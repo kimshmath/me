@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.6.17)  20 MAR 2026 12:36
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.6.17)  20 MAR 2026 12:53
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -220,35 +220,47 @@ Package: enumitem 2019/06/20 v3.9 Customized lists
 \enit@count@id=\count188
 \enitdp@description=\count189
 )
-Package hyperref Info: Option `colorlinks' set `true' on input line 16.
+(/usr/local/texlive/2020/texmf-dist/tex/latex/titlesec/titlesec.sty
+Package: titlesec 2019/10/16 v2.13 Sectioning titles
+\ttl@box=\box46
+\beforetitleunit=\skip51
+\aftertitleunit=\skip52
+\ttl@plus=\dimen148
+\ttl@minus=\dimen149
+\ttl@toksa=\toks20
+\titlewidth=\dimen150
+\titlewidthlast=\dimen151
+\titlewidthfirst=\dimen152
+)
+Package hyperref Info: Option `colorlinks' set `true' on input line 17.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/l3backend/l3backend-pdfmode.def
 File: l3backend-pdfmode.def 2020-03-12 L3 backend support: PDF mode
 \l__kernel_color_stack_int=\count190
-\l__pdf_internal_box=\box46
+\l__pdf_internal_box=\box47
 )
-No file cv.aux.
+(./cv.aux)
 \openout1 = `cv.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 18
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 21.
+LaTeX Font Info:    ... okay on input line 21.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 21.
+LaTeX Font Info:    ... okay on input line 21.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 21.
+LaTeX Font Info:    ... okay on input line 21.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 21.
+LaTeX Font Info:    ... okay on input line 21.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 21.
+LaTeX Font Info:    ... okay on input line 21.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 21.
+LaTeX Font Info:    ... okay on input line 21.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 21.
+LaTeX Font Info:    ... okay on input line 21.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 21.
+LaTeX Font Info:    ... okay on input line 21.
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 21
 .
-(/usr/local/texlive/2020/texmf-dist/tex/latex/lm/t1lmr.fd
+ (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 *geometry* driver: auto-detecting
@@ -285,7 +297,7 @@ File: t1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-\AtBeginShipoutBox=\box47
+\AtBeginShipoutBox=\box48
 (/usr/local/texlive/2020/texmf-dist/tex/latex/graphics/color.sty
 Package: color 2019/11/23 v1.2a Standard LaTeX Color (DPC)
 
@@ -300,18 +312,18 @@ File: pdftex.def 2018/01/08 v1.0l Graphics/color driver for pdftex
 (/usr/local/texlive/2020/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count191
-\scratchdimen=\dimen148
-\scratchbox=\box48
+\scratchdimen=\dimen153
+\scratchbox=\box49
 \nofMPsegments=\count192
 \nofMParguments=\count193
-\everyMPshowfont=\toks20
+\everyMPshowfont=\toks21
 \MPscratchCnt=\count194
-\MPscratchDim=\dimen149
+\MPscratchDim=\dimen154
 \MPnumerator=\count195
 \makeMPintoPDFobject=\count196
-\everyMPtoPDFconversion=\toks21
+\everyMPtoPDFconversion=\toks22
 )))
-Package hyperref Info: Link coloring ON on input line 18.
+Package hyperref Info: Link coloring ON on input line 21.
  (/usr/local/texlive/2020/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2019/09/16 v2.46 Cross-referencing by name of section
 
@@ -324,87 +336,111 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
 \c@section@level=\count197
 )
-LaTeX Info: Redefining \ref on input line 18.
-LaTeX Info: Redefining \pageref on input line 18.
-LaTeX Info: Redefining \nameref on input line 18.
+LaTeX Info: Redefining \ref on input line 21.
+LaTeX Info: Redefining \pageref on input line 21.
+LaTeX Info: Redefining \nameref on input line 21.
+ (./cv.out) (./cv.out)
 \@outlinefile=\write3
 \openout3 = `cv.out'.
 
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 3
-3.
- (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/ts1lmr.fd
-File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
-) [1
+6.
 
-{/usr/local/texlive/2020/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+(/usr/local/texlive/2020/texmf-dist/tex/latex/lm/ts1lmr.fd
+File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
+)
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 6
-4.
+3.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 6
-4.
+3.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-64.
+63.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-64.
+63.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 64.
+(Font)              <10.95> on input line 63.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 64.
+(Font)              <8> on input line 63.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 64.
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 83.
- [2]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 83.
+(Font)              <6> on input line 63.
+ [1
+
+{/usr/local/texlive/2020/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] [3]
+ [4] [5]
+[6]
+Overfull \hbox (18.3977pt too wide) in paragraph at lines 206--207
+[]\T1/lmr/m/n/10.95 Career Lec-ture at the Grad-u-a-tion Cer-e-mony, the Gifted
+ Ed-u-ca-tion Cen-ter, the Chungcheongbuk-
+ []
+
+[7] [8]
+Overfull \hbox (0.48294pt too wide) in paragraph at lines 261--262
+[]\T1/lmr/m/n/10.95 Mathematics De-part-ment Col-lo-quium, Sook-myung Women's U
+ni-ver-sity, Septem-ber 15, 2022. 
+ []
+
+[9] [10]
+Overfull \hbox (0.1322pt too wide) in paragraph at lines 318--319
+[]\T1/lmr/m/n/10.95 New Trends in Te-ichm-ller The-ory and Map-ping Class Group
+s, Math-e-ma-tis-ches Forschungsin-
+ []
+
+[11] [12]
+Overfull \hbox (3.64671pt too wide) in paragraph at lines 361--362
+[]\T1/lmr/m/n/10.95 Young Math-e-mati-cians' Camp, Na-tional In-sti-tute for Ma
+th-e-mat-i-cal Sci-ences, Dae-jeon, Febru-
+ []
+
+[13] [14] [15] [16] [17]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 487.
+ [18]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 487.
  (./cv.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 83.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 83.
-
-
-Package rerunfilecheck Warning: File `cv.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `cv.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  D41D8CD98F00B204E9800998ECF8427E;0.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 83.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 487.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 487.
+Package rerunfilecheck Info: File `cv.out' has not changed.
+(rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 487.
  ) 
 Here is how much of TeX's memory you used:
- 6060 strings out of 480608
- 94393 string characters out of 5903630
- 361116 words of memory out of 5000000
- 21845 multiletter control sequences out of 15000+600000
- 567051 words of font info for 44 fonts, out of 8000000 for 9000
+ 6679 strings out of 480608
+ 100463 string characters out of 5903630
+ 369928 words of memory out of 5000000
+ 22116 multiletter control sequences out of 15000+600000
+ 573048 words of font info for 46 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 34i,5n,29p,338b,455s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/local/texlive/2020/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/usr/local/
-texlive/2020/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/local/texlive/20
-20/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/usr/local/texlive/2020/texmf-dist/
-fonts/enc/dvips/lm/lm-ts1.enc}</usr/local/texlive/2020/texmf-dist/fonts/type1/p
-ublic/lm/lmbx10.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/public/lm/l
-mbx12.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/public/lm/lmmi10.pfb>
-</usr/local/texlive/2020/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/local
-/texlive/2020/texmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/local/texlive/202
-0/texmf-dist/fonts/type1/public/lm/lmri10.pfb>
-Output written on cv.pdf (2 pages, 130193 bytes).
+ 34i,5n,33p,370b,450s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/local/texlive/2020/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/lo
+cal/texlive/2020/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/usr/local/texlive/20
+20/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/local/texlive/2020/texmf-d
+ist/fonts/enc/dvips/lm/lm-ec.enc}{/usr/local/texlive/2020/texmf-dist/fonts/enc/
+dvips/lm/lm-ts1.enc}</usr/local/texlive/2020/texmf-dist/fonts/type1/public/lm/l
+mbx10.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/public/lm/lmbx12.pfb>
+</usr/local/texlive/2020/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></usr/loca
+l/texlive/2020/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/local/texlive/2
+020/texmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/local/texlive/2020/texmf-di
+st/fonts/type1/public/lm/lmri10.pfb></usr/local/texlive/2020/texmf-dist/fonts/t
+ype1/public/lm/lmsy8.pfb>
+Output written on cv.pdf (18 pages, 181016 bytes).
 PDF statistics:
- 66 PDF objects out of 1000 (max. 8388607)
- 55 compressed objects within 1 object stream
- 16 named destinations out of 1000 (max. 500000)
+ 535 PDF objects out of 1000 (max. 8388607)
+ 502 compressed objects within 6 object streams
+ 354 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
