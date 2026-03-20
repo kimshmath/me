@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.6.17)  20 MAR 2026 12:53
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.6.17)  20 MAR 2026 12:55
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -344,84 +344,84 @@ LaTeX Info: Redefining \nameref on input line 21.
 \openout3 = `cv.out'.
 
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 3
-6.
+5.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 6
-3.
+2.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 6
-3.
+2.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-63.
+62.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-63.
+62.
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 63.
+(Font)              <10.95> on input line 62.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 63.
+(Font)              <8> on input line 62.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 63.
+(Font)              <6> on input line 62.
  [1
 
 {/usr/local/texlive/2020/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] [3]
  [4] [5]
 [6]
-Overfull \hbox (18.3977pt too wide) in paragraph at lines 206--207
+Overfull \hbox (18.3977pt too wide) in paragraph at lines 205--206
 []\T1/lmr/m/n/10.95 Career Lec-ture at the Grad-u-a-tion Cer-e-mony, the Gifted
  Ed-u-ca-tion Cen-ter, the Chungcheongbuk-
  []
 
 [7] [8]
-Overfull \hbox (0.48294pt too wide) in paragraph at lines 261--262
+Overfull \hbox (0.48294pt too wide) in paragraph at lines 260--261
 []\T1/lmr/m/n/10.95 Mathematics De-part-ment Col-lo-quium, Sook-myung Women's U
 ni-ver-sity, Septem-ber 15, 2022. 
  []
 
 [9] [10]
-Overfull \hbox (0.1322pt too wide) in paragraph at lines 318--319
+Overfull \hbox (0.1322pt too wide) in paragraph at lines 317--318
 []\T1/lmr/m/n/10.95 New Trends in Te-ichm-ller The-ory and Map-ping Class Group
 s, Math-e-ma-tis-ches Forschungsin-
  []
 
 [11] [12]
-Overfull \hbox (3.64671pt too wide) in paragraph at lines 361--362
+Overfull \hbox (3.64671pt too wide) in paragraph at lines 360--361
 []\T1/lmr/m/n/10.95 Young Math-e-mati-cians' Camp, Na-tional In-sti-tute for Ma
 th-e-mat-i-cal Sci-ences, Dae-jeon, Febru-
  []
 
 [13] [14] [15] [16] [17]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 487.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 486.
  [18]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 487.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 486.
  (./cv.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 487.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 487.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 486.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 486.
 Package rerunfilecheck Info: File `cv.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 487.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 486.
  ) 
 Here is how much of TeX's memory you used:
  6679 strings out of 480608
  100463 string characters out of 5903630
- 369928 words of memory out of 5000000
+ 370032 words of memory out of 5000000
  22116 multiletter control sequences out of 15000+600000
  573048 words of font info for 46 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -437,7 +437,7 @@ l/texlive/2020/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/local/texlive/2
 020/texmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/local/texlive/2020/texmf-di
 st/fonts/type1/public/lm/lmri10.pfb></usr/local/texlive/2020/texmf-dist/fonts/t
 ype1/public/lm/lmsy8.pfb>
-Output written on cv.pdf (18 pages, 181016 bytes).
+Output written on cv.pdf (18 pages, 181226 bytes).
 PDF statistics:
  535 PDF objects out of 1000 (max. 8388607)
  502 compressed objects within 6 object streams
