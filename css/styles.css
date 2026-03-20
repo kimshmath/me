@@ -254,7 +254,8 @@ main {
 .hero {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  margin-top: 2rem;
   min-height: 40vh;
   margin-bottom: 2rem;
 }
