@@ -62,8 +62,8 @@ def main():
     with open('cv.tex', 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Find where \section*{Talks (Selected)} starts
-    idx = content.find(r'\section*{Talks (Selected)}')
+    # Find where \section*{Talks} starts
+    idx = content.find(r'\section*{Talks}')
     if idx == -1:
         print("Could not find talks section in cv.tex")
         return
