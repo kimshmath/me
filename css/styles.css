@@ -872,3 +872,26 @@ body.edit-mode .edit-pw-btn {
   display: inline-block;
 }
 
+/* Edit item button styling */
+.edit-edit-item {
+  display: none;
+  background: rgba(108, 155, 255, 0.12);
+  border: 1px solid rgba(108, 155, 255, 0.3);
+  color: var(--accent);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+}
+
+.edit-edit-item:hover {
+  background: rgba(108, 155, 255, 0.25);
+  color: #fff;
+}
+
+body.edit-mode .edit-edit-item {
+  display: inline-block;
+}
