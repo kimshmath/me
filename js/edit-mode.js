@@ -219,15 +219,18 @@
 
   // ── Section type detection ─────────────────────────────────────────────
 
-  function detectSectionType(h2Text) {
-    const t = h2Text.toLowerCase();
+  function detectSectionType(headingText) {
+    const t = headingText.toLowerCase();
     if (t.includes('published papers'))             return 'published';
     if (t.includes('submitted') || t.includes('accepted')) return 'submitted';
     if (t.includes('unpublished'))                  return 'unpublished';
     if (t.includes('slides') && t.includes('video'))  return 'slides';
     if (t.includes('upcoming'))                     return 'upcoming';
-    // For Talks & Panel h2, check for upcoming subheading inside
     if (t.includes('talks'))                        return 'talks';
+    if (t === 'quotes')                             return 'quotes';
+    if (t === 'links')                              return 'links';
+    if (t === 'notes')                              return 'notes';
+    if (t === 'references')                         return 'references';
     return 'generic';
   }
 
@@ -276,6 +279,26 @@
 
       case 'slides':
         fields.push({ id: 'stitle',    label: 'Title / description',type: 'text',     placeholder: 'Slide or video title' });
+        fields.push({ id: 'link',      label: 'Link URL',           type: 'url',      placeholder: 'https://...' });
+        break;
+
+      case 'quotes':
+        fields.push({ id: 'content',   label: 'Quote Text',         type: 'textarea', placeholder: 'e.g. If there is if, write then. [H]' });
+        break;
+
+      case 'links':
+        fields.push({ id: 'linktext',  label: 'Link Label',         type: 'text',     placeholder: 'e.g. Standard mathematics paper' });
+        fields.push({ id: 'link',      label: 'Link URL',           type: 'url',      placeholder: 'https://...' });
+        break;
+
+      case 'notes':
+        fields.push({ id: 'content',   label: 'Note Text',          type: 'text',     placeholder: 'e.g. As follows, not as following.' });
+        break;
+
+      case 'references':
+        fields.push({ id: 'refkey',    label: 'Key',                type: 'text',     placeholder: 'e.g. [H]' });
+        fields.push({ id: 'author',    label: 'Author/Prefix',      type: 'text',     placeholder: 'e.g. P. R. Halmos, ' });
+        fields.push({ id: 'linktext',  label: 'Link Text',          type: 'text',     placeholder: 'e.g. How to Write Mathematics' });
         fields.push({ id: 'link',      label: 'Link URL',           type: 'url',      placeholder: 'https://...' });
         break;
 
@@ -385,6 +408,32 @@
       html += ` <a href="${escapeHTML(vals.link)}" target="_blank">${escapeHTML(label)}</a>`;
     }
     return `<li>${html}</li>`;
+  }
+
+  /** Build a quote <li> */
+  function buildQuoteLI(vals) {
+    return `<li style="margin-bottom: 0.5rem; padding-left: 0.5rem;">${escapeHTML(vals.content || '')}</li>`;
+  }
+
+  /** Build a link <li> */
+  function buildLinkLI(vals) {
+    return `<li><a href="${escapeHTML(vals.link || '')}" target="_blank">${escapeHTML(vals.linktext || 'Link')}</a></li>`;
+  }
+
+  /** Build a note <li> */
+  function buildNoteLI(vals) {
+    return `<li>${escapeHTML(vals.content || '')}</li>`;
+  }
+
+  /** Build a reference <li> */
+  function buildReferenceLI(vals) {
+    const key = vals.refkey ? escapeHTML(vals.refkey) + ' ' : '';
+    const author = vals.author ? escapeHTML(vals.author) + ' ' : '';
+    const title = vals.linktext ? escapeHTML(vals.linktext) : 'Link';
+    if (vals.link) {
+      return `<li>${key}${author}<a href="${escapeHTML(vals.link)}" target="_blank">${title}</a></li>`;
+    }
+    return `<li>${key}${author}${title}</li>`;
   }
 
   // ── Renumbering ────────────────────────────────────────────────────────
@@ -549,6 +598,14 @@
           return buildUpcomingLI(num, vals);
         case 'slides':
           return buildSlideLI(vals);
+        case 'quotes':
+          return buildQuoteLI(vals);
+        case 'links':
+          return buildLinkLI(vals);
+        case 'notes':
+          return buildNoteLI(vals);
+        case 'references':
+          return buildReferenceLI(vals);
         default:
           return buildGenericLI(vals);
       }
@@ -658,16 +715,21 @@
   // ── Section scanning and [+ Add] button injection ──────────────────────
 
   function injectAddButtons() {
-    const h2s = document.querySelectorAll('h2');
+    const headings = document.querySelectorAll('h2, h3');
 
-    h2s.forEach(h2 => {
-      const text = h2.textContent.trim();
+    headings.forEach(heading => {
+      const text = heading.textContent.trim();
       const sectionType = detectSectionType(text);
+
+      if (heading.tagName === 'H3') {
+        const allowedTypes = ['quotes', 'links', 'notes', 'references'];
+        if (!allowedTypes.includes(sectionType)) return;
+      }
 
       // For the "Talks & Panel" section, we handle the Upcoming subheading
       if (sectionType === 'talks') {
         // Look for the "Upcoming" h3 inside this section
-        const section = h2.closest('section') || h2.parentElement;
+        const section = heading.closest('section') || heading.parentElement;
         const upcomingH3 = section.querySelector('h3');
         if (upcomingH3 && upcomingH3.textContent.toLowerCase().includes('upcoming')) {
           const ul = upcomingH3.parentElement.querySelector('ul.paper-list');
@@ -680,14 +742,14 @@
         return;
       }
 
-      // Find the target <ul> for this section
+      // Find the target list for this section
       let targetUL = null;
-      const section = h2.closest('section') || h2.parentElement;
+      const section = heading.closest('section') || heading.parentElement;
 
-      // Direct sibling <ul> or first paper-list in section
-      let sibling = h2.nextElementSibling;
+      // Direct sibling list or first list inside section
+      let sibling = heading.nextElementSibling;
       while (sibling) {
-        if (sibling.tagName === 'UL' && sibling.classList.contains('paper-list')) {
+        if (sibling.tagName === 'UL' || sibling.tagName === 'OL') {
           targetUL = sibling;
           break;
         }
@@ -699,28 +761,33 @@
       }
 
       if (!targetUL) {
-        targetUL = section.querySelector('ul.paper-list');
+        targetUL = section.querySelector('ul, ol');
       }
 
       const btn = document.createElement('button');
       btn.className = 'edit-add-btn';
       btn.textContent = '[+ Add]';
-      btn.addEventListener('click', () => showAddModal(sectionType, targetUL, h2));
+      btn.addEventListener('click', () => showAddModal(sectionType, targetUL, heading));
 
-      // Insert the button after h2 (and any <p> that immediately follows it)
-      let insertAfter = h2;
-      let nextEl = h2.nextElementSibling;
+      // Insert the button after heading (and any <p> that immediately follows it)
+      let insertAfter = heading;
+      let nextEl = heading.nextElementSibling;
       if (nextEl && nextEl.tagName === 'P') insertAfter = nextEl;
       insertAfter.after(btn);
     });
   }
 
   function injectDeleteButtons() {
-    const h2s = document.querySelectorAll('h2');
-    h2s.forEach(h2 => {
-      const text = h2.textContent.trim();
+    const headings = document.querySelectorAll('h2, h3');
+    headings.forEach(heading => {
+      const text = heading.textContent.trim();
       const sectionType = detectSectionType(text);
-      const section = h2.closest('section') || h2.parentElement;
+      const section = heading.closest('section') || heading.parentElement;
+
+      if (heading.tagName === 'H3') {
+        const allowedTypes = ['quotes', 'links', 'notes', 'references'];
+        if (!allowedTypes.includes(sectionType)) return;
+      }
 
       let uls = [];
       if (sectionType === 'talks') {
@@ -730,9 +797,9 @@
           if (ul) uls.push(ul);
         }
       } else {
-        let sibling = h2.nextElementSibling;
+        let sibling = heading.nextElementSibling;
         while (sibling) {
-          if (sibling.tagName === 'UL') {
+          if (sibling.tagName === 'UL' || sibling.tagName === 'OL') {
             uls.push(sibling);
             break;
           }
@@ -743,8 +810,8 @@
           break;
         }
         if (uls.length === 0) {
-          const sectionULs = section.querySelectorAll('ul');
-          sectionULs.forEach(ul => uls.push(ul));
+          const sectionLists = section.querySelectorAll('ul, ol');
+          sectionLists.forEach(l => uls.push(l));
         }
       }
 
