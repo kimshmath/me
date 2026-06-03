@@ -198,6 +198,22 @@
       }
       .edit-delete-item:hover { background: rgba(255,80,80,0.25); }
       body.edit-mode .edit-delete-item { display: inline; }
+
+      /* ── Edit button on items ─────────────────────────────────────── */
+      .edit-edit-item {
+        display: none;
+        background: rgba(108,155,255,0.12);
+        border: 1px solid rgba(108,155,255,0.3);
+        color: var(--accent, #64ffda);
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+        transition: all 0.2s;
+      }
+      .edit-edit-item:hover { background: rgba(108,155,255,0.25); color: #fff; }
+      body.edit-mode .edit-edit-item { display: inline; }
     `;
     const style = document.createElement('style');
     style.textContent = css;
@@ -523,36 +539,195 @@
     setTimeout(() => pwInput.focus(), 120);
   }
 
-  // ── Add-item modal ─────────────────────────────────────────────────────
+  // ── Parse existing item values for edit mode ───────────────────────────
 
-  function showAddModal(sectionType, targetUL, h2El) {
+  function parseItemValues(li, type) {
+    const vals = {};
+
+    switch (type) {
+      case 'published':
+      case 'submitted':
+      case 'unpublished': {
+        const citationEl = li.querySelector('.paper-citation');
+        let text = citationEl ? citationEl.textContent.trim() : '';
+        text = text.replace(/^\d+\.\s*/, '');
+
+        const bibPre = li.querySelector('.cite-content pre');
+        if (bibPre) vals.bibtex = bibPre.textContent.trim();
+
+        const sumDiv = li.querySelector('.summary-content');
+        if (sumDiv) vals.summary = sumDiv.textContent.trim();
+
+        const arxivLink = li.querySelector('a[href*="arxiv.org"]');
+        if (arxivLink) vals.arxiv = arxivLink.href;
+
+        const actionLinks = li.querySelectorAll('.paper-actions a');
+        actionLinks.forEach(a => {
+          if (!a.href.includes('arxiv.org')) {
+            vals.journal_url = a.href;
+          }
+        });
+
+        const em = li.querySelector('.paper-citation em');
+        if (em) {
+          vals.journal = em.textContent.trim();
+          const htmlParts = citationEl.innerHTML.split(/<em[^>]*>.*?<\/em>/i);
+          if (htmlParts.length > 0) {
+            let beforeText = document.createElement('div');
+            beforeText.innerHTML = htmlParts[0];
+            let cleanBefore = beforeText.textContent.trim().replace(/^\d+\.\s*/, '');
+            const firstDot = cleanBefore.indexOf('.');
+            if (firstDot !== -1) {
+              vals.authors = cleanBefore.substring(0, firstDot).trim();
+              vals.title = cleanBefore.substring(firstDot + 1).trim().replace(/,\s*$/, '');
+            } else {
+              vals.title = cleanBefore;
+            }
+          }
+          if (htmlParts.length > 1) {
+            let afterText = document.createElement('div');
+            afterText.innerHTML = htmlParts[1];
+            vals.volinfo = afterText.textContent.trim().replace(/\.\s*$/, '');
+          }
+        } else {
+          const firstDot = text.indexOf('.');
+          if (firstDot !== -1) {
+            vals.authors = text.substring(0, firstDot).trim();
+            let titlePart = text.substring(firstDot + 1).trim();
+            const yearMatch = titlePart.match(/\((\d{4})\)\.?$/);
+            if (yearMatch) {
+              vals.year = yearMatch[1];
+              vals.title = titlePart.replace(/\s*\(\d{4}\)\.?$/, '').trim();
+            } else {
+              vals.title = titlePart.replace(/\.\s*$/, '');
+            }
+          } else {
+            vals.title = text.replace(/\.\s*$/, '');
+          }
+        }
+        break;
+      }
+
+      case 'upcoming': {
+        let text = li.textContent.trim();
+        text = text.replace(/\[Link\]/g, '').replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+        text = text.replace(/^\d+\.\s*/, '');
+
+        const parts = text.split(',').map(s => s.trim());
+        if (parts.length > 0) vals.event = parts[0];
+        if (parts.length > 1) vals.date = parts[1];
+        if (parts.length > 2) vals.location = parts[2];
+
+        const a = li.querySelector('a');
+        if (a) vals.link = a.href;
+        break;
+      }
+
+      case 'slides': {
+        const a = li.querySelector('a');
+        if (a) {
+          vals.stitle = a.textContent.trim();
+          vals.link = a.href;
+        } else {
+          vals.stitle = li.textContent.trim().replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+        }
+        break;
+      }
+
+      case 'quotes': {
+        vals.content = li.textContent.trim().replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+        break;
+      }
+
+      case 'links': {
+        const a = li.querySelector('a');
+        if (a) {
+          vals.linktext = a.textContent.trim();
+          vals.link = a.href;
+        }
+        break;
+      }
+
+      case 'notes': {
+        vals.content = li.textContent.trim().replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+        break;
+      }
+
+      case 'references': {
+        let text = li.textContent.trim().replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+        const keyMatch = text.match(/^(\[[^\]]+\])/);
+        if (keyMatch) {
+          vals.refkey = keyMatch[1];
+          text = text.substring(vals.refkey.length).trim();
+        }
+        const a = li.querySelector('a');
+        if (a) {
+          vals.linktext = a.textContent.trim();
+          vals.link = a.href;
+          vals.author = text.split(vals.linktext)[0].trim().replace(/,\s*$/, '');
+        } else {
+          vals.linktext = text;
+        }
+        break;
+      }
+
+      default: {
+        const a = li.querySelector('a');
+        if (a) {
+          vals.link = a.href;
+          vals.linktext = a.textContent.trim();
+          vals.content = li.textContent.replace(vals.linktext, '').replace(/\[Link\]/g, '').replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+        } else {
+          vals.content = li.textContent.trim().replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+        }
+        break;
+      }
+    }
+
+    return vals;
+  }
+
+  // ── Add/Edit-item modal ────────────────────────────────────────────────
+
+  function showAddModal(sectionType, targetUL, h2El, isEdit, liToEdit) {
+    const isEditMode = !!isEdit;
     const overlay = createOverlay();
     const modal = document.createElement('div');
     modal.className = 'edit-modal';
 
-    const title = sectionType === 'published'   ? 'Add Published Paper' :
-                  sectionType === 'submitted'   ? 'Add Submitted / Accepted Paper' :
-                  sectionType === 'unpublished'  ? 'Add Unpublished Note' :
-                  sectionType === 'upcoming'     ? 'Add Upcoming Talk' :
-                  sectionType === 'slides'       ? 'Add Slide / Video' :
-                                                   'Add Item';
+    const vals = isEditMode ? parseItemValues(liToEdit, sectionType) : {};
+
+    const title = isEditMode
+      ? (sectionType === 'published'   ? 'Edit Published Paper' :
+         sectionType === 'submitted'   ? 'Edit Submitted / Accepted Paper' :
+         sectionType === 'unpublished'  ? 'Edit Unpublished Note' :
+         sectionType === 'upcoming'     ? 'Edit Upcoming Talk' :
+         sectionType === 'slides'       ? 'Edit Slide / Video' :
+                                         'Edit Item')
+      : (sectionType === 'published'   ? 'Add Published Paper' :
+         sectionType === 'submitted'   ? 'Add Submitted / Accepted Paper' :
+         sectionType === 'unpublished'  ? 'Add Unpublished Note' :
+         sectionType === 'upcoming'     ? 'Add Upcoming Talk' :
+         sectionType === 'slides'       ? 'Add Slide / Video' :
+                                         'Add Item');
 
     const fields = buildFormFields(sectionType);
 
     let fieldsHTML = '';
     fields.forEach(f => {
+      const val = vals[f.id] || '';
       if (f.type === 'textarea') {
         const monoClass = f.mono ? ' mono' : '';
         fieldsHTML += `
           <div class="edit-form-group">
             <label for="ef-${f.id}">${f.label}</label>
-            <textarea id="ef-${f.id}" class="${monoClass}" rows="4" placeholder="${f.placeholder || ''}"></textarea>
+            <textarea id="ef-${f.id}" class="${monoClass}" rows="4" placeholder="${f.placeholder || ''}">${escapeHTML(val)}</textarea>
           </div>`;
       } else {
         fieldsHTML += `
           <div class="edit-form-group">
             <label for="ef-${f.id}">${f.label}</label>
-            <input id="ef-${f.id}" type="${f.type}" placeholder="${f.placeholder || ''}">
+            <input id="ef-${f.id}" type="${f.type}" placeholder="${f.placeholder || ''}" value="${escapeHTML(val)}">
           </div>`;
       }
     });
@@ -615,39 +790,71 @@
 
     modal.querySelector('#emc-preview').addEventListener('click', () => {
       const vals = getValues();
-      const num = nextNumber();
+      let num = 1;
+      if (isEditMode) {
+        const strong = liToEdit.querySelector('strong');
+        if (strong) {
+          num = parseInt(strong.textContent) || 1;
+        } else {
+          const items = Array.from(targetUL.querySelectorAll(':scope > li'));
+          const idx = items.indexOf(liToEdit);
+          const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+          num = descending ? (items.length - idx) : (idx + 1);
+        }
+      } else {
+        num = nextNumber();
+      }
       const html = generateHTML(vals, num);
       previewPane.innerHTML = html;
       previewPane.style.display = 'block';
     });
 
+    modal.querySelector('#emc-insert').textContent = isEditMode ? 'Update' : 'Insert';
+
     modal.querySelector('#emc-insert').addEventListener('click', () => {
       const vals = getValues();
-      const num = nextNumber();
+      let num = 1;
+      if (isEditMode) {
+        const strong = liToEdit.querySelector('strong');
+        if (strong) {
+          num = parseInt(strong.textContent) || 1;
+        } else {
+          const items = Array.from(targetUL.querySelectorAll(':scope > li'));
+          const idx = items.indexOf(liToEdit);
+          const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+          num = descending ? (items.length - idx) : (idx + 1);
+        }
+      } else {
+        num = nextNumber();
+      }
       const html = generateHTML(vals, num);
 
-      if (!targetUL) {
-        // No <ul> found — try to find or create one
-        let section = h2El.closest('section');
-        if (!section) section = h2El.parentElement;
-        let ul = section.querySelector('ul.paper-list');
-        if (!ul) {
-          ul = document.createElement('ul');
-          ul.className = 'paper-list';
-          // Insert after h2
-          h2El.after(ul);
-        }
-        ul.insertAdjacentHTML('afterbegin', html);
-        const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
-        renumberSection(ul, descending);
-      } else {
-        // Prepend to top of list
-        targetUL.insertAdjacentHTML('afterbegin', html);
+      if (isEditMode) {
+        liToEdit.outerHTML = html;
         const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
         renumberSection(targetUL, descending);
+      } else {
+        if (!targetUL) {
+          let section = h2El.closest('section');
+          if (!section) section = h2El.parentElement;
+          let ul = section.querySelector('ul.paper-list');
+          if (!ul) {
+            ul = document.createElement('ul');
+            ul.className = 'paper-list';
+            h2El.after(ul);
+          }
+          ul.insertAdjacentHTML('afterbegin', html);
+          const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+          renumberSection(ul, descending);
+        } else {
+          targetUL.insertAdjacentHTML('afterbegin', html);
+          const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+          renumberSection(targetUL, descending);
+        }
       }
 
       injectDeleteButtons();
+      injectEditButtons();
       dirty = true;
       showSaveButton();
       closeModal(overlay);
@@ -683,7 +890,7 @@
     if (bodyEl) bodyEl.classList.remove('edit-mode');
 
     // Remove injected elements (login button is inside an <li>, remove the whole <li>)
-    clone.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-modal-overlay, .edit-delete-item, .edit-pw-btn').forEach(el => el.remove());
+    clone.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-modal-overlay, .edit-delete-item, .edit-pw-btn, .edit-edit-item').forEach(el => el.remove());
     clone.querySelectorAll('.edit-login-btn').forEach(el => {
       const li = el.closest('li');
       if (li) li.remove(); else el.remove();
@@ -844,6 +1051,67 @@
     });
   }
 
+  function injectEditButtons() {
+    const headings = document.querySelectorAll('h2, h3');
+    headings.forEach(heading => {
+      const text = heading.textContent.trim();
+      const sectionType = detectSectionType(text);
+      const section = heading.closest('section') || heading.parentElement;
+
+      if (heading.tagName === 'H3') {
+        const allowedTypes = ['quotes', 'links', 'notes', 'references'];
+        if (!allowedTypes.includes(sectionType)) return;
+      }
+
+      let uls = [];
+      if (sectionType === 'talks') {
+        const upcomingH3 = section.querySelector('h3');
+        if (upcomingH3 && upcomingH3.textContent.toLowerCase().includes('upcoming')) {
+          const ul = upcomingH3.parentElement.querySelector('ul.paper-list');
+          if (ul) uls.push(ul);
+        }
+      } else {
+        let sibling = heading.nextElementSibling;
+        while (sibling) {
+          if (sibling.tagName === 'UL' || sibling.tagName === 'OL') {
+            uls.push(sibling);
+            break;
+          }
+          if (sibling.tagName === 'P') {
+            sibling = sibling.nextElementSibling;
+            continue;
+          }
+          break;
+        }
+        if (uls.length === 0) {
+          const sectionLists = section.querySelectorAll('ul, ol');
+          sectionLists.forEach(l => uls.push(l));
+        }
+      }
+
+      uls.forEach(ul => {
+        const lis = ul.querySelectorAll(':scope > li');
+        lis.forEach(li => {
+          if (li.querySelector('.edit-edit-item')) return;
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'edit-edit-item';
+          editBtn.textContent = '[Edit]';
+          editBtn.addEventListener('click', () => {
+            showAddModal(sectionType, ul, heading, true, li);
+          });
+
+          const actionsDiv = li.querySelector('.paper-actions');
+          if (actionsDiv) {
+            actionsDiv.appendChild(editBtn);
+          } else {
+            li.appendChild(editBtn);
+          }
+        });
+      });
+    });
+  }
+
   function showChangePasswordModal() {
     const overlay = createOverlay();
 
@@ -918,14 +1186,15 @@
     if (loginBtn) loginBtn.textContent = '[🔓]';
     injectAddButtons();
     injectDeleteButtons();
+    injectEditButtons();
     createSaveButton();
   }
 
   function exitEditMode() {
     document.body.classList.remove('edit-mode');
     if (loginBtn) loginBtn.textContent = '[🔒]';
-    // Remove add buttons, delete buttons and save button
-    document.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-delete-item').forEach(el => el.remove());
+    // Remove add buttons, delete buttons, edit buttons and save button
+    document.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-delete-item, .edit-edit-item').forEach(el => el.remove());
     saveBtn = null;
   }
 
