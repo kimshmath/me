@@ -28,14 +28,14 @@
     // Expose auth for edit-mode.js
     window.EDIT_MODE_AUTH = {
       auth: auth,
-      signIn: function(email, password) {
-        return auth.signInWithEmailAndPassword(email, password);
+      signInWithEmailAndPassword: function(authInst, email, password) {
+        return authInst.signInWithEmailAndPassword(email, password);
       },
-      signOut: function() {
-        return auth.signOut();
+      signOut: function(authInst) {
+        return authInst.signOut();
       },
-      onAuthStateChanged: function(callback) {
-        return auth.onAuthStateChanged(callback);
+      onAuthStateChanged: function(authInst, callback) {
+        return authInst.onAuthStateChanged(callback);
       }
     };
 
