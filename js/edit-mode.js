@@ -36,6 +36,23 @@
       }
       .edit-login-btn:hover { border-color: var(--accent, #64ffda); color: var(--accent, #64ffda); }
 
+      /* ── Change Password button ─────────────────────────────────────── */
+      .edit-pw-btn {
+        display: none;
+        background: none;
+        border: 1px solid rgba(255,255,255,0.15);
+        color: var(--text-muted, #999);
+        font-size: 0.85rem;
+        padding: 0.25rem 0.55rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+        margin-left: 0.5rem;
+      }
+      .edit-pw-btn:hover { border-color: var(--accent, #64ffda); color: var(--accent, #64ffda); }
+      body.edit-mode .edit-pw-btn { display: inline-block; }
+
       /* ── Modal overlay ────────────────────────────────────────────── */
       .edit-modal-overlay {
         position: fixed; inset: 0;
@@ -609,7 +626,7 @@
     if (bodyEl) bodyEl.classList.remove('edit-mode');
 
     // Remove injected elements (login button is inside an <li>, remove the whole <li>)
-    clone.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-modal-overlay, .edit-delete-item').forEach(el => el.remove());
+    clone.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-modal-overlay, .edit-delete-item, .edit-pw-btn').forEach(el => el.remove());
     clone.querySelectorAll('.edit-login-btn').forEach(el => {
       const li = el.closest('li');
       if (li) li.remove(); else el.remove();
@@ -760,6 +777,73 @@
     });
   }
 
+  function showChangePasswordModal() {
+    const overlay = createOverlay();
+
+    const modal = document.createElement('div');
+    modal.className = 'edit-modal';
+    modal.innerHTML = `
+      <h3>🔑 Change Password</h3>
+      <div class="edit-form-group">
+        <label for="edit-new-pw">New Password</label>
+        <input id="edit-new-pw" type="password" placeholder="Enter new password">
+      </div>
+      <div class="edit-form-group">
+        <label for="edit-confirm-pw">Confirm Password</label>
+        <input id="edit-confirm-pw" type="password" placeholder="Confirm new password">
+      </div>
+      <div id="edit-pw-error" style="color:#ff5050;font-size:0.85rem;margin-top:0.5rem;display:none;"></div>
+      <div id="edit-pw-success" style="color:#22c55e;font-size:0.85rem;margin-top:0.5rem;display:none;"></div>
+      <div class="edit-modal-actions">
+        <button id="edit-pw-cancel">Cancel</button>
+        <button id="edit-pw-save" class="primary">Save</button>
+      </div>
+    `;
+    overlay.appendChild(modal);
+
+    const newPwInput = modal.querySelector('#edit-new-pw');
+    const confirmPwInput = modal.querySelector('#edit-confirm-pw');
+    const errDiv = modal.querySelector('#edit-pw-error');
+    const successDiv = modal.querySelector('#edit-pw-success');
+    const cancelBtn = modal.querySelector('#edit-pw-cancel');
+    const saveBtnModal = modal.querySelector('#edit-pw-save');
+
+    cancelBtn.addEventListener('click', () => closeModal(overlay));
+
+    async function doChangePassword() {
+      const newPw = newPwInput.value.trim();
+      const confirmPw = confirmPwInput.value.trim();
+      errDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+
+      if (!newPw) { errDiv.textContent = 'Please enter a new password.'; errDiv.style.display = 'block'; return; }
+      if (newPw !== confirmPw) { errDiv.textContent = 'Passwords do not match.'; errDiv.style.display = 'block'; return; }
+      if (newPw.length < 6) { errDiv.textContent = 'Password should be at least 6 characters.'; errDiv.style.display = 'block'; return; }
+
+      const authObj = window.EDIT_MODE_AUTH;
+      if (!authObj || !authObj.updatePassword) { errDiv.textContent = 'Firebase change password feature not available.'; errDiv.style.display = 'block'; return; }
+
+      try {
+        saveBtnModal.disabled = true;
+        saveBtnModal.textContent = 'Updating…';
+        await authObj.updatePassword(authObj.auth, newPw);
+        successDiv.textContent = 'Password updated successfully!';
+        successDiv.style.display = 'block';
+        setTimeout(() => closeModal(overlay), 1500);
+      } catch (err) {
+        errDiv.textContent = 'Failed to update: ' + (err.message || err);
+        errDiv.style.display = 'block';
+        saveBtnModal.disabled = false;
+        saveBtnModal.textContent = 'Save';
+      }
+    }
+
+    saveBtnModal.addEventListener('click', doChangePassword);
+    confirmPwInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doChangePassword(); });
+
+    setTimeout(() => newPwInput.focus(), 120);
+  }
+
   // ── Auth state management ──────────────────────────────────────────────
 
   function enterEditMode() {
@@ -783,10 +867,11 @@
   function init() {
     injectStyles();
 
-    // Inject login button into nav
+    // Inject login button and password change button into nav
     const navLinks = document.querySelector('.nav-links');
     if (navLinks) {
       const li = document.createElement('li');
+      
       loginBtn = document.createElement('button');
       loginBtn.className = 'edit-login-btn';
       loginBtn.textContent = '[🔒]';
@@ -800,6 +885,16 @@
         }
       });
       li.appendChild(loginBtn);
+
+      const changePwBtn = document.createElement('button');
+      changePwBtn.className = 'edit-pw-btn';
+      changePwBtn.textContent = '[🔑]';
+      changePwBtn.title = 'Change Password';
+      changePwBtn.addEventListener('click', () => {
+        showChangePasswordModal();
+      });
+      li.appendChild(changePwBtn);
+
       navLinks.appendChild(li);
     }
 

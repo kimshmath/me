@@ -36,6 +36,12 @@
       },
       onAuthStateChanged: function(authInst, callback) {
         return authInst.onAuthStateChanged(callback);
+      },
+      updatePassword: function(authInst, newPassword) {
+        if (!authInst.currentUser) {
+          return Promise.reject(new Error('No user is currently signed in.'));
+        }
+        return authInst.currentUser.updatePassword(newPassword);
       }
     };
 
