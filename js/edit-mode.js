@@ -573,6 +573,7 @@
         renumberSection(targetUL, descending);
       }
 
+      injectDeleteButtons();
       dirty = true;
       showSaveButton();
       closeModal(overlay);
@@ -697,20 +698,83 @@
     });
   }
 
+  function injectDeleteButtons() {
+    const h2s = document.querySelectorAll('h2');
+    h2s.forEach(h2 => {
+      const text = h2.textContent.trim();
+      const sectionType = detectSectionType(text);
+      const section = h2.closest('section') || h2.parentElement;
+
+      let uls = [];
+      if (sectionType === 'talks') {
+        const upcomingH3 = section.querySelector('h3');
+        if (upcomingH3 && upcomingH3.textContent.toLowerCase().includes('upcoming')) {
+          const ul = upcomingH3.parentElement.querySelector('ul.paper-list');
+          if (ul) uls.push(ul);
+        }
+      } else {
+        let sibling = h2.nextElementSibling;
+        while (sibling) {
+          if (sibling.tagName === 'UL') {
+            uls.push(sibling);
+            break;
+          }
+          if (sibling.tagName === 'P') {
+            sibling = sibling.nextElementSibling;
+            continue;
+          }
+          break;
+        }
+        if (uls.length === 0) {
+          const sectionULs = section.querySelectorAll('ul');
+          sectionULs.forEach(ul => uls.push(ul));
+        }
+      }
+
+      uls.forEach(ul => {
+        const lis = ul.querySelectorAll(':scope > li');
+        lis.forEach(li => {
+          if (li.querySelector('.edit-delete-item')) return;
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'edit-delete-item';
+          delBtn.textContent = '[Delete]';
+          delBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete this item?')) {
+              li.remove();
+              const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+              renumberSection(ul, descending);
+              dirty = true;
+              showSaveButton();
+            }
+          });
+
+          const actionsDiv = li.querySelector('.paper-actions');
+          if (actionsDiv) {
+            actionsDiv.appendChild(delBtn);
+          } else {
+            li.appendChild(delBtn);
+          }
+        });
+      });
+    });
+  }
+
   // ── Auth state management ──────────────────────────────────────────────
 
   function enterEditMode() {
     document.body.classList.add('edit-mode');
     if (loginBtn) loginBtn.textContent = '[🔓]';
     injectAddButtons();
+    injectDeleteButtons();
     createSaveButton();
   }
 
   function exitEditMode() {
     document.body.classList.remove('edit-mode');
     if (loginBtn) loginBtn.textContent = '[🔒]';
-    // Remove add buttons and save button
-    document.querySelectorAll('.edit-add-btn, .edit-save-btn').forEach(el => el.remove());
+    // Remove add buttons, delete buttons and save button
+    document.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-delete-item').forEach(el => el.remove());
     saveBtn = null;
   }
 
