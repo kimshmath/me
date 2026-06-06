@@ -7,7 +7,8 @@
  *
  * On login the script adds `edit-mode` class to <body>, injects [+ Add] buttons
  * next to each editable <h2>, and provides form modals that generate HTML matching
- * the existing page patterns.  A floating Save button downloads the modified HTML.
+ * the existing page patterns.  A floating Save button pushes changes directly to
+ * GitHub via the Contents API, so the live site updates automatically.
  */
 
 (function () {
@@ -15,6 +16,9 @@
 
   // ── Constants ──────────────────────────────────────────────────────────
   const ADMIN_EMAIL = 'admin@kimsh.kr';
+  const GITHUB_OWNER = 'kimshmath';
+  const GITHUB_REPO  = 'me';
+  const GITHUB_TOKEN_KEY = 'kimsh_github_pat'; // localStorage key
   let dirty = false;                         // track whether edits were made
   let loginBtn = null;
 
@@ -214,6 +218,59 @@
       }
       .edit-edit-item:hover { background: rgba(108,155,255,0.25); color: #fff; }
       body.edit-mode .edit-edit-item { display: inline; }
+
+      /* ── Toast notification ────────────────────────────────────────── */
+      .edit-toast {
+        position: fixed;
+        bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px);
+        padding: 0.85rem 1.6rem;
+        border-radius: 12px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        z-index: 10001;
+        opacity: 0;
+        transition: opacity 0.35s, transform 0.35s;
+        pointer-events: none;
+        max-width: 90vw;
+        text-align: center;
+      }
+      .edit-toast.visible {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      .edit-toast.success {
+        background: rgba(34,197,94,0.92);
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(34,197,94,0.35);
+      }
+      .edit-toast.error {
+        background: rgba(239,68,68,0.92);
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(239,68,68,0.35);
+      }
+      .edit-toast.info {
+        background: rgba(59,130,246,0.92);
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+      }
+
+      /* ── Secondary download link ───────────────────────────────────── */
+      .edit-download-btn {
+        display: none;
+        position: fixed;
+        bottom: 5.2rem; right: 2rem;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #aaa;
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        cursor: pointer;
+        z-index: 9999;
+        transition: all 0.2s;
+      }
+      .edit-download-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+      body.edit-mode .edit-download-btn.visible { display: block; }
     `;
     const style = document.createElement('style');
     style.textContent = css;
@@ -865,58 +922,237 @@
     if (firstInput) setTimeout(() => firstInput.focus(), 120);
   }
 
-  // ── Floating Save button ───────────────────────────────────────────────
+  // ── Toast notifications ────────────────────────────────────────────────
 
-  let saveBtn = null;
-
-  function createSaveButton() {
-    saveBtn = document.createElement('button');
-    saveBtn.className = 'edit-save-btn';
-    saveBtn.textContent = '💾 Save HTML';
-    saveBtn.addEventListener('click', downloadHTML);
-    document.body.appendChild(saveBtn);
+  function showToast(message, type, durationMs) {
+    type = type || 'info';
+    durationMs = durationMs || 3500;
+    const toast = document.createElement('div');
+    toast.className = 'edit-toast ' + type;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('visible'));
+    setTimeout(() => {
+      toast.classList.remove('visible');
+      setTimeout(() => toast.remove(), 400);
+    }, durationMs);
   }
 
-  function showSaveButton() {
-    if (saveBtn) saveBtn.classList.add('visible');
+  // ── GitHub token management ────────────────────────────────────────────
+
+  function getGitHubToken() {
+    return localStorage.getItem(GITHUB_TOKEN_KEY) || '';
   }
 
-  function downloadHTML() {
-    // Remove edit-mode artifacts before serialising
+  function setGitHubToken(token) {
+    localStorage.setItem(GITHUB_TOKEN_KEY, token);
+  }
+
+  /** Show modal to enter GitHub PAT — returns a Promise<string|null> */
+  function promptForToken() {
+    return new Promise(function (resolve) {
+      const overlay = createOverlay();
+      const modal = document.createElement('div');
+      modal.className = 'edit-modal';
+      modal.innerHTML = `
+        <h3>🔑 GitHub Access Token</h3>
+        <p style="font-size:0.85rem;color:#aaa;margin:0 0 1rem;line-height:1.5;">
+          To push changes directly to GitHub you need a
+          <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:var(--accent);">fine-grained Personal Access Token</a>
+          for the <code style="background:rgba(255,255,255,0.08);padding:0.15rem 0.35rem;border-radius:4px;">kimshmath/me</code> repo with <strong>Contents → Read and write</strong> permission.
+        </p>
+        <div class="edit-form-group">
+          <label for="edit-gh-token">Personal Access Token</label>
+          <input id="edit-gh-token" type="password" placeholder="github_pat_..." autocomplete="off">
+        </div>
+        <div id="edit-token-error" style="color:#ff5050;font-size:0.85rem;margin-top:0.5rem;display:none;"></div>
+        <div class="edit-modal-actions">
+          <button id="emc-tok-cancel">Cancel</button>
+          <button id="emc-tok-save" class="primary">Save Token</button>
+        </div>
+      `;
+      overlay.appendChild(modal);
+
+      const tokenInput = modal.querySelector('#edit-gh-token');
+      const errDiv = modal.querySelector('#edit-token-error');
+
+      modal.querySelector('#emc-tok-cancel').addEventListener('click', function () {
+        closeModal(overlay);
+        resolve(null);
+      });
+
+      function doSave() {
+        const tok = tokenInput.value.trim();
+        if (!tok) {
+          errDiv.textContent = 'Please enter a token.';
+          errDiv.style.display = 'block';
+          return;
+        }
+        setGitHubToken(tok);
+        closeModal(overlay);
+        resolve(tok);
+      }
+
+      modal.querySelector('#emc-tok-save').addEventListener('click', doSave);
+      tokenInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSave(); });
+      setTimeout(function () { tokenInput.focus(); }, 120);
+    });
+  }
+
+  // ── Build clean HTML from current DOM ──────────────────────────────────
+
+  function buildCleanHTML() {
     const clone = document.documentElement.cloneNode(true);
 
     // Remove edit-mode class from body
     const bodyEl = clone.querySelector('body');
     if (bodyEl) bodyEl.classList.remove('edit-mode');
 
-    // Remove injected elements (login button is inside an <li>, remove the whole <li>)
-    clone.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-modal-overlay, .edit-delete-item, .edit-pw-btn, .edit-edit-item').forEach(el => el.remove());
-    clone.querySelectorAll('.edit-login-btn').forEach(el => {
-      const li = el.closest('li');
+    // Remove injected elements
+    clone.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-download-btn, .edit-modal-overlay, .edit-delete-item, .edit-pw-btn, .edit-edit-item').forEach(function (el) { el.remove(); });
+    clone.querySelectorAll('.edit-login-btn').forEach(function (el) {
+      var li = el.closest('li');
       if (li) li.remove(); else el.remove();
     });
 
-    // Remove the injected <style> (last one in head if we added it)
-    const styles = clone.querySelectorAll('style');
-    styles.forEach(s => {
+    // Remove injected <style>
+    clone.querySelectorAll('style').forEach(function (s) {
       if (s.textContent.includes('.edit-login-btn')) s.remove();
     });
 
-    // Build a clean doctype + html string
-    let html = '<!DOCTYPE html>\n' + clone.outerHTML;
+    // Remove toast elements
+    clone.querySelectorAll('.edit-toast').forEach(function (el) { el.remove(); });
 
-    // Pretty-print is not critical — just download
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    return '<!DOCTYPE html>\n' + clone.outerHTML;
+  }
+
+  // ── Push to GitHub via Contents API ────────────────────────────────────
+
+  async function pushToGitHub() {
+    var token = getGitHubToken();
+    if (!token) {
+      token = await promptForToken();
+      if (!token) return; // user cancelled
+    }
+
+    var filename = currentPage();
+    var apiUrl = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + filename;
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = '⏳ Pushing…';
+
+    try {
+      // 1) GET current file to obtain its SHA
+      var getRes = await fetch(apiUrl, {
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (getRes.status === 401 || getRes.status === 403) {
+        // Token invalid — clear and re-prompt
+        localStorage.removeItem(GITHUB_TOKEN_KEY);
+        showToast('Token rejected by GitHub. Please enter a valid token.', 'error');
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Push to GitHub';
+        token = await promptForToken();
+        if (!token) return;
+        // Retry once
+        return pushToGitHub();
+      }
+
+      if (!getRes.ok) {
+        throw new Error('GET failed: ' + getRes.status + ' ' + (await getRes.text()));
+      }
+
+      var fileData = await getRes.json();
+      var sha = fileData.sha;
+
+      // 2) Build clean HTML and base64-encode it
+      var html = buildCleanHTML();
+      var contentBase64 = btoa(unescape(encodeURIComponent(html)));
+
+      // 3) PUT updated content
+      var putRes = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: 'Update ' + filename + ' via edit mode',
+          content: contentBase64,
+          sha: sha
+        })
+      });
+
+      if (putRes.status === 401 || putRes.status === 403) {
+        localStorage.removeItem(GITHUB_TOKEN_KEY);
+        throw new Error('Token lacks permission. Please create a new token with Contents read/write access.');
+      }
+
+      if (!putRes.ok) {
+        throw new Error('PUT failed: ' + putRes.status + ' ' + (await putRes.text()));
+      }
+
+      var result = await putRes.json();
+      var shortSha = result.commit.sha.substring(0, 7);
+
+      dirty = false;
+      showToast('✅ Pushed to GitHub (' + shortSha + '). Site will update in ~30s.', 'success', 5000);
+
+    } catch (err) {
+      console.error('[Edit Mode] Push failed:', err);
+      showToast('❌ Push failed: ' + err.message, 'error', 6000);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Push to GitHub';
+    }
+  }
+
+  // ── Download HTML (fallback) ───────────────────────────────────────────
+
+  function downloadHTML() {
+    var html = buildCleanHTML();
+    var blob = new Blob([html], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
     a.href = url;
     a.download = currentPage();
     document.body.appendChild(a);
     a.click();
-    setTimeout(() => {
+    setTimeout(function () {
       URL.revokeObjectURL(url);
       a.remove();
     }, 200);
+  }
+
+  // ── Floating Save button ───────────────────────────────────────────────
+
+  let saveBtn = null;
+  let dlBtn = null;
+
+  function createSaveButton() {
+    // Primary: Push to GitHub
+    saveBtn = document.createElement('button');
+    saveBtn.className = 'edit-save-btn';
+    saveBtn.textContent = '💾 Push to GitHub';
+    saveBtn.addEventListener('click', pushToGitHub);
+    document.body.appendChild(saveBtn);
+
+    // Secondary: Download HTML
+    dlBtn = document.createElement('button');
+    dlBtn.className = 'edit-download-btn';
+    dlBtn.textContent = '📥 Download HTML';
+    dlBtn.addEventListener('click', downloadHTML);
+    document.body.appendChild(dlBtn);
+  }
+
+  function showSaveButton() {
+    if (saveBtn) saveBtn.classList.add('visible');
+    if (dlBtn) dlBtn.classList.add('visible');
   }
 
   // ── Section scanning and [+ Add] button injection ──────────────────────
@@ -1193,9 +1429,10 @@
   function exitEditMode() {
     document.body.classList.remove('edit-mode');
     if (loginBtn) loginBtn.textContent = '[🔒]';
-    // Remove add buttons, delete buttons, edit buttons and save button
-    document.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-delete-item, .edit-edit-item').forEach(el => el.remove());
+    // Remove add buttons, delete buttons, edit buttons, save button, and download button
+    document.querySelectorAll('.edit-add-btn, .edit-save-btn, .edit-download-btn, .edit-delete-item, .edit-edit-item').forEach(el => el.remove());
     saveBtn = null;
+    dlBtn = null;
   }
 
   // ── Bootstrap ──────────────────────────────────────────────────────────
