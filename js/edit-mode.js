@@ -321,7 +321,7 @@
         fields.push({ id: 'year',      label: 'Year',               type: 'text',     placeholder: '2026' });
         fields.push({ id: 'summary',   label: 'Summary (3-4 sentences)', type: 'textarea' });
         fields.push({ id: 'arxiv',     label: 'arXiv link',         type: 'url',      placeholder: 'https://arxiv.org/abs/...' });
-        fields.push({ id: 'journal_url', label: 'Journal / DOI link', type: 'url',    placeholder: 'https://doi.org/...' });
+        fields.push({ id: 'journal_url', label: 'Journal / PDF / Links', type: 'text', placeholder: 'e.g. [Journal] https://..., [PDF] https://...' });
         fields.push({ id: 'bibtex',    label: 'BibTeX',             type: 'textarea', mono: true });
         break;
 
@@ -330,7 +330,7 @@
         fields.push({ id: 'title',     label: 'Title',              type: 'text',     placeholder: 'Paper title' });
         fields.push({ id: 'year',      label: 'Year',               type: 'text',     placeholder: '2026' });
         fields.push({ id: 'summary',   label: 'Summary (3-4 sentences)', type: 'textarea' });
-        fields.push({ id: 'arxiv',     label: 'arXiv link',         type: 'url',      placeholder: 'https://arxiv.org/abs/...' });
+        fields.push({ id: 'arxiv',     label: 'arXiv / Links',      type: 'text',      placeholder: 'e.g. [Arxiv] https://..., [PDF] https://...' });
         fields.push({ id: 'bibtex',    label: 'BibTeX',             type: 'textarea', mono: true });
         break;
 
@@ -339,20 +339,21 @@
         fields.push({ id: 'title',     label: 'Title',              type: 'text',     placeholder: 'Note title' });
         fields.push({ id: 'summary',   label: 'Summary',            type: 'textarea' });
         fields.push({ id: 'arxiv',     label: 'arXiv link',         type: 'url',      placeholder: 'https://arxiv.org/abs/...' });
-        fields.push({ id: 'journal_url', label: 'Link (PDF / DOI)', type: 'url',      placeholder: 'https://...' });
+        fields.push({ id: 'journal_url', label: 'Links (PDF / DOI)', type: 'text',    placeholder: 'e.g. [PDF] https://..., [arXiv] https://...' });
         fields.push({ id: 'bibtex',    label: 'BibTeX',             type: 'textarea', mono: true });
         break;
 
       case 'upcoming':
-        fields.push({ id: 'event',     label: 'Event name',         type: 'text',     placeholder: 'Conference / seminar name' });
-        fields.push({ id: 'date',      label: 'Date',               type: 'text',     placeholder: 'e.g. June 15, 2026' });
-        fields.push({ id: 'location',  label: 'Location',           type: 'text',     placeholder: 'e.g. Seoul, Korea' });
-        fields.push({ id: 'link',      label: 'Link URL',           type: 'url',      placeholder: 'https://...' });
+      case 'talks':
+        fields.push({ id: 'event',     label: 'Talk / Event details', type: 'text',     placeholder: 'e.g. Siji High School, Daegu, Korea' });
+        fields.push({ id: 'date',      label: 'Date',               type: 'text',     placeholder: 'e.g. November 24, 2026' });
+        fields.push({ id: 'location',  label: 'Location (optional)',type: 'text',     placeholder: 'e.g. Seoul, Korea' });
+        fields.push({ id: 'link',      label: 'Links (optional)',   type: 'text',     placeholder: 'e.g. [Link] https://..., [YouTube] https://...' });
         break;
 
       case 'slides':
         fields.push({ id: 'stitle',    label: 'Title / description',type: 'text',     placeholder: 'Slide or video title' });
-        fields.push({ id: 'link',      label: 'Link URL',           type: 'url',      placeholder: 'https://...' });
+        fields.push({ id: 'link',      label: 'Links',              type: 'text',     placeholder: 'e.g. [Slides] https://..., [Video] https://...' });
         break;
 
       case 'quotes':
@@ -386,6 +387,43 @@
 
   // ── HTML generation helpers ────────────────────────────────────────────
 
+  // ── Multiple Links Parser & Renderer ──────────────────────────────────────
+  function parseMultipleLinks(str) {
+    if (!str) return [];
+    const results = [];
+    const linkRegex = /(?:\[([^\]]+)\]\s*)?(https?:\/\/[^\s,]+)/gi;
+    let match;
+    while ((match = linkRegex.exec(str)) !== null) {
+      let label = match[1] ? match[1].trim() : 'Link';
+      let url = match[2].trim();
+      if (!label.startsWith('[')) label = '[' + label;
+      if (!label.endsWith(']')) label = label + ']';
+      results.push({ label: label, url: url });
+    }
+    return results;
+  }
+
+  function renderLinksHTML(links, isActionBtn) {
+    if (!links || links.length === 0) return '';
+    const cls = isActionBtn ? ' class="action-btn"' : '';
+    return links.map(l => `<a href="${escapeHTML(l.url)}"${cls} target="_blank">${escapeHTML(l.label)}</a>`).join(' ');
+  }
+
+  function serializeMultipleLinks(container) {
+    if (!container) return '';
+    const links = container.querySelectorAll('a[href^="http"]');
+    const items = [];
+    links.forEach(a => {
+      if (a.classList.contains('edit-delete-item') || a.classList.contains('edit-edit-item')) return;
+      let label = a.textContent.trim();
+      if (!label) label = '[Link]';
+      if (!label.startsWith('[')) label = '[' + label;
+      if (!label.endsWith(']')) label = label + ']';
+      items.push(`${label} ${a.href}`);
+    });
+    return items.join(', ');
+  }
+
   /** Build a published / submitted / unpublished paper <li> */
   function buildPaperLI(type, number, vals) {
     const nameAttr = type === 'published' ? 'published' :
@@ -417,17 +455,27 @@
                         </details>`;
     }
 
-    // Journal link
+    // Journal link(s)
     if (vals.journal_url) {
-      const label = type === 'unpublished' ? 'Journal' : 'Journal';
-      actions += `
-                        <a href="${escapeHTML(vals.journal_url)}" class="action-btn" target="_blank">[${label}]</a>`;
+      const parsed = parseMultipleLinks(vals.journal_url);
+      if (parsed.length > 0) {
+        actions += '\n                        ' + renderLinksHTML(parsed, true);
+      } else {
+        const label = type === 'unpublished' ? '[Journal]' : '[Journal]';
+        actions += `
+                        <a href="${escapeHTML(vals.journal_url)}" class="action-btn" target="_blank">${label}</a>`;
+      }
     }
 
-    // Arxiv link
+    // Arxiv link(s)
     if (vals.arxiv) {
-      actions += `
+      const parsed = parseMultipleLinks(vals.arxiv);
+      if (parsed.length > 0) {
+        actions += '\n                        ' + renderLinksHTML(parsed, true);
+      } else {
+        actions += `
                         <a href="${escapeHTML(vals.arxiv)}" class="action-btn" target="_blank">[Arxiv]</a>`;
+      }
     }
 
     // BibTeX
@@ -454,31 +502,59 @@
 
   /** Build an upcoming talk <li> */
   function buildUpcomingLI(number, vals) {
-    let text = `${number}. `;
-    text += escapeHTML(vals.event || '');
-    if (vals.date) text += ', ' + escapeHTML(vals.date);
-    if (vals.location) text += ', ' + escapeHTML(vals.location);
-    if (vals.link) {
-      return `<li>${text} <a href="${escapeHTML(vals.link)}" target="_blank">[Link]</a></li>`;
+    let text = escapeHTML(vals.event || vals.content || '');
+    if (vals.date && !text.toLowerCase().includes(vals.date.toLowerCase())) {
+      text += (text ? ', ' : '') + escapeHTML(vals.date);
     }
-    return `<li>${text}</li>`;
+    if (vals.location && !text.toLowerCase().includes(vals.location.toLowerCase())) {
+      text += (text ? ', ' : '') + escapeHTML(vals.location);
+    }
+
+    let dateAttr = '';
+    const dateSource = vals.date || text;
+    const dt = parseDateString(dateSource);
+    if (dt) {
+      dateAttr = ` data-date="${dt}"`;
+    }
+
+    let linkHTML = '';
+    if (vals.link) {
+      const parsed = parseMultipleLinks(vals.link);
+      if (parsed.length > 0) {
+        linkHTML = ' ' + renderLinksHTML(parsed, false);
+      } else {
+        const label = vals.linktext || '[Link]';
+        linkHTML = ` <a href="${escapeHTML(vals.link)}" target="_blank">${escapeHTML(label)}</a>`;
+      }
+    }
+
+    return `<li${dateAttr}><span class="talk-num">${number}.</span> ${text}${linkHTML}</li>`;
   }
 
   /** Build a slides/videos <li> */
   function buildSlideLI(vals) {
     const title = escapeHTML(vals.stitle || 'Untitled');
     if (vals.link) {
+      const parsed = parseMultipleLinks(vals.link);
+      if (parsed.length > 0) {
+        return `<li>${title} ${renderLinksHTML(parsed, false)}</li>`;
+      }
       return `<li><a href="${escapeHTML(vals.link)}" target="_blank">${title}</a></li>`;
     }
     return `<li>${title}</li>`;
   }
 
-  /** Build a generic <li> (activities / culture / tips) */
+  /** Build a generic <li> (activities / culture / tips / positions) */
   function buildGenericLI(vals) {
     let html = escapeHTML(vals.content || '');
     if (vals.link) {
-      const label = vals.linktext || '[Link]';
-      html += ` <a href="${escapeHTML(vals.link)}" target="_blank">${escapeHTML(label)}</a>`;
+      const parsed = parseMultipleLinks(vals.link);
+      if (parsed.length > 0) {
+        html += ' ' + renderLinksHTML(parsed, false);
+      } else {
+        const label = vals.linktext || '[Link]';
+        html += ` <a href="${escapeHTML(vals.link)}" target="_blank">${escapeHTML(label)}</a>`;
+      }
     }
     return `<li>${html}</li>`;
   }
@@ -512,15 +588,23 @@
   // ── Renumbering ────────────────────────────────────────────────────────
 
   function renumberSection(ul, descending) {
+    if (!ul) return;
     const items = ul.querySelectorAll(':scope > li');
     const total = items.length;
     items.forEach((li, i) => {
+      const num = descending ? (total - i) : (i + 1);
       const strong = li.querySelector('strong');
       if (strong) {
-        const num = descending ? (total - i) : (i + 1);
         strong.textContent = num + '.';
       }
+      const numSpan = li.querySelector('.talk-num');
+      if (numSpan) {
+        numSpan.textContent = num + '.';
+      }
     });
+    if (typeof window.updateUpcomingTalks === 'function') {
+      window.updateUpcomingTalks();
+    }
   }
 
   // ── Modal infrastructure ───────────────────────────────────────────────
@@ -615,15 +699,16 @@
         const sumDiv = li.querySelector('.summary-content');
         if (sumDiv) vals.summary = sumDiv.textContent.trim();
 
+        const actionsContainer = li.querySelector('.paper-actions');
+        if (actionsContainer) {
+          const serialized = serializeMultipleLinks(actionsContainer);
+          if (serialized) {
+            vals.journal_url = serialized;
+          }
+        }
+
         const arxivLink = li.querySelector('a[href*="arxiv.org"]');
         if (arxivLink) vals.arxiv = arxivLink.href;
-
-        const actionLinks = li.querySelectorAll('.paper-actions a');
-        actionLinks.forEach(a => {
-          if (!a.href.includes('arxiv.org')) {
-            vals.journal_url = a.href;
-          }
-        });
 
         const em = li.querySelector('.paper-citation em');
         if (em) {
@@ -665,29 +750,43 @@
         break;
       }
 
-      case 'upcoming': {
-        let text = li.textContent.trim();
-        text = text.replace(/\[Link\]/g, '').replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
-        text = text.replace(/^\d+\.\s*/, '');
+      case 'upcoming':
+      case 'talks': {
+        const clone = li.cloneNode(true);
+        clone.querySelectorAll('.edit-delete-item, .edit-edit-item, .talk-num').forEach(el => el.remove());
 
-        const parts = text.split(',').map(s => s.trim());
-        if (parts.length > 0) vals.event = parts[0];
-        if (parts.length > 1) vals.date = parts[1];
-        if (parts.length > 2) vals.location = parts[2];
+        const serialized = serializeMultipleLinks(clone);
+        if (serialized) {
+          vals.link = serialized;
+        }
 
-        const a = li.querySelector('a');
-        if (a) vals.link = a.href;
+        clone.querySelectorAll('a').forEach(a => a.remove());
+
+        let rawText = clone.textContent.trim();
+        vals.event = rawText;
+
+        const dataDate = li.getAttribute('data-date');
+        const matchDate = rawText.match(/(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d+(?:\s*-\s*|\s*--\s*)?(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)?\s*\d*,?\s*\d{4}/i);
+        if (matchDate) {
+          vals.date = matchDate[0];
+        } else if (dataDate) {
+          vals.date = dataDate;
+        }
+
         break;
       }
 
       case 'slides': {
-        const a = li.querySelector('a');
-        if (a) {
-          vals.stitle = a.textContent.trim();
-          vals.link = a.href;
-        } else {
-          vals.stitle = li.textContent.trim().replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+        const clone = li.cloneNode(true);
+        clone.querySelectorAll('.edit-delete-item, .edit-edit-item').forEach(el => el.remove());
+
+        const serialized = serializeMultipleLinks(clone);
+        if (serialized) {
+          vals.link = serialized;
         }
+
+        clone.querySelectorAll('a').forEach(a => a.remove());
+        vals.stitle = clone.textContent.trim();
         break;
       }
 
@@ -697,10 +796,18 @@
       }
 
       case 'links': {
-        const a = li.querySelector('a');
-        if (a) {
-          vals.linktext = a.textContent.trim();
-          vals.link = a.href;
+        const clone = li.cloneNode(true);
+        clone.querySelectorAll('.edit-delete-item, .edit-edit-item').forEach(el => el.remove());
+
+        const serialized = serializeMultipleLinks(clone);
+        if (serialized) {
+          vals.link = serialized;
+        } else {
+          const a = li.querySelector('a');
+          if (a) {
+            vals.linktext = a.textContent.trim();
+            vals.link = a.href;
+          }
         }
         break;
       }
@@ -717,26 +824,35 @@
           vals.refkey = keyMatch[1];
           text = text.substring(vals.refkey.length).trim();
         }
-        const a = li.querySelector('a');
-        if (a) {
-          vals.linktext = a.textContent.trim();
-          vals.link = a.href;
-          vals.author = text.split(vals.linktext)[0].trim().replace(/,\s*$/, '');
+        const clone = li.cloneNode(true);
+        clone.querySelectorAll('.edit-delete-item, .edit-edit-item').forEach(el => el.remove());
+        const serialized = serializeMultipleLinks(clone);
+        if (serialized) {
+          vals.link = serialized;
         } else {
-          vals.linktext = text;
+          const a = li.querySelector('a');
+          if (a) {
+            vals.linktext = a.textContent.trim();
+            vals.link = a.href;
+            vals.author = text.split(vals.linktext)[0].trim().replace(/,\s*$/, '');
+          } else {
+            vals.linktext = text;
+          }
         }
         break;
       }
 
       default: {
-        const a = li.querySelector('a');
-        if (a) {
-          vals.link = a.href;
-          vals.linktext = a.textContent.trim();
-          vals.content = li.textContent.replace(vals.linktext, '').replace(/\[Link\]/g, '').replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
-        } else {
-          vals.content = li.textContent.trim().replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+        const clone = li.cloneNode(true);
+        clone.querySelectorAll('.edit-delete-item, .edit-edit-item').forEach(el => el.remove());
+
+        const serialized = serializeMultipleLinks(clone);
+        if (serialized) {
+          vals.link = serialized;
         }
+
+        clone.querySelectorAll('a').forEach(a => a.remove());
+        vals.content = clone.textContent.trim();
         break;
       }
     }
@@ -827,6 +943,7 @@
         case 'unpublished':
           return buildPaperLI(sectionType, num, vals);
         case 'upcoming':
+        case 'talks':
           return buildUpcomingLI(num, vals);
         case 'slides':
           return buildSlideLI(vals);
@@ -850,12 +967,15 @@
       let num = 1;
       if (isEditMode) {
         const strong = liToEdit.querySelector('strong');
+        const numSpan = liToEdit.querySelector('.talk-num');
         if (strong) {
           num = parseInt(strong.textContent) || 1;
+        } else if (numSpan) {
+          num = parseInt(numSpan.textContent) || 1;
         } else {
           const items = Array.from(targetUL.querySelectorAll(':scope > li'));
           const idx = items.indexOf(liToEdit);
-          const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+          const descending = ['published', 'submitted', 'unpublished', 'upcoming', 'talks'].includes(sectionType);
           num = descending ? (items.length - idx) : (idx + 1);
         }
       } else {
@@ -873,12 +993,15 @@
       let num = 1;
       if (isEditMode) {
         const strong = liToEdit.querySelector('strong');
+        const numSpan = liToEdit.querySelector('.talk-num');
         if (strong) {
           num = parseInt(strong.textContent) || 1;
+        } else if (numSpan) {
+          num = parseInt(numSpan.textContent) || 1;
         } else {
           const items = Array.from(targetUL.querySelectorAll(':scope > li'));
           const idx = items.indexOf(liToEdit);
-          const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+          const descending = ['published', 'submitted', 'unpublished', 'upcoming', 'talks'].includes(sectionType);
           num = descending ? (items.length - idx) : (idx + 1);
         }
       } else {
@@ -888,7 +1011,7 @@
 
       if (isEditMode) {
         liToEdit.outerHTML = html;
-        const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+        const descending = ['published', 'submitted', 'unpublished', 'upcoming', 'talks'].includes(sectionType);
         renumberSection(targetUL, descending);
       } else {
         if (!targetUL) {
@@ -905,7 +1028,7 @@
           renumberSection(ul, descending);
         } else {
           targetUL.insertAdjacentHTML('afterbegin', html);
-          const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+          const descending = ['published', 'submitted', 'unpublished', 'upcoming', 'talks'].includes(sectionType);
           renumberSection(targetUL, descending);
         }
       }
@@ -1169,18 +1292,16 @@
         if (!allowedTypes.includes(sectionType)) return;
       }
 
-      // For the "Talks & Panel" section, we handle the Upcoming subheading
-      if (sectionType === 'talks') {
-        // Look for the "Upcoming" h3 inside this section
+      // For the "Talks & Panel" section
+      if (sectionType === 'talks' || sectionType === 'upcoming') {
         const section = heading.closest('section') || heading.parentElement;
-        const upcomingH3 = section.querySelector('h3');
-        if (upcomingH3 && upcomingH3.textContent.toLowerCase().includes('upcoming')) {
-          const ul = upcomingH3.parentElement.querySelector('ul.paper-list');
+        const ul = section.querySelector('ul.paper-list, ul.talk-list, ul');
+        if (ul) {
           const btn = document.createElement('button');
           btn.className = 'edit-add-btn';
           btn.textContent = '[+ Add Talk]';
-          btn.addEventListener('click', () => showAddModal('upcoming', ul, upcomingH3));
-          upcomingH3.after(btn);
+          btn.addEventListener('click', () => showAddModal('upcoming', ul, heading));
+          heading.after(btn);
         }
         return;
       }
@@ -1233,12 +1354,9 @@
       }
 
       let uls = [];
-      if (sectionType === 'talks') {
-        const upcomingH3 = section.querySelector('h3');
-        if (upcomingH3 && upcomingH3.textContent.toLowerCase().includes('upcoming')) {
-          const ul = upcomingH3.parentElement.querySelector('ul.paper-list');
-          if (ul) uls.push(ul);
-        }
+      if (sectionType === 'talks' || sectionType === 'upcoming') {
+        const ul = section.querySelector('ul.paper-list, ul.talk-list, ul');
+        if (ul) uls.push(ul);
       } else {
         let sibling = heading.nextElementSibling;
         while (sibling) {
@@ -1269,7 +1387,7 @@
           delBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to delete this item?')) {
               li.remove();
-              const descending = ['published', 'submitted', 'unpublished'].includes(sectionType);
+              const descending = ['published', 'submitted', 'unpublished', 'upcoming', 'talks'].includes(sectionType);
               renumberSection(ul, descending);
               dirty = true;
               showSaveButton();
@@ -1300,12 +1418,9 @@
       }
 
       let uls = [];
-      if (sectionType === 'talks') {
-        const upcomingH3 = section.querySelector('h3');
-        if (upcomingH3 && upcomingH3.textContent.toLowerCase().includes('upcoming')) {
-          const ul = upcomingH3.parentElement.querySelector('ul.paper-list');
-          if (ul) uls.push(ul);
-        }
+      if (sectionType === 'talks' || sectionType === 'upcoming') {
+        const ul = section.querySelector('ul.paper-list, ul.talk-list, ul');
+        if (ul) uls.push(ul);
       } else {
         let sibling = heading.nextElementSibling;
         while (sibling) {
