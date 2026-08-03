@@ -290,6 +290,25 @@
     return d.innerHTML;
   }
 
+  function parseDateString(str) {
+    if (!str) return '';
+    const trimmed = str.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    const match = trimmed.match(/(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{1,2}),?\s+(\d{4})/i);
+    if (match) {
+      const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+      const monthIdx = monthNames.findIndex(m => match[1].toLowerCase().startsWith(m));
+      if (monthIdx !== -1) {
+        const yyyy = match[3];
+        const mm = String(monthIdx + 1).padStart(2, '0');
+        const dd = String(parseInt(match[2], 10)).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      }
+    }
+    return '';
+  }
+
   // ── Section type detection ─────────────────────────────────────────────
 
   function detectSectionType(headingText) {
