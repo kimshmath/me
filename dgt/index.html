@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamical Group Theory | Sang-hyun Kim</title>
+    <meta name="description"
+        content="Dynamical Group Theory — a conference series on group actions, dynamics, and geometric group theory, organized at KIAS and partner institutions since 2023.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #08080a;
+            --bg-color-alt: #0e0e12;
+            --text-main: #f0e8d8;
+            --text-muted: #9ca3af;
+            --accent: #6C9BFF;
+            --accent-glow: rgba(108, 155, 255, 0.4);
+            --border-color: rgba(255, 255, 255, 0.07);
+            --card-bg: rgba(14, 14, 18, 0.7);
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-display: 'Outfit', system-ui, sans-serif;
+            --font-serif: 'Newsreader', Georgia, serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-blobs {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.5;
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out alternate;
+        }
+
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(108, 155, 255, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+        }
+
+        .blob-2 {
+            bottom: -20%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(255, 121, 198, 0.06) 0%, rgba(0, 0, 0, 0) 70%);
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(5%, 5%) scale(1.1); }
+        }
+
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 0 1.5rem 6rem;
+        }
+
+        /* ── Top bar ─────────────────────────────── */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.75rem 0;
+            margin-bottom: 3.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .topbar a {
+            text-decoration: none;
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+            color: var(--text-muted);
+            transition: color 0.25s ease;
+        }
+
+        .topbar a:hover {
+            color: var(--accent);
+        }
+
+        .topbar .wordmark {
+            font-family: var(--font-serif);
+            font-size: 1.05rem;
+            color: var(--text-main);
+        }
+
+        .topbar .wordmark:hover {
+            color: var(--accent);
+        }
+
+        /* ── Hero ────────────────────────────────── */
+        .kicker {
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1.25rem;
+        }
+
+        h1 {
+            font-family: var(--font-serif);
+            font-weight: 500;
+            font-size: clamp(2.4rem, 6.5vw, 3.6rem);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #f0e8d8 0%, #9ca3af 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.25rem;
+        }
+
+        .lede {
+            font-size: 1.02rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            max-width: 56ch;
+            margin-bottom: 0.75rem;
+        }
+
+        .lede em {
+            font-family: var(--font-serif);
+            color: var(--text-main);
+        }
+
+        .organizer {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            opacity: 0.8;
+        }
+
+        /* ── Upcoming note ───────────────────────── */
+        .upcoming {
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin: 2.75rem 0 0;
+            padding: 1.1rem 1.35rem;
+            background: linear-gradient(135deg, rgba(108, 155, 255, 0.07), rgba(108, 155, 255, 0.02));
+            border: 1px solid rgba(108, 155, 255, 0.18);
+            border-radius: 12px;
+        }
+
+        .upcoming .badge {
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+
+        .upcoming .what {
+            font-family: var(--font-serif);
+            font-size: 1.05rem;
+            color: var(--text-main);
+        }
+
+        .upcoming .when {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* ── Timeline ────────────────────────────── */
+        .timeline {
+            list-style: none;
+            margin-top: 4rem;
+            position: relative;
+            padding-left: 4.75rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 3.55rem;
+            top: 0.4rem;
+            bottom: 0.4rem;
+            width: 1px;
+            background: linear-gradient(to bottom, rgba(108, 155, 255, 0.35), var(--border-color) 25%, var(--border-color) 85%, transparent);
+        }
+
+        .event {
+            position: relative;
+            padding: 0 0 3rem;
+        }
+
+        .event:last-child {
+            padding-bottom: 0.5rem;
+        }
+
+        .event::before {
+            content: '';
+            position: absolute;
+            left: -1.2rem;
+            top: 0.62rem;
+            transform: translateX(-0.5px);
+            width: 7px;
+            height: 7px;
+            margin-left: -3px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            border: 1.5px solid var(--text-muted);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .event:hover::before {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .roman {
+            position: absolute;
+            left: -4.75rem;
+            top: 0;
+            width: 2.9rem;
+            text-align: right;
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-weight: 300;
+            font-size: 1.35rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+            opacity: 0.55;
+            transition: color 0.3s ease, opacity 0.3s ease;
+        }
+
+        .event:hover .roman {
+            color: var(--accent);
+            opacity: 1;
+        }
+
+        .event-name {
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: 1.12rem;
+            letter-spacing: -0.01em;
+            color: var(--text-main);
+            margin-bottom: 0.2rem;
+        }
+
+        .event-name .series-tag {
+            font-family: var(--font-sans);
+            font-weight: 400;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            opacity: 0.85;
+            white-space: nowrap;
+        }
+
+        .event-theme {
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-weight: 300;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 0.45rem;
+            max-width: 52ch;
+        }
+
+        .event-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.35rem 0.9rem;
+        }
+
+        .event-meta .date {
+            color: var(--text-main);
+            opacity: 0.85;
+            font-weight: 500;
+            font-size: 0.82rem;
+            letter-spacing: 0.02em;
+        }
+
+        .event-meta .sep {
+            opacity: 0.35;
+        }
+
+        .event-link {
+            display: inline-block;
+            margin-top: 0.55rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            color: var(--accent);
+            text-decoration: none;
+            border: 1px solid rgba(108, 155, 255, 0.25);
+            border-radius: 999px;
+            padding: 0.18rem 0.8rem;
+            transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+
+        .event-link:hover {
+            background: rgba(108, 155, 255, 0.1);
+            border-color: rgba(108, 155, 255, 0.5);
+            box-shadow: 0 0 16px rgba(108, 155, 255, 0.15);
+        }
+
+        .event-link.archived {
+            color: var(--text-muted);
+            border-color: var(--border-color);
+        }
+
+        .event-link.archived:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: none;
+        }
+
+        /* ── Footer ──────────────────────────────── */
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.25s ease;
+        }
+
+        footer a:hover {
+            color: var(--accent);
+        }
+
+        /* ── Reveal animation ────────────────────────────────────────────────
+           Items are visible by default; the script adds .pending only when
+           IntersectionObserver is available, so content can never be lost. */
+        .reveal {
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .reveal.pending {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+
+        @media (max-width: 600px) {
+            .timeline {
+                padding-left: 3.4rem;
+            }
+
+            .timeline::before {
+                left: 2.4rem;
+            }
+
+            .roman {
+                left: -3.4rem;
+                width: 1.8rem;
+                font-size: 1.1rem;
+            }
+
+            .event::before {
+                left: -1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container">
+        <nav class="topbar">
+            <a href="../" class="wordmark">Sang-hyun Kim</a>
+            <a href="../activities.html">← Professional Activities</a>
+        </nav>
+
+        <header>
+            <p class="kicker">Conference Series · 2023 — Present</p>
+            <h1>Dynamical Group Theory</h1>
+            <p class="lede">A series of workshops on <em>group actions, dynamics, and geometry</em> —
+                bringing together researchers in geometric group theory, low-dimensional topology, and
+                dynamical systems, at KIAS and partner institutions around the world.</p>
+            <p class="organizer">Organized by Sang-hyun Kim (KIAS) with collaborators in Korea, France, Chile, and the US.</p>
+
+            <div class="upcoming">
+                <span class="badge">Upcoming</span>
+                <span class="what">Dynamical Group Theory</span>
+                <span class="when">Seoul, Korea · November 11 – 13, 2026</span>
+            </div>
+        </header>
+
+        <ol class="timeline">
+            <li class="event reveal">
+                <span class="roman">VIII</span>
+                <p class="event-name">France-Korea Workshop on Dynamical Group Theory</p>
+                <p class="event-meta">
+                    <span class="date">January 6 – 8, 2026</span>
+                    <span class="sep">·</span>
+                    <span>FRUMAM, Aix-Marseille Université, Marseille, France</span>
+                </p>
+                <a class="event-link" href="https://mtriestino.perso.math.cnrs.fr/FrKoDGT.html" target="_blank"
+                    rel="noopener">Website ↗</a>
+            </li>
+
+            <li class="event reveal">
+                <span class="roman">VII</span>
+                <p class="event-name">Dynamical Group Theory VII</p>
+                <p class="event-theme">Group actions on manifolds and related topics</p>
+                <p class="event-meta">
+                    <span class="date">November 26 – 28, 2025</span>
+                    <span class="sep">·</span>
+                    <span>Sangsan Mathematical Science Building, Seoul National University, Seoul, Korea</span>
+                </p>
+                <a class="event-link" href="https://sites.google.com/view/dgtvii" target="_blank"
+                    rel="noopener">Website ↗</a>
+            </li>
+
+            <li class="event reveal">
+                <span class="roman">VI</span>
+                <p class="event-name">Dynamical Group Theory VI</p>
+                <p class="event-theme">One-day workshop, held jointly with the KIAS Colloquium</p>
+                <p class="event-meta">
+                    <span class="date">September 18, 2025</span>
+                    <span class="sep">·</span>
+                    <span>KIAS, Seoul, Korea</span>
+                </p>
+                <a class="event-link" href="https://sites.google.com/view/dgt6" target="_blank"
+                    rel="noopener">Website ↗</a>
+            </li>
+
+            <li class="event reveal">
+                <span class="roman">V</span>
+                <p class="event-name">KOREA-GGT <span class="series-tag">(Dynamical Group Theory V)</span></p>
+                <p class="event-theme">KIAS workshop on One-RElator groups and other Aspects of GGT</p>
+                <p class="event-meta">
+                    <span class="date">November 19 – 22, 2024</span>
+                    <span class="sep">·</span>
+                    <span>Gimhae, Korea</span>
+                </p>
+                <a class="event-link" href="https://sites.google.com/view/dgt5" target="_blank"
+                    rel="noopener">Website ↗</a>
+            </li>
+
+            <li class="event reveal">
+                <span class="roman">IV</span>
+                <p class="event-name">KIAS-Rice Workshop on Geometric Topology <span class="series-tag">(Dynamical
+                        Group Theory IV)</span></p>
+                <p class="event-theme">Geometric group theory and hyperbolic geometry, in a broad sense</p>
+                <p class="event-meta">
+                    <span class="date">September 24 – 27, 2024</span>
+                    <span class="sep">·</span>
+                    <span>June E Huh Center for Mathematical Challenges, KIAS, Seoul, Korea</span>
+                </p>
+                <a class="event-link archived"
+                    href="https://web.archive.org/web/20241013105014/https://sites.google.com/view/dgt4-kias"
+                    target="_blank" rel="noopener">Archived site ↗</a>
+            </li>
+
+            <li class="event reveal">
+                <span class="roman">III</span>
+                <p class="event-name">New Methods in Group Actions on Manifolds <span class="series-tag">(Dynamical
+                        Group Theory III)</span></p>
+                <p class="event-meta">
+                    <span class="date">August 13 – 16, 2024</span>
+                    <span class="sep">·</span>
+                    <span>KIAS, Seoul, Korea</span>
+                </p>
+                <a class="event-link archived"
+                    href="https://web.archive.org/web/20241004232423/https://sites.google.com/view/dgt3-kias"
+                    target="_blank" rel="noopener">Archived site ↗</a>
+            </li>
+
+            <li class="event reveal">
+                <span class="roman">II</span>
+                <p class="event-name">Korea-France Workshop on Dynamical Group Theory <span
+                        class="series-tag">(Dynamical Group Theory II)</span></p>
+                <p class="event-theme">Dynamical, algebraic, and topological properties of group actions</p>
+                <p class="event-meta">
+                    <span class="date">February 29, 2024</span>
+                    <span class="sep">·</span>
+                    <span>June E Huh Center for Mathematical Challenges, KIAS, Seoul, Korea</span>
+                </p>
+                <a class="event-link" href="https://events.kias.re.kr/h/KRdgt/" target="_blank"
+                    rel="noopener">Website ↗</a>
+            </li>
+
+            <li class="event reveal">
+                <span class="roman">I</span>
+                <p class="event-name">The 1st Korea-Chile Workshop on Dynamical Group Theory</p>
+                <p class="event-meta">
+                    <span class="date">September 27 – 28, 2023</span>
+                    <span class="sep">·</span>
+                    <span>Incheon, Korea</span>
+                </p>
+                <a class="event-link archived"
+                    href="https://web.archive.org/web/20240111130228/https://dgt.cayley.kr/" target="_blank"
+                    rel="noopener">Archived site ↗</a>
+            </li>
+        </ol>
+
+        <footer>
+            <span>Dynamical Group Theory — conference series</span>
+            <a href="../">me.kimsh.kr</a>
+        </footer>
+    </div>
+
+    <script>
+        if ('IntersectionObserver' in window && window.innerHeight > 0) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.remove('pending');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            document.querySelectorAll('.timeline .reveal').forEach((el) => {
+                if (el.getBoundingClientRect().top > window.innerHeight) {
+                    el.classList.add('pending');
+                    observer.observe(el);
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
