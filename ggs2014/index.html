@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry on Groups and Spaces | Sang-hyun Kim</title>
+    <meta name="description"
+        content="Geometry on Groups and Spaces — ICM 2014 Satellite Conference on geometric group theory and geometric structures. KAIST, Daejeon, Korea, August 7-12, 2014.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #08080a;
+            --bg-color-alt: #0e0e12;
+            --text-main: #f0e8d8;
+            --text-muted: #9ca3af;
+            --accent: #6C9BFF;
+            --accent-glow: rgba(108, 155, 255, 0.4);
+            --border-color: rgba(255, 255, 255, 0.07);
+            --card-bg: rgba(14, 14, 18, 0.7);
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-display: 'Outfit', system-ui, sans-serif;
+            --font-serif: 'Newsreader', Georgia, serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-blobs {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.5;
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out alternate;
+        }
+
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(108, 155, 255, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+        }
+
+        .blob-2 {
+            bottom: -20%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(255, 121, 198, 0.06) 0%, rgba(0, 0, 0, 0) 70%);
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(5%, 5%) scale(1.1); }
+        }
+
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 0 1.5rem 6rem;
+        }
+
+        /* ── Top bar ─────────────────────────────── */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.75rem 0;
+            margin-bottom: 3.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .topbar a {
+            text-decoration: none;
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+            color: var(--text-muted);
+            transition: color 0.25s ease;
+        }
+
+        .topbar a:hover {
+            color: var(--accent);
+        }
+
+        .topbar .wordmark {
+            font-family: var(--font-serif);
+            font-size: 1.05rem;
+            color: var(--text-main);
+        }
+
+        /* ── Hero ────────────────────────────────── */
+        .kicker {
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1.25rem;
+        }
+
+        h1 {
+            font-family: var(--font-serif);
+            font-weight: 500;
+            font-size: clamp(2.3rem, 6.5vw, 3.5rem);
+            line-height: 1.12;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #f0e8d8 0%, #9ca3af 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.1rem;
+        }
+
+        .when-where {
+            font-family: var(--font-display);
+            font-size: 1.02rem;
+            color: var(--text-main);
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+
+        .when-where .sep {
+            color: var(--text-muted);
+            opacity: 0.5;
+            margin: 0 0.5rem;
+        }
+
+        .lede {
+            font-size: 1rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            max-width: 62ch;
+            margin-bottom: 2.25rem;
+        }
+
+        .lede em {
+            font-family: var(--font-serif);
+            color: var(--text-main);
+        }
+
+        /* ── Fact strip ──────────────────────────── */
+        .facts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1px;
+            background: var(--border-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 3.5rem;
+        }
+
+        .fact {
+            flex: 1 1 140px;
+            background: var(--bg-color);
+            padding: 1.1rem 1.25rem;
+        }
+
+        .fact .num {
+            font-family: var(--font-serif);
+            font-size: 1.7rem;
+            font-weight: 400;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .fact .lbl {
+            font-size: 0.68rem;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        /* ── Sections ────────────────────────────── */
+        h2 {
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: 1.05rem;
+            letter-spacing: 0.02em;
+            color: var(--text-main);
+            margin: 3rem 0 1.25rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h2 .count {
+            font-family: var(--font-sans);
+            font-weight: 400;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-left: 0.5rem;
+        }
+
+        /* Speakers grid */
+        .speakers {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 0.55rem 2rem;
+        }
+
+        .speakers li {
+            font-size: 0.92rem;
+            color: var(--text-main);
+            padding-left: 1rem;
+            position: relative;
+        }
+
+        .speakers li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.62em;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(108, 155, 255, 0.45);
+        }
+
+        .speakers .aff {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* Organizers */
+        .organizers {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.6rem;
+        }
+
+        .organizers li {
+            font-size: 0.88rem;
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            padding: 0.28rem 0.9rem;
+        }
+
+        /* Program table */
+        .program {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .program td {
+            padding: 0.7rem 0.9rem;
+            border-top: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        .program tr:first-child td {
+            border-top: none;
+        }
+
+        .program .day {
+            white-space: nowrap;
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: 0.82rem;
+            letter-spacing: 0.04em;
+            color: var(--accent);
+            width: 7.5rem;
+        }
+
+        .program .plen {
+            color: var(--text-main);
+        }
+
+        .program .note {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-family: var(--font-serif);
+            font-style: italic;
+            margin-top: 0.15rem;
+        }
+
+        .program-wrap {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow-x: auto;
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .program-note {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 0.9rem;
+        }
+
+        /* Documents */
+        .docs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .doc-link {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--accent);
+            border: 1px solid rgba(108, 155, 255, 0.25);
+            border-radius: 999px;
+            padding: 0.4rem 1.1rem;
+            transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+
+        .doc-link .kind {
+            font-size: 0.72rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        .doc-link:hover {
+            background: rgba(108, 155, 255, 0.1);
+            border-color: rgba(108, 155, 255, 0.5);
+            box-shadow: 0 0 16px rgba(108, 155, 255, 0.15);
+        }
+
+        .doc-link.archived {
+            color: var(--text-muted);
+            border-color: var(--border-color);
+        }
+
+        .doc-link.archived:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: none;
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .sponsors {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            max-width: 62ch;
+        }
+
+        /* ── Footer ──────────────────────────────── */
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.25s ease;
+        }
+
+        footer a:hover {
+            color: var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .program td {
+                padding: 0.6rem 0.7rem;
+            }
+
+            .program .day {
+                width: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container">
+        <nav class="topbar">
+            <a href="../" class="wordmark">Sang-hyun Kim</a>
+            <a href="../activities.html">← Professional Activities</a>
+        </nav>
+
+        <header>
+            <p class="kicker">ICM 2014 Satellite Conference</p>
+            <h1>Geometry on Groups and Spaces</h1>
+            <p class="when-where">August 7 – 12, 2014<span class="sep">·</span>KAIST, Daejeon, Korea</p>
+            <p class="lede">A satellite conference of the <em>Seoul ICM 2014</em>, covering the interplays between
+                geometric group theory and geometric structures — discrete subgroups of Lie groups, hyperbolic
+                geometry, Teichmüller theory, representation varieties, bounded cohomology, hyperbolic and CAT(0)
+                groups, and automorphisms of free and surface groups. The meeting concluded on August 12 with a bus
+                ride to Seoul, where the International Congress of Mathematicians opened the next day.</p>
+        </header>
+
+        <div class="facts">
+            <div class="fact"><div class="num">6</div><div class="lbl">Days</div></div>
+            <div class="fact"><div class="num">22</div><div class="lbl">Plenary speakers</div></div>
+            <div class="fact"><div class="num">40+</div><div class="lbl">Session talks</div></div>
+            <div class="fact"><div class="num">130</div><div class="lbl">Participants</div></div>
+        </div>
+
+        <section>
+            <h2>Plenary Speakers<span class="count">Auditorium</span></h2>
+            <ul class="speakers">
+                <li>Yves Benoist <span class="aff">(Univ. Paris-Sud)</span></li>
+                <li>Mladen Bestvina <span class="aff">(Univ. Utah)</span></li>
+                <li>Martin Bridson <span class="aff">(Univ. Oxford)</span></li>
+                <li>Michelle Bucher-Karlsson <span class="aff">(U. Genève)</span></li>
+                <li>Marc Burger <span class="aff">(ETH)</span></li>
+                <li>Richard Canary <span class="aff">(Univ. Michigan)</span></li>
+                <li>Ruth Charney <span class="aff">(Brandeis Univ.)</span></li>
+                <li>Daryl Cooper <span class="aff">(UC Santa Barbara)</span></li>
+                <li>Patrick Foulon <span class="aff">(Univ. Strasbourg)</span></li>
+                <li>Koji Fujiwara <span class="aff">(Kyoto Univ.)</span></li>
+                <li>Ursula Hamenstädt <span class="aff">(Univ. Bonn)</span></li>
+                <li>Alessandra Iozzi <span class="aff">(ETH)</span></li>
+                <li>Jeremy Kahn <span class="aff">(CUNY)</span></li>
+                <li>Olga Kharlampovich <span class="aff">(CUNY)</span></li>
+                <li>Masato Mimura <span class="aff">(Tohoku Univ.)</span></li>
+                <li>Shahar Mozes <span class="aff">(Hebrew Univ.)</span></li>
+                <li>Denis Osin <span class="aff">(Vanderbilt Univ.)</span></li>
+                <li>Joan Porti <span class="aff">(Univ. Autònoma Barcelona)</span></li>
+                <li>Alan Reid <span class="aff">(Univ. Texas Austin)</span></li>
+                <li>Mark Sapir <span class="aff">(Vanderbilt Univ.)</span></li>
+                <li>Karen Vogtmann <span class="aff">(Cornell Univ.)</span></li>
+                <li>Dani Wise <span class="aff">(McGill Univ.)</span></li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Program at a Glance</h2>
+            <div class="program-wrap">
+                <table class="program">
+                    <tr>
+                        <td class="day">Thu, Aug 7</td>
+                        <td class="plen">Sapir · Canary · Bridson · Bucher-Karlsson
+                            <span class="note">Parallel sessions · Reception</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="day">Fri, Aug 8</td>
+                        <td class="plen">Burger · Charney · Foulon · Cooper
+                            <span class="note">Parallel sessions</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="day">Sat, Aug 9</td>
+                        <td class="plen">Fujiwara · Hamenstädt · Iozzi · Kahn
+                            <span class="note">Parallel sessions</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="day">Sun, Aug 10</td>
+                        <td class="plen">Kharlampovich · Bestvina · Mimura
+                            <span class="note">Excursion &amp; conference dinner</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="day">Mon, Aug 11</td>
+                        <td class="plen">Mozes · Benoist · Porti · Reid
+                            <span class="note">Parallel sessions</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="day">Tue, Aug 12</td>
+                        <td class="plen">Osin · Wise · Vogtmann
+                            <span class="note">Bus ride to Seoul, for the ICM opening on August 13</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <p class="program-note">Contributed talks ran in three parallel sessions each afternoon — over 40 research
+                talks in total. See the original schedule below for the complete list.</p>
+        </section>
+
+        <section>
+            <h2>Organizers</h2>
+            <ul class="organizers">
+                <li>Suhyoung Choi</li>
+                <li>Inkang Kim</li>
+                <li>Sang-hyun Kim</li>
+                <li>Ki Hyung Ko</li>
+                <li>Thomas Koberda</li>
+                <li>Seonhee Lim</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Original Documents</h2>
+            <div class="docs">
+                <a class="doc-link" href="poster.pdf" target="_blank" rel="noopener">Conference poster <span
+                        class="kind">PDF</span></a>
+                <a class="doc-link" href="schedule.pdf" target="_blank" rel="noopener">Full schedule <span
+                        class="kind">PDF</span></a>
+                <a class="doc-link archived" href="https://web.archive.org/web/20150214070645/http://icm.cayley.kr/"
+                    target="_blank" rel="noopener">Archived website ↗</a>
+            </div>
+        </section>
+
+        <section>
+            <h2>Sponsors</h2>
+            <p class="sponsors">BRL-SNU Math · KAIST · KIAS · NIMS · NRF · Samsung Science &amp; Technology
+                Foundation · SNU BK21 PLUS Mathematical Sciences Division</p>
+        </section>
+
+        <footer>
+            <span>Geometry on Groups and Spaces — ICM 2014 Satellite Conference</span>
+            <a href="../">me.kimsh.kr</a>
+        </footer>
+    </div>
+</body>
+
+</html>
