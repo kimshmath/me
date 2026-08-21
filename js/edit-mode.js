@@ -454,8 +454,7 @@
 
   /** Build an upcoming talk <li> */
   function buildUpcomingLI(number, vals) {
-    let text = `${number}. `;
-    text += escapeHTML(vals.event || '');
+    let text = escapeHTML(vals.event || '');
     if (vals.date) text += ', ' + escapeHTML(vals.date);
     if (vals.location) text += ', ' + escapeHTML(vals.location);
     if (vals.link) {
@@ -999,6 +998,201 @@
     });
   }
 
+  // ── Auto-sort talks ────────────────────────────────────────────────────
+
+  /**
+   * Extract a Date from a talk <li> element's text content.
+   * Handles formats like:
+   *   - "June 30, 2026"     → 2026-06-30
+   *   - "September 28 - Oct 2, 2026" → 2026-09-28 (uses first date)
+   *   - "May 20 - 24, 2026" → 2026-05-20
+   *   - "August 13, 19, 26, 2025" → 2025-08-13
+   *   - "February 4, 2025" → 2025-02-04
+   * Returns a Date object, or null if no date found.
+   */
+  function extractDateFromTalkLI(li) {
+    let text = li.textContent.trim();
+    // Strip edit-mode button text
+    text = text.replace(/\[Link\]/g, '').replace(/\[YouTube\]/g, '')
+               .replace(/\[Delete\]/g, '').replace(/\[Edit\]/g, '').trim();
+    // Strip leading numbering like "14. " or "1. "
+    text = text.replace(/^\d+\.\s*/, '');
+
+    const MONTHS = {
+      'january':1,'february':2,'march':3,'april':4,'may':5,'june':6,
+      'july':7,'august':8,'september':9,'october':10,'november':11,'december':12,
+      'jan':1,'feb':2,'mar':3,'apr':4,'jun':6,'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12
+    };
+
+    // Match patterns like "Month DD, YYYY" or "Month DD - DD, YYYY" or "Month DD - Month DD, YYYY"
+    // We look for the LAST year in the string to anchor our search
+    const yearMatches = [...text.matchAll(/(\d{4})/g)];
+    if (yearMatches.length === 0) return null;
+
+    // Try each year match from the end to find a valid month-day-year combination
+    for (let yi = yearMatches.length - 1; yi >= 0; yi--) {
+      const year = parseInt(yearMatches[yi][1]);
+      if (year < 2000 || year > 2100) continue;
+
+      const yearIdx = yearMatches[yi].index;
+      // Look at text before this year for a month name
+      const before = text.substring(0, yearIdx);
+
+      // Find the last month name before this year
+      let bestMonth = -1;
+      let bestDay = -1;
+      let bestPos = -1;
+
+      for (const [name, num] of Object.entries(MONTHS)) {
+        const re = new RegExp(name, 'gi');
+        let m;
+        while ((m = re.exec(before)) !== null) {
+          if (m.index > bestPos) {
+            // Get the day number after the month name
+            const afterMonth = before.substring(m.index + name.length).trim();
+            const dayMatch = afterMonth.match(/^[,\s]*(\d{1,2})/);
+            if (dayMatch) {
+              bestMonth = num;
+              bestDay = parseInt(dayMatch[1]);
+              bestPos = m.index;
+            } else {
+              // Month with no day (rare) — use day 1
+              bestMonth = num;
+              bestDay = 1;
+              bestPos = m.index;
+            }
+          }
+        }
+      }
+
+      if (bestMonth > 0 && bestDay > 0) {
+        return new Date(year, bestMonth - 1, bestDay);
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Auto-sort and auto-move talks in the "Talks & Panel" section.
+   * - Moves past talks from Upcoming → Completed Talks
+   * - Sorts Upcoming: farthest-future first (descending date)
+   * - Sorts Completed: most-recent first (descending date)
+   * - Strips leading numbering (e.g. "14. ") from all items
+   * - Updates the summary count
+   *
+   * @param {Document} doc - the DOM document (typically a clone)
+   */
+  function autoSortTalks(doc) {
+    // Find the "Talks & Panel" h2
+    const h2s = doc.querySelectorAll('h2');
+    let talksSection = null;
+    for (const h2 of h2s) {
+      if (h2.textContent.includes('Talks') && h2.textContent.includes('Panel')) {
+        talksSection = h2.closest('section') || h2.parentElement;
+        break;
+      }
+    }
+    if (!talksSection) return;
+
+    // Find the Upcoming and Complete Talks subsections
+    const h3s = talksSection.querySelectorAll('h3');
+    let upcomingUL = null;
+    let completedUL = null;
+    let completedSummary = null;
+
+    for (const h3 of h3s) {
+      const t = h3.textContent.toLowerCase();
+      if (t.includes('upcoming')) {
+        upcomingUL = h3.parentElement.querySelector('ul.paper-list');
+      } else if (t.includes('complete')) {
+        const details = h3.parentElement.querySelector('details');
+        if (details) {
+          completedUL = details.querySelector('ul.paper-list');
+          completedSummary = details.querySelector('summary');
+        }
+      }
+    }
+
+    if (!upcomingUL || !completedUL) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Helper: strip leading numbering from a <li>
+    function stripNumbering(li) {
+      // Process direct text nodes (not inside child elements)
+      for (const node of li.childNodes) {
+        if (node.nodeType === 3) { // TEXT_NODE
+          node.textContent = node.textContent.replace(/^\s*\d+\.\s*/, '');
+          break; // Only strip from the first text node
+        }
+      }
+    }
+
+    // 1) Strip numbering from all items in both lists
+    upcomingUL.querySelectorAll(':scope > li').forEach(stripNumbering);
+    completedUL.querySelectorAll(':scope > li').forEach(stripNumbering);
+
+    // 2) Move past talks from Upcoming → Completed
+    const upcomingItems = Array.from(upcomingUL.querySelectorAll(':scope > li'));
+    const toMove = [];
+    for (const li of upcomingItems) {
+      const d = extractDateFromTalkLI(li);
+      if (d && d <= today) {
+        toMove.push(li);
+      }
+    }
+    // Remove from Upcoming, will prepend to Completed after sorting
+    toMove.forEach(li => li.remove());
+
+    // 3) Sort Upcoming: farthest-future first (descending by date)
+    const remainingUpcoming = Array.from(upcomingUL.querySelectorAll(':scope > li'));
+    remainingUpcoming.sort((a, b) => {
+      const da = extractDateFromTalkLI(a);
+      const db = extractDateFromTalkLI(b);
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return db - da; // descending
+    });
+    // Re-append in sorted order
+    remainingUpcoming.forEach(li => upcomingUL.appendChild(li));
+
+    // 4) Sort moved items (most recent first) and prepend to Completed
+    toMove.sort((a, b) => {
+      const da = extractDateFromTalkLI(a);
+      const db = extractDateFromTalkLI(b);
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return db - da; // descending
+    });
+
+    // Collect all completed items, add moved items, sort everything
+    const allCompleted = [
+      ...toMove,
+      ...Array.from(completedUL.querySelectorAll(':scope > li'))
+    ];
+    allCompleted.sort((a, b) => {
+      const da = extractDateFromTalkLI(a);
+      const db = extractDateFromTalkLI(b);
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return db - da; // descending (most recent first)
+    });
+    // Clear and re-append
+    while (completedUL.firstChild) completedUL.removeChild(completedUL.firstChild);
+    completedUL.append(...allCompleted);
+
+    // 5) Update summary count
+    if (completedSummary) {
+      const count = completedUL.querySelectorAll(':scope > li').length;
+      completedSummary.textContent = `▶ Click to expand all ${count} completed talks`;
+    }
+  }
+
   // ── Build clean HTML from current DOM ──────────────────────────────────
 
   function buildCleanHTML() {
@@ -1022,6 +1216,11 @@
 
     // Remove toast elements
     clone.querySelectorAll('.edit-toast').forEach(function (el) { el.remove(); });
+
+    // Auto-sort and auto-move talks (only on research.html)
+    if (currentPage() === 'research.html') {
+      autoSortTalks(clone);
+    }
 
     return '<!DOCTYPE html>\n' + clone.outerHTML;
   }
