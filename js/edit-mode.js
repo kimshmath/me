@@ -315,7 +315,7 @@
     const t = headingText.toLowerCase();
     if (t.includes('published papers'))             return 'published';
     if (t.includes('submitted') || t.includes('accepted')) return 'submitted';
-    if (t.includes('unpublished'))                  return 'unpublished';
+    if (t.includes('unpublished') || t.includes('will not be published')) return 'unpublished';
     if (t.includes('slides') && t.includes('video'))  return 'slides';
     if (t.includes('upcoming'))                     return 'upcoming';
     if (t.includes('talks'))                        return 'talks';
