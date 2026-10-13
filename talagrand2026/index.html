@@ -1,15 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Talagrand Lectures at KIAS</title>
-  <meta name="description" content="Five Lectures on Probability Theory by Michel Talagrand (CNRS, Paris. Abel Prize 2024) at Korea Institute for Advanced Study (KIAS), October 27, 28 &amp; November 2, 2026.">
-  <link rel="canonical" href="https://kimsh.kr/talagrand2026">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Handjet:wght@400;500;600;700&family=Pixelify+Sans:wght@400;500;600&display=swap">
-  <style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Michel Talagrand (CNRS, Abel Prize 2024): Six Lectures on Probability Theory, an intensive lecture course at the Korea Institute for Advanced Study, October and November 2026.">
+<meta property="og:title" content="Michel Talagrand: Six Lectures on Probability Theory">
+<meta property="og:description" content="Intensive lecture course at KIAS, Seoul. October 16, 27, 28 and November 2, 2026, Room 1503.">
+<meta property="og:url" content="https://me.kimsh.kr/talagrand2026/">
+<title>Michel Talagrand: Six Lectures on Probability Theory at KIAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Handjet:wght@400;500;600;700&family=Pixelify+Sans:wght@400;500;600&display=swap">
+<style>
   /* Layout: a full-bleed pixel sky with the title, then one band with exactly the poster's
      facts: dates, room, link. Every face is a pixel face: Handjet carries display lines and
      anything with digits, Pixelify Sans the few words of running text. Left-aligned. */
@@ -166,12 +168,34 @@
   }
   .info .wrap {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 2.25rem 2.5rem;
     align-items: start;
     padding-block: clamp(2.25rem, 5vw, 3.5rem);
   }
-  @media (min-width: 900px) { .info .wrap { grid-template-columns: 1.05fr .85fr 1.3fr 1.1fr; } }
+  .info .sessions { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); border-bottom: 2px solid var(--indigo); }
+  @media (min-width: 1000px) { .info .sessions { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .info .where { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  @media (min-width: 700px) { .info .where { grid-template-columns: 1fr auto; } }
+  .topic {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(1.9rem, 2.6vw, 2.4rem);
+    line-height: .95;
+    color: var(--c, var(--cream));
+    text-shadow: 3px 3px 0 var(--night);
+    text-wrap: balance;
+  }
+  .s1 { --c: var(--gold); } .s2 { --c: var(--apricot); } .s3 { --c: var(--rose); } .s4 { --c: var(--teal-hi); }
+  .when {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(1.2rem, 1.7vw, 1.45rem);
+    line-height: 1.15;
+    color: var(--cream);
+  }
+  .when span { display: block; color: var(--lilac); }
   .cell { display: flex; flex-direction: column; gap: .45rem; min-width: 0; }
   .cell .big {
     margin: 0;
@@ -229,40 +253,49 @@
 </style>
 </head>
 <body>
-
 <header class="hero" id="top">
   <canvas id="board" aria-label="A pixel-art Galton board: beads fall from the sky through a triangle of pegs and pile up into a bell curve" role="img"></canvas>
   <div class="hero-copy">
     <p class="series"><span class="series-a">Intensive lecture course</span><span class="series-b">Korea Institute for Advanced Study</span></p>
     <h1>Michel<br>Talagrand</h1>
-    <p class="course">Five Lectures on Probability Theory</p>
+    <p class="course">Six Lectures on Probability Theory</p>
     <p class="affil">CNRS, Paris. Abel Prize 2024.</p>
     <p class="hint" id="hint">Tap a peg to drop beads onto it</p>
   </div>
-  <div class="hero-dates" aria-hidden="true">27, 28 October &amp; 2 November 2026<span>KIAS 1503</span></div>
+  <div class="hero-dates" aria-hidden="true">16, 27, 28 October &amp; 2 November 2026<span>KIAS 1503</span></div>
   <div class="hero-ui">
     <button class="pxbtn" id="toggle" type="button" aria-pressed="false">Pause</button>
   </div>
 </header>
 
 <main class="info">
-  <div class="wrap">
-    <div class="cell">
-      <p class="big">October 27 &amp; 28</p>
-      <p class="sub">10:00 am and 2:30 pm</p>
+  <div class="wrap sessions">
+    <div class="cell s1">
+      <p class="topic">Subgaussian random variables</p>
+      <p class="when">Friday, October 16<span>10:00 am</span></p>
     </div>
-    <div class="cell">
-      <p class="big">November 2</p>
-      <p class="sub">11:00 am</p>
+    <div class="cell s2">
+      <p class="topic">Concentration of measure</p>
+      <p class="when">Tuesday, October 27<span>10:00 am and 2:30 pm</span></p>
     </div>
+    <div class="cell s3">
+      <p class="topic">Creating convexity</p>
+      <p class="when">Wednesday, October 28<span>10:00 am and 2:30 pm</span></p>
+    </div>
+    <div class="cell s4">
+      <p class="topic">Thresholds</p>
+      <p class="when">Monday, November 2<span>11:00 am</span></p>
+    </div>
+  </div>
+  <div class="wrap where">
     <div class="cell">
       <p class="big gold">KIAS 1503</p>
       <p class="sub teal">Korea Institute for Advanced Study</p>
       <p class="sub lilac">Seoul, Korea</p>
     </div>
     <div class="cell link-cell">
-      <div class="qr"><svg viewBox="0 0 35 35" width="100%" height="100%" role="img" aria-label="QR code for kimsh.kr/talagrand2026" shape-rendering="crispEdges" style="display:block"><rect width="35" height="35" fill="#f7ecd2"/><path transform="translate(3 3)" d="M0 0h7v1h-7zM9 0h1v1h-1zM11 0h3v1h-3zM15 0h1v1h-1zM17 0h1v1h-1zM19 0h1v1h-1zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h3v1h-3zM13 1h2v1h-2zM16 1h3v1h-3zM20 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h5v1h-5zM16 2h1v1h-1zM18 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h3v1h-3zM16 3h2v1h-2zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM10 4h1v1h-1zM12 4h3v1h-3zM16 4h4v1h-4zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h2v1h-2zM12 5h1v1h-1zM16 5h1v1h-1zM19 5h2v1h-2zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM10 7h1v1h-1zM13 7h1v1h-1zM16 7h2v1h-2zM20 7h1v1h-1zM1 8h3v1h-3zM5 8h2v1h-2zM9 8h1v1h-1zM11 8h1v1h-1zM13 8h1v1h-1zM15 8h3v1h-3zM20 8h1v1h-1zM26 8h2v1h-2zM7 9h1v1h-1zM10 9h1v1h-1zM13 9h2v1h-2zM16 9h1v1h-1zM19 9h1v1h-1zM22 9h4v1h-4zM28 9h1v1h-1zM6 10h1v1h-1zM9 10h1v1h-1zM14 10h2v1h-2zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h2v1h-2zM1 11h2v1h-2zM4 11h1v1h-1zM7 11h1v1h-1zM9 11h1v1h-1zM11 11h2v1h-2zM18 11h3v1h-3zM23 11h1v1h-1zM28 11h1v1h-1zM0 12h4v1h-4zM6 12h1v1h-1zM8 12h2v1h-2zM11 12h1v1h-1zM13 12h1v1h-1zM15 12h3v1h-3zM21 12h1v1h-1zM23 12h1v1h-1zM26 12h3v1h-3zM0 13h1v1h-1zM3 13h2v1h-2zM9 13h4v1h-4zM15 13h1v1h-1zM17 13h1v1h-1zM19 13h1v1h-1zM22 13h2v1h-2zM25 13h4v1h-4zM0 14h3v1h-3zM6 14h1v1h-1zM8 14h1v1h-1zM11 14h2v1h-2zM14 14h2v1h-2zM17 14h1v1h-1zM19 14h2v1h-2zM22 14h4v1h-4zM27 14h2v1h-2zM0 15h2v1h-2zM5 15h1v1h-1zM10 15h1v1h-1zM12 15h1v1h-1zM14 15h2v1h-2zM18 15h2v1h-2zM21 15h2v1h-2zM24 15h2v1h-2zM28 15h1v1h-1zM0 16h1v1h-1zM2 16h1v1h-1zM6 16h1v1h-1zM9 16h2v1h-2zM12 16h2v1h-2zM16 16h1v1h-1zM19 16h3v1h-3zM23 16h3v1h-3zM27 16h2v1h-2zM1 17h4v1h-4zM10 17h1v1h-1zM12 17h2v1h-2zM16 17h3v1h-3zM20 17h1v1h-1zM23 17h1v1h-1zM25 17h1v1h-1zM0 18h1v1h-1zM4 18h1v1h-1zM6 18h5v1h-5zM12 18h1v1h-1zM15 18h2v1h-2zM18 18h1v1h-1zM22 18h4v1h-4zM2 19h3v1h-3zM8 19h2v1h-2zM11 19h2v1h-2zM14 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h2v1h-2zM28 19h1v1h-1zM1 20h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM8 20h4v1h-4zM14 20h1v1h-1zM17 20h1v1h-1zM20 20h8v1h-8zM8 21h2v1h-2zM11 21h2v1h-2zM14 21h1v1h-1zM16 21h1v1h-1zM18 21h1v1h-1zM20 21h1v1h-1zM24 21h2v1h-2zM27 21h2v1h-2zM0 22h7v1h-7zM9 22h2v1h-2zM13 22h1v1h-1zM16 22h1v1h-1zM18 22h3v1h-3zM22 22h1v1h-1zM24 22h1v1h-1zM26 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h3v1h-3zM12 23h5v1h-5zM20 23h1v1h-1zM24 23h1v1h-1zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM12 24h2v1h-2zM18 24h1v1h-1zM20 24h8v1h-8zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h1v1h-1zM12 25h1v1h-1zM16 25h1v1h-1zM19 25h1v1h-1zM24 25h2v1h-2zM27 25h1v1h-1zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h2v1h-2zM11 26h2v1h-2zM14 26h5v1h-5zM20 26h1v1h-1zM23 26h1v1h-1zM25 26h1v1h-1zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM8 27h2v1h-2zM11 27h1v1h-1zM13 27h2v1h-2zM16 27h1v1h-1zM18 27h1v1h-1zM20 27h2v1h-2zM24 27h2v1h-2zM27 27h1v1h-1zM0 28h7v1h-7zM9 28h1v1h-1zM11 28h2v1h-2zM14 28h2v1h-2zM18 28h4v1h-4zM23 28h1v1h-1zM27 28h1v1h-1z" fill="#0e1026"/></svg></div>
-      <a class="url" href="https://kimsh.kr/talagrand2026">kimsh.kr/talagrand2026</a>
+      <div class="qr"><svg viewBox="0 0 35 35" width="100%" height="100%" role="img" aria-label="QR code for me.kimsh.kr/talagrand2026" shape-rendering="crispEdges" style="display:block"><rect width="35" height="35" fill="#f7ecd2"/><path transform="translate(3 3)" d="M0 0h7v1h-7zM9 0h1v1h-1zM11 0h1v1h-1zM14 0h1v1h-1zM17 0h3v1h-3zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h2v1h-2zM11 1h1v1h-1zM13 1h1v1h-1zM17 1h4v1h-4zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM9 2h2v1h-2zM15 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h1v1h-1zM12 3h2v1h-2zM16 3h1v1h-1zM18 3h2v1h-2zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h1v1h-1zM13 4h1v1h-1zM16 4h1v1h-1zM18 4h2v1h-2zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM14 5h4v1h-4zM19 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM9 7h2v1h-2zM12 7h1v1h-1zM15 7h1v1h-1zM17 7h4v1h-4zM0 8h1v1h-1zM2 8h1v1h-1zM4 8h1v1h-1zM6 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM16 8h2v1h-2zM24 8h1v1h-1zM27 8h1v1h-1zM1 9h5v1h-5zM7 9h1v1h-1zM9 9h3v1h-3zM13 9h1v1h-1zM15 9h3v1h-3zM20 9h3v1h-3zM25 9h1v1h-1zM28 9h1v1h-1zM0 10h1v1h-1zM2 10h5v1h-5zM9 10h2v1h-2zM14 10h4v1h-4zM23 10h1v1h-1zM26 10h3v1h-3zM0 11h1v1h-1zM2 11h1v1h-1zM5 11h1v1h-1zM8 11h2v1h-2zM11 11h1v1h-1zM13 11h2v1h-2zM16 11h3v1h-3zM20 11h1v1h-1zM23 11h2v1h-2zM27 11h1v1h-1zM0 12h1v1h-1zM2 12h1v1h-1zM6 12h2v1h-2zM11 12h2v1h-2zM14 12h4v1h-4zM19 12h4v1h-4zM25 12h1v1h-1zM27 12h2v1h-2zM4 13h1v1h-1zM7 13h1v1h-1zM9 13h1v1h-1zM14 13h2v1h-2zM17 13h2v1h-2zM21 13h2v1h-2zM25 13h1v1h-1zM28 13h1v1h-1zM6 14h3v1h-3zM13 14h1v1h-1zM16 14h3v1h-3zM20 14h2v1h-2zM25 14h1v1h-1zM27 14h2v1h-2zM0 15h1v1h-1zM2 15h1v1h-1zM5 15h1v1h-1zM9 15h3v1h-3zM16 15h2v1h-2zM24 15h2v1h-2zM27 15h1v1h-1zM1 16h2v1h-2zM5 16h2v1h-2zM11 16h1v1h-1zM17 16h1v1h-1zM21 16h2v1h-2zM25 16h1v1h-1zM27 16h2v1h-2zM1 17h1v1h-1zM8 17h1v1h-1zM12 17h2v1h-2zM17 17h1v1h-1zM20 17h1v1h-1zM22 17h2v1h-2zM25 17h2v1h-2zM28 17h1v1h-1zM0 18h1v1h-1zM4 18h1v1h-1zM6 18h1v1h-1zM9 18h1v1h-1zM12 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM18 18h1v1h-1zM22 18h3v1h-3zM27 18h2v1h-2zM1 19h1v1h-1zM3 19h2v1h-2zM8 19h3v1h-3zM12 19h3v1h-3zM17 19h2v1h-2zM22 19h1v1h-1zM25 19h1v1h-1zM27 19h1v1h-1zM0 20h1v1h-1zM2 20h3v1h-3zM6 20h4v1h-4zM11 20h1v1h-1zM14 20h1v1h-1zM17 20h1v1h-1zM19 20h6v1h-6zM8 21h5v1h-5zM14 21h1v1h-1zM19 21h2v1h-2zM24 21h1v1h-1zM26 21h3v1h-3zM0 22h7v1h-7zM10 22h1v1h-1zM12 22h2v1h-2zM16 22h2v1h-2zM19 22h2v1h-2zM22 22h1v1h-1zM24 22h2v1h-2zM27 22h2v1h-2zM0 23h1v1h-1zM6 23h1v1h-1zM9 23h1v1h-1zM12 23h1v1h-1zM15 23h1v1h-1zM17 23h1v1h-1zM20 23h1v1h-1zM24 23h2v1h-2zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM8 24h3v1h-3zM17 24h1v1h-1zM20 24h5v1h-5zM28 24h1v1h-1zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM9 25h5v1h-5zM17 25h1v1h-1zM19 25h2v1h-2zM23 25h2v1h-2zM26 25h3v1h-3zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h1v1h-1zM10 26h1v1h-1zM13 26h1v1h-1zM16 26h1v1h-1zM19 26h1v1h-1zM23 26h3v1h-3zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM10 27h5v1h-5zM17 27h1v1h-1zM19 27h4v1h-4zM27 27h1v1h-1zM0 28h7v1h-7zM8 28h1v1h-1zM10 28h1v1h-1zM12 28h1v1h-1zM17 28h2v1h-2zM20 28h1v1h-1zM22 28h2v1h-2zM27 28h2v1h-2z" fill="#0e1026"/></svg></div>
+      <a class="url" href="https://me.kimsh.kr/talagrand2026">me.kimsh.kr/talagrand2026</a>
     </div>
   </div>
 </main>
