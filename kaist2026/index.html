@@ -24,7 +24,7 @@
 *{box-sizing:border-box}[hidden]{display:none!important}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--ivory);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden;overscroll-behavior:none}
 button{font:inherit;color:inherit}
-.app{position:fixed;inset:0;display:grid;grid-template-rows:var(--top) minmax(0,1fr) var(--bot)}
+.app{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:var(--top) minmax(0,1fr) var(--bot)}
 .top{grid-row:1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 18px 0 22px;border-bottom:1px solid var(--rule);min-width:0;transition:opacity .3s}
 .brand{display:flex;align-items:baseline;gap:12px;min-width:0;white-space:nowrap;overflow:hidden;color:inherit;text-decoration:none}
 .brand .t{font-family:var(--serif);font-weight:700;font-size:18px;color:var(--ivory)}
@@ -85,7 +85,7 @@ button{font:inherit;color:inherit}
 .grid h3 span{font-family:var(--sans);font-weight:400;font-size:12px;color:var(--dim);margin-left:10px;letter-spacing:.06em}
 .grid ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
 .grid li button{appearance:none;display:block;width:100%;padding:0;border:0;background:none;cursor:pointer;text-align:left;color:inherit}
-.grid li img{display:block;width:100%;aspect-ratio:16/9;border-radius:3px;box-shadow:0 0 0 1px var(--rule);background:#0d0d10}
+.grid li img{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:3px;box-shadow:0 0 0 1px var(--rule);background:#0d0d10}
 .grid li .c{display:flex;gap:8px;font-size:12px;color:var(--grey);margin-top:7px;line-height:1.4}
 .grid li .c b{font-family:var(--serif);color:var(--gold);font-weight:400;flex:none}
 .grid li button:hover img,.grid li button:focus-visible img{box-shadow:0 0 0 1px var(--grey)}
@@ -346,19 +346,27 @@ Slide view needs JavaScript — see <a style="color:#eeebe3" href="all.html">all
     bump();
   });
 
-  // 휠 · 트랙패드: 한 번에 한 장
-  var wAcc = 0, wLock = 0;
+  // 휠 · 트랙패드: 한 번 굴리거나 쓸면 딱 한 장. 넘긴 뒤에는 관성으로 이어지는 휠 신호를
+  // 그것이 멎을 때까지(300ms 동안 조용) 무시한다 — 한 번 쓸었는데 여러 장이 넘어가는 일이 없게(v29.2)
+  var wAcc = 0, wHold = false, wLast = 0, wUntil = 0;
   stage.addEventListener('wheel', function(e){
-    var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    var sl = slides[cur];                       // 세로 배치(글이 아래)에서 글을 굴리는 중이면 장을 넘기지 않는다
-    if (sl && Math.abs(e.deltaY) >= Math.abs(e.deltaX) && sl.scrollHeight > sl.clientHeight + 2){
+    var unit = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? 100 : 1);      // 줄 · 쪽 단위(파이어폭스 등)를 픽셀로
+    var d = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * unit;
+    var now = Date.now();
+    var sl = slides[cur];                       // 세로 배치(글이 아래)에서 글을 굴리는 중이면 장을 넘기지 않는다 —
+    if (sl && Math.abs(e.deltaY) >= Math.abs(e.deltaX) && sl.scrollHeight > sl.clientHeight + 2){   // 끝까지 굴린 그 몸짓으로도 넘기지 않는다
       var atTop = sl.scrollTop <= 0, atEnd = sl.scrollTop + sl.clientHeight >= sl.scrollHeight - 2;
-      if ((e.deltaY > 0 && !atEnd) || (e.deltaY < 0 && !atTop)) return;
+      if ((e.deltaY > 0 && !atEnd) || (e.deltaY < 0 && !atTop)){ wHold = true; wUntil = 0; wLast = now; return; }
     }
     e.preventDefault();
-    if (Date.now() < wLock) return;
+    if (wHold){
+      if (now - wLast < 300 || now < wUntil){ wLast = now; return; }
+      wHold = false; wAcc = 0;
+    }
+    if (now - wLast > 300) wAcc = 0;            // 새 몸짓
+    wLast = now;
     wAcc += d;
-    if (Math.abs(wAcc) > 40){ go(cur + (wAcc > 0 ? 1 : -1)); wAcc = 0; wLock = Date.now() + 600; }
+    if (Math.abs(wAcc) > 40){ go(cur + (wAcc > 0 ? 1 : -1)); wAcc = 0; wHold = true; wUntil = now + 350; }
   }, {passive:false});
 
   // 손가락으로 밀기
