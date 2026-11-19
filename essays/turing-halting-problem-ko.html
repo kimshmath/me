@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&amp;display=swap">
-    <link rel="stylesheet" href="essay.css?v=20261119c">
+    <link rel="stylesheet" href="essay.css?v=20261119d">
 </head>
 <body class="essay-page">
     <div class="bg-blobs">
@@ -41,7 +41,7 @@
         </nav>
     </header>
 
-    <figure class="essay-hero" data-hero="goldbach" data-l-checked="지금까지 짝수 {n}개를 확인했다. 단계 (4)에는 아직 닿지 못했다." data-l-halted="{x} = p + q인 두 소수 p, q가 없다. 프로그램 4가 정지했다." data-l-pause="멈춤" data-l-play="재생">
+    <figure class="essay-hero" id="hero" data-hero="goldbach" aria-describedby="about-hero" data-l-checked="지금까지 짝수 {n}개를 확인했다. 단계 (4)에는 아직 닿지 못했다." data-l-halted="{x} = p + q인 두 소수 p, q가 없다. 프로그램 4가 정지했다." data-l-pause="멈춤" data-l-play="재생">
       <div class="hero-stage">
         <canvas aria-hidden="true"></canvas>
         <div class="container hero-ui">
@@ -49,7 +49,6 @@
           <button class="hero-toggle" type="button"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.2v11.6a.6.6 0 0 0 .92.5l9-5.8a.6.6 0 0 0 0-1L3.92.7A.6.6 0 0 0 3 1.2z"/></svg></button>
         </div>
       </div>
-      <figcaption class="container"><p>본문의 <a href="#program-4">프로그램 4</a>가 지금 이 화면에서 돌아가고 있다. 점 하나가 짝수 <i>x</i> 하나이고, 높이는 <i>x</i>를 두 소수의 합으로 쓰는 방법의 수이다. 금빛 점은 3의 배수이다. 프로그램 4가 정지하는지 여부를 아는 사람은 아직 이 세상에 없다.</p></figcaption>
     </figure>
 
     <main class="container">
@@ -254,6 +253,10 @@
 <figure class="closing-quote"><blockquote><p>“나의 정리에 의하여 둘 중 하나가 성립한다... 수학이 인간의 마음보다 더 크거나, 혹은 인간의 마음이 기계보다 우월하다”</p></blockquote><figcaption>— 쿠르트 괴델</figcaption></figure>
         </div>
         <div class="essay-end">
+          <div class="essay-note" id="about-hero">
+            <p class="essay-note-title"><a href="#hero">맨 위 그림에 대하여</a></p>
+            <p>본문의 <a href="#program-4">프로그램 4</a>가 지금 이 화면에서 돌아가고 있다. 점 하나가 짝수 <i>x</i> 하나이고, 높이는 <i>x</i>를 두 소수의 합으로 쓰는 방법의 수이다. 금빛 점은 3의 배수이다. 프로그램 4가 정지하는지 여부를 아는 사람은 아직 이 세상에 없다.</p>
+          </div>
           <p>이 글의 영어판: <a href="turing-halting-problem-en.html" hreflang="en" lang="en">Turing and the Halting Problem</a></p>
           <p><a href="../culture.html#articles">Culture 페이지의 다른 글</a></p>
         </div>
@@ -267,6 +270,6 @@
     </footer>
 
     <script src="../js/script.js"></script>
-    <script src="hero.js?v=20261119c" defer></script>
+    <script src="hero.js?v=20261119d" defer></script>
 </body>
 </html>

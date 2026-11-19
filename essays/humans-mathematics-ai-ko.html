@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&amp;display=swap">
-    <link rel="stylesheet" href="essay.css?v=20261119c">
+    <link rel="stylesheet" href="essay.css?v=20261119d">
 </head>
 <body class="essay-page">
     <div class="bg-blobs">
@@ -41,7 +41,7 @@
         </nav>
     </header>
 
-    <figure class="essay-hero" data-hero="unit" data-l-count="점 {n}개, 거리가 정확히 1인 쌍 {u}개" data-l-grow="8차원 격자의 점을 차례로 평면에 비추고 있다." data-l-view="네 그림자 가운데 {k}번째. 선분의 길이는 모두 정확히 1이다." data-l-lengths="점 {n}개, 선분의 길이 {lo} ~ {hi}" data-l-turn="비추는 방향을 돌리고 있다." data-l-side="3차원 공간에 비춘 그림자를 비스듬히 보고 있다. 바로 위에서 보면 선분의 길이가 모두 1이다." data-l-tilt="비스듬히 보기" data-l-top="위에서 내려다보기" data-l-pause="멈춤" data-l-play="재생">
+    <figure class="essay-hero" id="hero" data-hero="unit" aria-describedby="about-hero" data-l-count="점 {n}개, 거리가 정확히 1인 쌍 {u}개" data-l-grow="8차원 격자의 점을 차례로 평면에 비추고 있다." data-l-view="네 그림자 가운데 {k}번째. 선분의 길이는 모두 정확히 1이다." data-l-lengths="점 {n}개, 선분의 길이 {lo} ~ {hi}" data-l-turn="비추는 방향을 돌리고 있다." data-l-side="3차원 공간에 비춘 그림자를 비스듬히 보고 있다. 바로 위에서 보면 선분의 길이가 모두 1이다." data-l-tilt="비스듬히 보기" data-l-top="위에서 내려다보기" data-l-pause="멈춤" data-l-play="재생">
       <div class="hero-stage">
         <canvas aria-hidden="true"></canvas>
         <div class="container hero-ui">
@@ -49,7 +49,6 @@
           <div class="hero-controls"><button class="hero-toggle" type="button"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.2v11.6a.6.6 0 0 0 .92.5l9-5.8a.6.6 0 0 0 0-1L3.92.7A.6.6 0 0 0 3 1.2z"/></svg></button><button class="hero-view" type="button"><svg class="i-tilt" viewBox="0 0 14 14" aria-hidden="true"><ellipse cx="7" cy="7" rx="6" ry="2.6"/><circle cx="7" cy="7" r="1"/></svg><svg class="i-top" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.6"/><circle cx="7" cy="7" r="1"/></svg></button></div>
         </div>
       </div>
-      <figcaption class="container"><p>평면 위의 점 <i>n</i>개 가운데 거리가 정확히 1인 쌍은 최대 몇 개일까. 1946년 에르되시는 정사각 격자가 사실상 최선이라고 추측했고, 2026년 5월 기계가 이를 반증했다(<a href="#sec-5">5절</a>). 이 그림은 그 구성법을 작은 규모로 따라 한 것이다. 8차원 격자의 점들을 평면에 비추고, 거리가 정확히 1인 두 점을 모두 이었다. 비추는 방향을 돌리면 길이가 흐트러지고, 특별한 방향에 이르면 다시 모두 1이 된다. 실제 반증에 쓰인 격자는 차원이 훨씬 높다. 그림을 끌거나 기울이기 단추를 누르면 격자를 3차원 공간에 비춘 모습을 여러 방향에서 볼 수 있다.</p></figcaption>
     </figure>
 
     <main class="container">
@@ -163,6 +162,10 @@
 <p>이 글의 요지는 인류가 축적해 온 거의 모든 학문에 적용될 것이다. 텍스트를 읽고, 그 타당성을 따지고, 의미를 해석하여 공동체 안에서 공유하는 일은 학문의 공통된 작업이기 때문이다. 기계가 산출한 수학 앞에서 수학자에게 요구되는 것도 이와 다르지 않을 뿐이다. 테드 창의 소설에서 인간 과학자가 해석의 역할로 물러난 것은 지위의 하락으로 그려지지만, 이해를 학문의 목적으로 보는 관점에서 해석과 전달은 본래 학문의 본령에 속한다. 교육의 목표 역시 정답의 습득에서 물음의 형성과 이해의 경험으로 중심을 옮기게 될 것이다.</p>
         </div>
         <div class="essay-end">
+          <div class="essay-note" id="about-hero">
+            <p class="essay-note-title"><a href="#hero">맨 위 그림에 대하여</a></p>
+            <p>평면 위의 점 <i>n</i>개 가운데 거리가 정확히 1인 쌍은 최대 몇 개일까. 1946년 에르되시는 정사각 격자가 사실상 최선이라고 추측했고, 2026년 5월 기계가 이를 반증했다(<a href="#sec-5">5절</a>). 이 그림은 그 구성법을 작은 규모로 따라 한 것이다. 8차원 격자의 점들을 평면에 비추고, 거리가 정확히 1인 두 점을 모두 이었다. 비추는 방향을 돌리면 길이가 흐트러지고, 특별한 방향에 이르면 다시 모두 1이 된다. 실제 반증에 쓰인 격자는 차원이 훨씬 높다. 그림을 끌거나 기울이기 단추를 누르면 격자를 3차원 공간에 비춘 모습을 여러 방향에서 볼 수 있다.</p>
+          </div>
           <p>이 글의 영어판: <a href="humans-mathematics-ai-en.html" hreflang="en" lang="en">Humans, Mathematics, and AI</a></p>
           <p><a href="../culture.html#articles">Culture 페이지의 다른 글</a></p>
         </div>
@@ -176,6 +179,6 @@
     </footer>
 
     <script src="../js/script.js"></script>
-    <script src="hero.js?v=20261119c" defer></script>
+    <script src="hero.js?v=20261119d" defer></script>
 </body>
 </html>

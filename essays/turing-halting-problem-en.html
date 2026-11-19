@@ -16,7 +16,7 @@
     <meta property="og:url" content="https://me.kimsh.kr/essays/turing-halting-problem-en.html">
     <meta property="og:locale" content="en_US">
     <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="essay.css?v=20261119c">
+    <link rel="stylesheet" href="essay.css?v=20261119d">
 </head>
 <body class="essay-page">
     <div class="bg-blobs">
@@ -38,7 +38,7 @@
         </nav>
     </header>
 
-    <figure class="essay-hero" data-hero="goldbach" data-l-checked="{n} even numbers checked so far. Step (4) has not been reached." data-l-halted="{x} is not a sum of two primes. Program 4 has halted." data-l-pause="Pause" data-l-play="Play">
+    <figure class="essay-hero" id="hero" data-hero="goldbach" aria-describedby="about-hero" data-l-checked="{n} even numbers checked so far. Step (4) has not been reached." data-l-halted="{x} is not a sum of two primes. Program 4 has halted." data-l-pause="Pause" data-l-play="Play">
       <div class="hero-stage">
         <canvas aria-hidden="true"></canvas>
         <div class="container hero-ui">
@@ -46,7 +46,6 @@
           <button class="hero-toggle" type="button"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.2v11.6a.6.6 0 0 0 .92.5l9-5.8a.6.6 0 0 0 0-1L3.92.7A.6.6 0 0 0 3 1.2z"/></svg></button>
         </div>
       </div>
-      <figcaption class="container"><p><a href="#program-4">Program 4</a> of this essay is running on this page. Each dot is one even number <i>x</i>; its height is the number of ways to write <i>x</i> as a sum of two primes. The gold dots are multiples of 3. No one in the world yet knows whether Program 4 stops.</p></figcaption>
     </figure>
 
     <main class="container">
@@ -246,6 +245,10 @@
 </blockquote><figcaption>— Kurt Gödel</figcaption></figure>
         </div>
         <div class="essay-end">
+          <div class="essay-note" id="about-hero">
+            <p class="essay-note-title"><a href="#hero">About the picture at the top</a></p>
+            <p><a href="#program-4">Program 4</a> of this essay is running on this page. Each dot is one even number <i>x</i>; its height is the number of ways to write <i>x</i> as a sum of two primes. The gold dots are multiples of 3. No one in the world yet knows whether Program 4 stops.</p>
+          </div>
           <p>Korean original: <a href="turing-halting-problem-ko.html" hreflang="ko" lang="ko">튜링과 정지문제</a></p>
           <p><a href="../culture.html#articles">More writing on the Culture page</a></p>
         </div>
@@ -259,6 +262,6 @@
     </footer>
 
     <script src="../js/script.js"></script>
-    <script src="hero.js?v=20261119c" defer></script>
+    <script src="hero.js?v=20261119d" defer></script>
 </body>
 </html>

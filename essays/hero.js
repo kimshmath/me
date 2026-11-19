@@ -70,20 +70,6 @@
         var r = root.querySelector('.hero-readout');
         return r ? r.getBoundingClientRect().bottom - stage.getBoundingClientRect().top : 0;
       },
-      toggleBottom: function () {
-        return toggle ? toggle.getBoundingClientRect().bottom - stage.getBoundingClientRect().top : 0;
-      },
-      captionHeight: function (width) {     // how tall the caption would be if it were set this wide
-        var p = root.querySelector('figcaption p');
-        if (!p) return 0;
-        var m = p.cloneNode(true);
-        m.setAttribute('aria-hidden', 'true');
-        m.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;left:0;top:0;margin:0;max-width:none;width:' + width + 'px';
-        p.parentNode.appendChild(m);
-        var h = m.getBoundingClientRect().height;
-        p.parentNode.removeChild(m);
-        return h;
-      },
       headerHeight: function () {
         var h = document.querySelector('body > header');
         return h ? h.getBoundingClientRect().height : 0;
@@ -666,10 +652,7 @@
         px = left + room + 40 + d / 2;
         root.style.setProperty('--hero-col', room + 'px');
         reserve();
-        // the caption joins the column if it fits under the button; otherwise it stays below the figure
-        root.classList.toggle('caption-beside', ui.toggleBottom() + 24 + ui.captionHeight(room) + 24 <= chh);
-      } else {
-        root.classList.remove('caption-beside');   // the readout on top, the figure below it
+      } else {                                     // the readout on top, the figure below it
         reserve();
         y = Math.max(ui.readoutBottom(), head + 40) + 6;
         d = Math.max(60, Math.min(cw - 12, chh - y - 6));

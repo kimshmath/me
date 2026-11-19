@@ -55,8 +55,7 @@
   height: clamp(20rem, 64vh, 40rem);
 }
 
-/* Windows that are wide for their height: the figure at the right; its readout and button in a column at the left.
-   When hero.js finds that the caption fits in that column as well, it adds .caption-beside.
+/* Windows that are wide for their height: the figure at the right; its readout and buttons in a column at the left.
    (hero.js tests the same media query: keep the two in step.) */
 @media (min-width: 900px) and (min-aspect-ratio: 1/1), (min-width: 480px) and (min-aspect-ratio: 4/3) {
   .essay-hero[data-hero="unit"] {
@@ -86,20 +85,6 @@
   .essay-hero[data-hero="unit"] .hero-controls {
     position: static;
     margin-top: 0.6rem;
-  }
-
-  .essay-hero[data-hero="unit"].caption-beside figcaption {
-    position: absolute;
-    right: 0;
-    bottom: 1.5rem;
-    left: 0;
-    pointer-events: none;
-  }
-
-  .essay-hero[data-hero="unit"].caption-beside figcaption p {
-    max-width: var(--hero-col, 21rem);
-    margin: 0;
-    pointer-events: auto;
   }
 }
 
@@ -231,15 +216,6 @@
 
 .hero-toggle.is-paused .i-play {
   display: block;
-}
-
-.essay-hero figcaption p {
-  max-width: var(--essay-measure);
-  margin: 0.9rem 0 0;
-  font-family: var(--font-sans);
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: var(--text-muted);
 }
 
 .essay-page:lang(ko) .essay-hero {
@@ -637,6 +613,43 @@ table.data tbody th {
 .essay-end p {
   color: var(--text-muted);
   margin: 0 0 0.4rem;
+}
+
+/* What the picture at the top shows: at the end of the essay, so that the essay opens with the picture alone.
+   Shown only when scripts run, like the picture itself. */
+.essay-note {
+  display: none;
+  max-width: var(--essay-measure);
+  margin: 0 0 1.8rem;
+}
+
+.js .essay-note {
+  display: block;
+}
+
+.essay-end .essay-note p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.essay-end .essay-note .essay-note-title {
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+}
+
+.essay-note-title a {
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.essay-note-title a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.essay-page:lang(ko) .essay-note {
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .essay-page a:focus-visible,
