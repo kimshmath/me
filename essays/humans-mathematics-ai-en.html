@@ -16,7 +16,7 @@
     <meta property="og:url" content="https://me.kimsh.kr/essays/humans-mathematics-ai-en.html">
     <meta property="og:locale" content="en_US">
     <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="essay.css?v=20261119b">
+    <link rel="stylesheet" href="essay.css?v=20261119c">
 </head>
 <body class="essay-page">
     <div class="bg-blobs">
@@ -38,15 +38,15 @@
         </nav>
     </header>
 
-    <figure class="essay-hero" data-hero="unit" data-l-count="{n} points, {u} pairs at distance exactly 1" data-l-grow="The points of a lattice in eight dimensions are being projected onto the plane." data-l-view="Shadow {k} of 4. Every segment has length exactly 1." data-l-lengths="{n} points, segment lengths {lo} to {hi}" data-l-turn="The direction of projection is turning." data-l-pause="Pause" data-l-play="Play">
+    <figure class="essay-hero" data-hero="unit" data-l-count="{n} points, {u} pairs at distance exactly 1" data-l-grow="The points of a lattice in eight dimensions are being projected onto the plane." data-l-view="Shadow {k} of 4. Every segment has length exactly 1." data-l-lengths="{n} points, segment lengths {lo} to {hi}" data-l-turn="The direction of projection is turning." data-l-side="A shadow in three-dimensional space, seen at an angle. From straight above, every segment has length 1." data-l-tilt="Tilt the view" data-l-top="View from above" data-l-pause="Pause" data-l-play="Play">
       <div class="hero-stage">
         <canvas aria-hidden="true"></canvas>
         <div class="container hero-ui">
           <p class="hero-readout" aria-hidden="true"><span class="hero-num"></span><span class="hero-sub"></span></p>
-          <button class="hero-toggle" type="button"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.2v11.6a.6.6 0 0 0 .92.5l9-5.8a.6.6 0 0 0 0-1L3.92.7A.6.6 0 0 0 3 1.2z"/></svg></button>
+          <div class="hero-controls"><button class="hero-toggle" type="button"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.2v11.6a.6.6 0 0 0 .92.5l9-5.8a.6.6 0 0 0 0-1L3.92.7A.6.6 0 0 0 3 1.2z"/></svg></button><button class="hero-view" type="button"><svg class="i-tilt" viewBox="0 0 14 14" aria-hidden="true"><ellipse cx="7" cy="7" rx="6" ry="2.6"/><circle cx="7" cy="7" r="1"/></svg><svg class="i-top" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.6"/><circle cx="7" cy="7" r="1"/></svg></button></div>
         </div>
       </div>
-      <figcaption class="container"><p>How many pairs among <i>n</i> points in the plane can be at distance exactly 1? In 1946 Erdős conjectured that a square grid is essentially optimal, and in May 2026 a machine disproved it (<a href="#sec-5">Section 5</a>). This picture follows that construction on a small scale: points of a lattice in eight dimensions are projected onto the plane, and every two at distance exactly 1 are joined. Turning the direction of projection scatters the lengths; in each special direction they all return to 1. The lattices in the actual disproof have far higher dimension.</p></figcaption>
+      <figcaption class="container"><p>How many pairs among <i>n</i> points in the plane can be at distance exactly 1? In 1946 Erdős conjectured that a square grid is essentially optimal, and in May 2026 a machine disproved it (<a href="#sec-5">Section 5</a>). This picture follows that construction on a small scale: points of a lattice in eight dimensions are projected onto the plane, and every two at distance exactly 1 are joined. Turning the direction of projection scatters the lengths; in each special direction they all return to 1. The lattices in the actual disproof have far higher dimension. Drag the figure, or press the tilt button, to see the lattice projected into space from any side.</p></figcaption>
     </figure>
 
     <main class="container">
@@ -173,6 +173,6 @@
     </footer>
 
     <script src="../js/script.js"></script>
-    <script src="hero.js?v=20261119b" defer></script>
+    <script src="hero.js?v=20261119c" defer></script>
 </body>
 </html>

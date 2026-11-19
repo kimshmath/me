@@ -16,6 +16,9 @@
               exact integer arithmetic, and draws them. The lattice lives in eight dimensions; its four
               embeddings give four different pictures, and the hero turns the plane of projection
               from one to the next. In between, the lengths spread out; at each embedding all are 1.
+              The reader can drag the figure to turn it in space: a third axis from the other
+              embeddings makes it a projection of the lattice into three dimensions, and the view
+              from straight above is the planar shadow.
 
    Markup (see the essay pages): <figure class="essay-hero" data-hero="..."> with a <canvas>,
    a .hero-readout (.hero-num, .hero-sub) and a .hero-toggle button. Text templates live in
@@ -84,11 +87,15 @@
       headerHeight: function () {
         var h = document.querySelector('body > header');
         return h ? h.getBoundingClientRect().height : 0;
+      },
+      redraw: function () {                 // one frame now, even while paused (for a reader turning the figure by hand)
+        if (running() || pend) return;
+        pend = requestAnimationFrame(function () { pend = 0; if (sized) hero.draw(performance.now(), true); });
       }
     };
     var hero = factory(root, canvas, ui);
     var visible = true, hidden = document.hidden, paused = reduce.matches;
-    var raf = 0, last = 0, sized = false;
+    var raf = 0, last = 0, sized = false, pend = 0;
 
     function running() { return sized && visible && !hidden && !paused; }
     function frame(now) {
@@ -116,7 +123,7 @@
         sized = true;
         if (paused) hero.still();
       }
-      if (!running()) hero.draw(performance.now());
+      if (!running()) hero.draw(performance.now(), true);
     }
 
     if (toggle) {
@@ -541,6 +548,11 @@
       EA = new Int32Array(pairs); EB = new Int32Array(pairs); ELV = new Int32Array(pairs);
       for (i = 0; i < pairs; i++) { EA[i] = ea[order[i]]; EB[i] = eb[order[i]]; ELV[i] = LVL[EA[i]]; }
       for (i = 0; i < n; i++) if (DEG[i] > maxDeg) maxDeg = DEG[i];
+      NN = new Float32Array(n);                    // |x|^2 in the norm above
+      for (i = 0; i < n; i++) for (j = 0; j < F; j++) NN[i] += PX[j][i] * PX[j][i] + PY[j][i] * PY[j][i];
+      var hmax = 0;
+      for (i = 0; i < n; i++) hmax = Math.max(hmax, Math.sqrt(NN[i]));
+      ZC = hmax / 2;                               // turn the figure about the middle of its height
     }
 
     /* ---- the show: the window opens; then the direction of projection turns from one embedding to the next ---- */
@@ -548,6 +560,62 @@
     var TOUR = [[0, 1], [2, -1], [3, -1], [1, -1]];           // embedding and mirror sign of the four shadows, in order
     var phase = 'grow', clock = 0, stop = 0, theta = 0, lastText = -1;
     var moved = true, dirty = true, glint = 0, settled = false;   // the figure changed; the canvas needs repainting; a glow as a shadow settles
+
+    /* ---- the third dimension ----
+       The picture is an orthogonal projection of the eight-dimensional lattice onto a plane (in the norm
+       sum_j |s_j(x)|^2 / s_j(alpha), for which the four embeddings are orthonormal coordinates). The height of a
+       point is its distance from that plane in eight dimensions: sqrt(|x|^2 - |shadow|^2). It is unchanged by the
+       roots of unity, so the figure keeps its symmetry. Seen from straight above (pitch 0) the picture is exactly the
+       planar shadow; tilting shows how far each point lies from the plane. */
+    var yaw = 0, pitch = 0, goal = null, vel = 0, drag = null, lastCam = 0, PMAX = 1.45, DZv = null, NN = null, ZC = 1;
+    var viewBtn = root.querySelector('.hero-view');
+    function tilted() { return goal !== null ? goal > 0.05 : pitch > 0.05; }
+    function viewLabel() {
+      if (!viewBtn) return;
+      var t = tilted(), l = t ? (root.dataset.lTop || 'View from above') : (root.dataset.lTilt || 'Tilt the view');
+      if (viewBtn.getAttribute('aria-label') !== l) { viewBtn.setAttribute('aria-label', l); viewBtn.title = l; }
+      viewBtn.classList.toggle('is-tilted', t);
+    }
+    function camera(now, manual) {                 // inertia, easing to a chosen view, a slow turn while tilted; true while still moving
+      var dt = lastCam ? clamp((now - lastCam) / 1000, 0, 0.05) : 0, y0 = yaw, p0 = pitch;
+      lastCam = now;
+      if (!drag) {
+        if (goal !== null) {
+          pitch += (goal - pitch) * (1 - Math.exp(-dt / 0.25));
+          if (Math.abs(goal - pitch) < 0.002) { pitch = goal; goal = null; viewLabel(); }
+        }
+        if (vel) { yaw += vel * dt; vel *= Math.exp(-dt / 0.9); if (Math.abs(vel) < 0.01) vel = 0; }
+        else if (!manual && pitch > 0.05 && !reduce.matches) yaw += 0.045 * dt;
+      }
+      if (yaw !== y0 || pitch !== p0) moved = true;
+      return goal !== null || vel !== 0;
+    }
+    canvas.addEventListener('pointerdown', function (e) {
+      if (e.button) return;
+      drag = { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId, touch: e.pointerType === 'touch' };
+      vel = 0; goal = null;
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* not supported */ }
+      root.classList.add('is-dragging');
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var K = 3.2 / Math.max(240, canvas.getBoundingClientRect().width);   // a drag across the figure turns it about half a turn
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y, dt = Math.max(8, e.timeStamp - drag.t) / 1000;
+      yaw += dx * K;
+      if (!drag.touch) pitch = clamp(pitch + dy * K, 0, PMAX);      // (on a touch screen a vertical drag scrolls the page)
+      vel = 0.6 * vel + 0.4 * dx * K / dt;
+      drag.x = e.clientX; drag.y = e.clientY; drag.t = e.timeStamp;
+      moved = true; viewLabel(); ui.redraw();
+    });
+    function release(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (e.timeStamp - drag.t > 80) vel = 0;      // the pointer had stopped before it was let go
+      drag = null; root.classList.remove('is-dragging'); ui.redraw();
+    }
+    canvas.addEventListener('pointerup', release);
+    canvas.addEventListener('pointercancel', release);
+    canvas.addEventListener('dblclick', function () { goal = 0; vel = 0; viewLabel(); ui.redraw(); });
+    if (viewBtn) viewBtn.addEventListener('click', function () { goal = tilted() ? 0 : 1.0; vel = 0; viewLabel(); ui.redraw(); });
     var nf2 = new Intl.NumberFormat(lang === 'ko' ? 'ko-KR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     function ease(u) { return u * u * u * (u * (6 * u - 15) + 10); }
     function due(k) { return 0.3 + (k < 3 ? 0.7 * k : 2.1 + 0.95 * (k - 3)); }   // when level k starts to arrive
@@ -578,7 +646,7 @@
       if (!ro || !ui.num || !ui.sub) return;
       var keep = [ui.num.textContent, ui.sub.textContent];
       var nums = [fill(data.lCount, { n: nf.format(n), u: nf.format(pairs) }), fill(data.lLengths, { n: nf.format(n), lo: nf2.format(0.88), hi: nf2.format(1.88) })];
-      var subs = [data.lGrow || '', fill(data.lView, { k: 4 }), data.lTurn || ''];
+      var subs = [data.lGrow || '', fill(data.lView, { k: 4 }), data.lTurn || '', data.lSide || ''];
       ro.style.minHeight = '';
       for (a = 0; a < nums.length; a++) for (b = 0; b < subs.length; b++) {
         ui.num.textContent = nums[a]; ui.sub.textContent = subs[b];
@@ -625,7 +693,7 @@
       }
       unit0 = S / 2 / 1.12 / RWIN;
       tone(clamp(0.25 * unit0 / 250, 0.12, 0.34));          // a smaller figure packs more lines into each cell: keep the brightness the same
-      if (!TXv) { TXv = new Float32Array(n); TYv = new Float32Array(n); }
+      if (!TXv) { TXv = new Float32Array(n); TYv = new Float32Array(n); DZv = new Float32Array(n); }
       moved = true;
     }
 
@@ -648,14 +716,20 @@
 
     function trace() {                             // the figure as it stands now, into the buffer and through the colour map
       var a = TOUR[stop % 4], b = TOUR[(stop + 1) % 4], c = Math.cos(theta), s = Math.sin(theta);
-      var ax = PX[a[0]], ay = PY[a[0]], bx = PX[b[0]], by = PY[b[0]], i, k, x, y, r, ext = RWIN * RWIN, p, q;
+      var ax = PX[a[0]], ay = PY[a[0]], bx = PX[b[0]], by = PY[b[0]], i, k, x, y, z, r, ext = RWIN * RWIN, p, q;
+      var cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), xr, yr, dz, f;
       for (i = 0; i < n; i++) {                    // the plane of projection, turned by theta from shadow a towards shadow b
         x = c * ax[i] + s * bx[i]; y = c * a[1] * ay[i] + s * b[1] * by[i];
-        TXv[i] = x; TYv[i] = y;
-        r = x * x + y * y; if (r > ext) ext = r;
+        z = Math.sqrt(Math.max(0, NN[i] - x * x - y * y)) - ZC;   // distance from the plane (see above), centred
+        xr = x * cy - y * sy; yr = x * sy + y * cy;            // turn about the vertical axis, then tip towards the reader
+        dz = z * cp - yr * sp;                     // towards the reader
+        f = 1 / (1 - 0.12 * sp * dz / RWIN);       // a little perspective once tilted; none from straight above
+        TXv[i] = xr * f; TYv[i] = (yr * cp + z * sp) * f; DZv[i] = dz;
+        r = TXv[i] * TXv[i] + TYv[i] * TYv[i]; if (r > ext) ext = r;
       }
       var u = unit0 * Math.min(1, 1.04 * RWIN / Math.sqrt(ext)), h = S / 2;  // step back while the shadow is wider
       for (i = 0; i < n; i++) { TXv[i] = h + u * TXv[i]; TYv[i] = h - u * TYv[i]; }
+      var shade = sp > 0.001 ? 0.5 * sp / RWIN : 0, w, dim = 1 - 0.45 * sp;   // nearer is brighter; seen edge-on, lines pile up, so each is fainter
 
       acc.fill(0);
       var growing = phase === 'grow', lv = -1, t = 1, e = 1;
@@ -665,11 +739,12 @@
           if (e <= 0) break;                       // later pairs belong to levels that have not arrived
         }
         p = EA[k]; q = EB[k];
-        if (e >= 1) seg(TXv[p], TYv[p], TXv[q], TYv[q], 1);
+        w = shade ? dim * clamp(1 + shade * (DZv[p] + DZv[q]) / 2, 0.3, 1.7) : 1;
+        if (e >= 1) seg(TXv[p], TYv[p], TXv[q], TYv[q], w);
         else if (LVL[q] === lv) {                  // both ends are new: the thread grows from both
-          seg(TXv[p], TYv[p], TXv[p] + (TXv[q] - TXv[p]) * e / 2, TYv[p] + (TYv[q] - TYv[p]) * e / 2, 1);
-          seg(TXv[q], TYv[q], TXv[q] + (TXv[p] - TXv[q]) * e / 2, TYv[q] + (TYv[p] - TYv[q]) * e / 2, 1);
-        } else seg(TXv[p], TYv[p], TXv[p] + (TXv[q] - TXv[p]) * e, TYv[p] + (TYv[q] - TYv[p]) * e, 1);
+          seg(TXv[p], TYv[p], TXv[p] + (TXv[q] - TXv[p]) * e / 2, TYv[p] + (TYv[q] - TYv[p]) * e / 2, w);
+          seg(TXv[q], TYv[q], TXv[q] + (TXv[p] - TXv[q]) * e / 2, TYv[q] + (TYv[p] - TYv[q]) * e / 2, w);
+        } else seg(TXv[p], TYv[p], TXv[p] + (TXv[q] - TXv[p]) * e, TYv[p] + (TYv[q] - TYv[p]) * e, w);
       }
 
       var v, row, end;
@@ -683,14 +758,14 @@
     }
 
     function show() {                              // onto the canvas: the lines, the points, a halo
-      var growing = phase === 'grow', px1 = S / 560, i, t, v, r;
+      var growing = phase === 'grow', px1 = S / 560, i, t, v, r, near = Math.sin(pitch) / RWIN;
       ctx.putImageData(img, 0, 0);
       ctx.fillStyle = 'rgb(255, 246, 226)';        // the points themselves, brighter the more partners they have
       for (i = 0; i < n; i++) {
         t = growing ? clamp(rise(LVL[i]) / 0.3, 0, 1) : 1;
         if (t <= 0) break;                         // later levels have not arrived (the points are in order of arrival)
         v = DEG[i] / maxDeg;
-        ctx.globalAlpha = t * (0.5 + 0.5 * v);
+        ctx.globalAlpha = t * (0.5 + 0.5 * v) * clamp(1 + 0.5 * near * DZv[i], 0.25, 1);
         r = px1 * (0.85 + 0.75 * v) * (1 + 1.6 * (1 - t));
         ctx.beginPath(); ctx.arc(TXv[i], TYv[i], r, 0, 6.2832); ctx.fill();
       }
@@ -718,8 +793,8 @@
       ctx.restore();
     }
 
-    function text(now) {
-      if (now - lastText < 90 && lastText >= 0) return;
+    function text(now, force) {
+      if (!force && now - lastText < 90 && lastText >= 0 && now >= lastText) return;
       lastText = now;
       var data = root.dataset, shown = n, made = pairs, k, t;
       if (phase === 'turn') {                      // a difference seen as u in one shadow and v in the next now has length
@@ -742,7 +817,7 @@
         }
       }
       write(ui.num, fill(data.lCount, { n: nf.format(shown), u: nf.format(made) }));
-      write(ui.sub, phase === 'grow' ? (data.lGrow || '') : fill(data.lView, { k: stop % 4 + 1 }));
+      write(ui.sub, phase === 'grow' ? (data.lGrow || '') : pitch > 0.05 ? (data.lSide || '') : fill(data.lView, { k: stop % 4 + 1 }));
     }
 
     function step(dt) {
@@ -764,8 +839,9 @@
       }
     }
 
-    function draw(now) {
+    function draw(now, manual) {
       if (!img) return;
+      var busy = camera(now || performance.now(), manual);
       var t0 = moved ? performance.now() : 0;
       if (moved) { moved = false; dirty = true; trace(); }
       if (dirty) { dirty = false; show(); }
@@ -777,7 +853,8 @@
           moved = false; trace(); show();          // (the canvas was cleared: repaint it in the same frame)
         }
       }
-      text(now || 0);
+      text(now || 0, manual);
+      if (manual && busy) ui.redraw();             // paused, but the figure is still coasting or easing: keep drawing
     }
 
     function still() {                             // for readers who prefer no motion: the first shadow, complete
@@ -785,6 +862,7 @@
     }
 
     build();
+    viewLabel();
     return { resize: resize, step: step, draw: draw, still: still };
   }
 

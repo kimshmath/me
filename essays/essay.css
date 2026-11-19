@@ -83,7 +83,7 @@
     max-width: none;
   }
 
-  .essay-hero[data-hero="unit"] .hero-toggle {
+  .essay-hero[data-hero="unit"] .hero-controls {
     position: static;
     margin-top: 0.6rem;
   }
@@ -136,7 +136,8 @@
   color: var(--text-muted);
 }
 
-.hero-toggle {
+.hero-toggle,
+.hero-view {
   position: absolute;
   right: 2rem;
   bottom: 1.1rem;
@@ -159,11 +160,13 @@
   bottom: calc(7% + 0.9rem);         /* just above the axis of the plot */
 }
 
-.hero-toggle:hover {
+.hero-toggle:hover,
+.hero-view:hover {
   border-color: rgba(255, 255, 255, 0.4);
 }
 
-.essay-page .hero-toggle:focus-visible {
+.essay-page .hero-toggle:focus-visible,
+.essay-page .hero-view:focus-visible {
   border-radius: 50%;                /* the focus ring follows the round button */
 }
 
@@ -176,6 +179,54 @@
 .hero-toggle .i-play,
 .hero-toggle.is-paused .i-pause {
   display: none;
+}
+
+/* The lattice hero has two buttons side by side: pause, and tilt / view from above. */
+.hero-controls {
+  position: absolute;
+  right: 2rem;
+  bottom: 1.1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hero-controls .hero-toggle,
+.hero-controls .hero-view {
+  position: static;
+}
+
+.hero-view svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+
+.hero-view svg circle:last-child {
+  fill: currentColor;
+  stroke: none;
+}
+
+.hero-view .i-top,
+.hero-view.is-tilted .i-tilt {
+  display: none;
+}
+
+.hero-view.is-tilted .i-top {
+  display: block;
+}
+
+/* The figure can be turned by hand. A vertical drag on a touch screen still scrolls the page. */
+.essay-hero[data-hero="unit"] canvas {
+  cursor: grab;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.essay-hero[data-hero="unit"].is-dragging canvas {
+  cursor: grabbing;
 }
 
 .hero-toggle.is-paused .i-play {
@@ -633,11 +684,12 @@ table.data tbody th {
   }
 
   .essay-hero[data-hero="unit"] .hero-readout {
-    right: 4.4rem;                     /* room for the pause button, which moves up beside it */
+    right: 7.4rem;                     /* room for the two buttons, which move up beside it */
   }
 
-  .essay-hero[data-hero="unit"] .hero-toggle {
+  .essay-hero[data-hero="unit"] .hero-controls {
     top: calc(var(--nav-height) + 0.9rem);
+    right: 1.25rem;
     bottom: auto;
   }
 
