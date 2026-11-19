@@ -1,0 +1,523 @@
+/* Essay pages (essays/*.html): a reading layout on top of ../css/styles.css.
+   Korean pages use Noto Serif KR (loaded in the page head); English pages use the
+   site's Newsreader. Everything else (colors, nav, footer) comes from styles.css. */
+
+.essay-page {
+  --essay-text: #e4ddd0;
+  --essay-strong: #f5efe4;
+  --essay-rule: rgba(255, 255, 255, 0.1);
+  --essay-tint: rgba(108, 155, 255, 0.05);
+  --essay-measure: 40rem;
+  --essay-serif: 'Newsreader', Georgia, serif;
+  --essay-size: 1.25rem;
+  --essay-leading: 1.68;
+}
+
+.essay-page:lang(ko) {
+  --essay-serif: 'Noto Serif KR', 'Noto Serif CJK KR', 'Nanum Myeongjo', serif;
+  --essay-size: 1.125rem;
+  --essay-leading: 1.86;
+}
+
+/* styles.css gives main.container no top padding, so clear the fixed header here.
+   The column keeps the site's left edge (logo, page titles). */
+.essay {
+  max-width: var(--essay-measure);
+  padding-top: calc(var(--nav-height) + 3rem);
+}
+
+/* ---------- Head ---------- */
+.essay-head {
+  margin: 0.5rem 0 3rem;
+}
+
+.lang-switch {
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0 0 2.25rem;
+}
+
+.lang-switch > * + *::before {
+  content: '/';
+  margin: 0 0.6em;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.lang-switch [aria-current] {
+  color: var(--text-main);
+}
+
+.essay-head h1 {
+  font-family: var(--essay-serif);
+  font-size: clamp(2.3rem, 1.7rem + 2.4vw, 3.3rem);
+  line-height: 1.12;
+  margin: 0 0 0.6rem;
+  text-wrap: balance;
+}
+
+.essay-page:lang(ko) .essay-head h1 {
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+
+.essay-subtitle {
+  font-family: var(--essay-serif);
+  font-size: 1.4rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  margin: 0 0 1.75rem;
+}
+
+.essay-page:lang(en) .essay-subtitle {
+  font-style: italic;
+}
+
+.essay-page:lang(ko) .essay-subtitle {
+  font-size: 1.2rem;
+}
+
+.essay-byline,
+.essay-pub {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 0.3rem;
+}
+
+.essay-byline .name {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.essay-byline .affil {
+  color: var(--text-muted);
+}
+
+.essay-pub {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Contents (long essays) ---------- */
+.essay-toc {
+  display: block;
+  margin: 0 0 3rem;
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--essay-rule);
+  border-bottom: 1px solid var(--essay-rule);
+}
+
+.essay-toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.essay-toc li {
+  margin: 0 0 0.3rem;
+}
+
+.essay-toc li:last-child {
+  margin-bottom: 0;
+}
+
+.essay-toc a {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.essay-toc a:hover {
+  color: var(--text-main);
+  text-shadow: none;
+}
+
+/* ---------- Body ---------- */
+.essay-body {
+  font-family: var(--essay-serif);
+  font-size: var(--essay-size);
+  line-height: var(--essay-leading);
+  color: var(--essay-text);
+}
+
+.essay-page:lang(en) .essay-body {
+  font-variant-numeric: oldstyle-nums;
+}
+
+.essay-page:lang(ko) .essay-body {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.essay-body p {
+  color: inherit;
+  margin: 0 0 1.1em;
+  text-wrap: pretty;
+}
+
+/* Keeps expressions such as halt(p, i) on one line. */
+.essay-body .nw {
+  white-space: nowrap;
+}
+
+.essay-body h2 {
+  font-family: var(--essay-serif);
+  font-weight: 600;
+  font-size: 1.5em;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--essay-strong);
+  border: 0;
+  padding: 0;
+  margin: 2.4em 0 0.8em;
+  text-wrap: balance;
+  scroll-margin-top: calc(var(--nav-height) + 1.5rem);
+}
+
+.essay-page:lang(ko) .essay-body h2 {
+  font-size: 1.3em;
+  letter-spacing: -0.02em;
+}
+
+.essay-body > h2:first-child {
+  margin-top: 0;
+}
+
+.essay-body strong {
+  font-weight: 600;
+  color: var(--essay-strong);
+}
+
+/* Variables in the Korean text are set in the Latin serif's true italic. */
+.essay-page:lang(ko) .essay-body i {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.essay-body sub,
+.essay-body sup {
+  font-size: 0.68em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+  font-style: normal;
+  font-variant-numeric: lining-nums;
+}
+
+.essay-body sub { bottom: -0.25em; }
+.essay-body sup { top: -0.5em; }
+
+.essay-body u {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+/* Stated questions and claims */
+.essay-body blockquote.statement {
+  margin: 1.6em 0;
+  padding: 0.05em 0 0.05em 1.25em;
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  color: var(--essay-strong);
+}
+
+.essay-body blockquote p {
+  margin: 0;
+}
+
+/* Programs and the definition of halt(p, i) */
+.program,
+.definition {
+  margin: 1.75em 0;
+  padding: 1rem 1.35rem;
+  background: var(--essay-tint);
+  border-left: 2px solid rgba(108, 155, 255, 0.65);
+  border-radius: 0 10px 10px 0;
+}
+
+.program-title {
+  font-weight: 600;
+  color: #a9c2ff;
+  margin: 0 0 0.45em !important;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 2.3em 1fr;
+  margin: 0 0 0.3em;
+}
+
+.steps li:last-child {
+  margin-bottom: 0;
+}
+
+.steps .n {
+  color: var(--text-muted);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.display {
+  text-align: center;
+  margin: 1.5em 0 !important;
+}
+
+/* Tables */
+.table-wrap {
+  overflow-x: auto;
+  margin: 1.75em 0;
+}
+
+.essay-body table {
+  border-collapse: collapse;
+  font-size: 0.9em;
+  line-height: 1.45;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.essay-body th,
+.essay-body td {
+  padding: 0.55em 0.9em;
+  border-bottom: 1px solid var(--essay-rule);
+}
+
+.essay-body thead th {
+  color: var(--text-muted);
+  font-weight: 400;
+  border-bottom-color: rgba(255, 255, 255, 0.24);
+}
+
+table.grid {
+  margin: 0 auto;
+}
+
+table.grid th,
+table.grid td {
+  text-align: center;
+  white-space: nowrap;
+}
+
+table.grid tbody th {
+  color: var(--text-muted);
+  font-weight: 400;
+  text-align: left;
+}
+
+/* The diagonal of each table: the cells the argument turns on. */
+table.grid td.diag {
+  background: rgba(108, 155, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(108, 155, 255, 0.5);
+  color: #fff;
+}
+
+table.data {
+  width: 100%;
+}
+
+table.data th,
+table.data td {
+  text-align: left;
+  vertical-align: top;
+}
+
+table.data thead th {
+  white-space: nowrap;
+}
+
+table.data th:first-child {
+  padding-left: 0;
+}
+
+table.data tbody th {
+  font-weight: 400;
+  color: var(--essay-strong);
+  white-space: nowrap;
+}
+
+.table-figure {
+  margin: 2em 0;
+}
+
+.table-figure .table-wrap {
+  margin: 0;
+}
+
+.essay-body figcaption {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.table-figure figcaption {
+  margin-bottom: 0.6rem;
+}
+
+.table-figure figcaption strong {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+/* Closing quotation */
+.closing-quote {
+  margin: 2.8em 0 0;
+  padding-top: 1.6em;
+  border-top: 1px solid var(--essay-rule);
+}
+
+.closing-quote blockquote {
+  font-size: 1.1em;
+  line-height: 1.6;
+  color: var(--essay-strong);
+}
+
+.essay-page:lang(en) .closing-quote blockquote {
+  font-style: italic;
+}
+
+.closing-quote figcaption {
+  margin-top: 0.8rem;
+}
+
+/* ---------- End matter ---------- */
+.essay-end {
+  margin-top: 3.5rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--essay-rule);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+}
+
+.essay-end p {
+  color: var(--text-muted);
+  margin: 0 0 0.4rem;
+}
+
+.essay-page a:focus-visible,
+.essay-page button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+@media (max-width: 600px) {
+  .essay-page .container {
+    padding: 0 1.25rem;
+  }
+
+  .essay-page {
+    --essay-size: 1.125rem;
+  }
+
+  .essay-page:lang(ko) {
+    --essay-size: 1.0625rem;
+    --essay-leading: 1.82;
+  }
+
+  .essay-page:lang(en) .essay-body p {
+    hyphens: auto;
+    -webkit-hyphens: auto;
+  }
+
+  .essay {
+    padding-top: calc(var(--nav-height) + 2rem);
+  }
+
+  .program,
+  .definition {
+    padding: 0.85rem 1rem;
+  }
+
+  .essay-body th,
+  .essay-body td {
+    padding: 0.5em 0.6em;
+  }
+
+  /* Five-column diagonal tables fit a phone without sideways scrolling. */
+  table.grid {
+    font-size: 0.82em;
+  }
+
+  table.grid th,
+  table.grid td {
+    padding: 0.45em 0.45em;
+  }
+
+  table.grid thead th:first-child {
+    white-space: normal;
+    min-width: 4.5em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob {
+    animation: none;
+  }
+}
+
+@media print {
+  .bg-blobs,
+  body > header,
+  body > footer,
+  .lang-switch,
+  .essay-toc,
+  .essay-end {
+    display: none !important;
+  }
+
+  body,
+  .essay-page {
+    background: #fff;
+    color: #000;
+  }
+
+  main {
+    padding: 0;
+  }
+
+  .essay-head h1 {
+    background: none;
+    -webkit-text-fill-color: #000;
+    color: #000;
+  }
+
+  .essay-body,
+  .essay-body h2,
+  .essay-body strong,
+  .essay-body blockquote,
+  .essay-subtitle,
+  .essay-byline .name,
+  .essay-byline .affil,
+  .essay-pub,
+  .essay-pub a {
+    color: #000 !important;
+  }
+
+  .program,
+  .definition {
+    background: none;
+    border-left-color: #000;
+  }
+
+  table.grid td.diag {
+    background: #e8e8e8;
+    box-shadow: none;
+    color: #000;
+  }
+
+  .essay-body th,
+  .essay-body td {
+    border-bottom-color: #999;
+  }
+}

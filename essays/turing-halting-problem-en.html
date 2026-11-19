@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turing and the Halting Problem — Sang-hyun Kim</title>
+    <meta name="description" content="“Can we build a computer that solves every mathematical problem?” — and the answer given by Alan Turing. Sang-hyun Kim, HORIZON (2021), English version.">
+    <meta name="author" content="Sang-hyun Kim">
+    <link rel="canonical" href="https://me.kimsh.kr/essays/turing-halting-problem-en.html">
+    <link rel="alternate" hreflang="en" href="https://me.kimsh.kr/essays/turing-halting-problem-en.html">
+    <link rel="alternate" hreflang="ko" href="https://me.kimsh.kr/essays/turing-halting-problem-ko.html">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Turing and the Halting Problem — Humans, Mathematics, and Computers">
+    <meta property="og:description" content="“Can we build a computer that solves every mathematical problem?” — and the answer given by Alan Turing. Sang-hyun Kim, HORIZON (2021), English version.">
+    <meta property="og:url" content="https://me.kimsh.kr/essays/turing-halting-problem-en.html">
+    <meta property="og:locale" content="en_US">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="essay.css">
+</head>
+<body class="essay-page">
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <header>
+        <nav class="container">
+            <a href="../index.html" class="logo">kimsh<span>.kr</span></a>
+            <button class="mobile-menu-btn" aria-label="Toggle Navigation">☰</button>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../research.html">Research</a></li>
+                <li><a href="../activities.html">Activities</a></li>
+                <li><a href="../culture.html" class="active">Culture</a></li>
+                <li><a href="../tips.html">Tips</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+      <article class="essay">
+        <div class="essay-head">
+          <p class="lang-switch"><span aria-current="page">English</span><a href="turing-halting-problem-ko.html" hreflang="ko" lang="ko">한국어</a></p>
+          <h1>Turing and the Halting Problem</h1>
+          <p class="essay-subtitle">Humans, Mathematics, and Computers</p>
+          <p class="essay-byline"><span class="name">Sang-hyun Kim</span> <span class="affil">School of Mathematics, Korea Institute for Advanced Study</span></p>
+          <p class="essay-pub">Originally published in Korean in <a href="https://horizon.kias.re.kr/19364/">HORIZON</a>, the KIAS webzine, in 2021.</p>
+        </div>
+        <div class="essay-body">
+<h2 id="sec-1">Thinking Computers</h2>
+<p>Since the advent of the computer, our lives have changed dramatically. Topics such as when Korea scored its first World Cup goal, or where a neighboring country ranks in GDP, are now things we look up rather than talk about. Most of what we call “work” is some task carried out in front of a computer. More and more, we are outsourcing our thinking and our memory to computers.</p>
+<p>The influence of computers is growing in mathematics as well. As early as the 1970s, Appel and Haken used a computer to solve the <strong>four-color problem</strong> (Note: the problem of whether all the countries on any map can be colored with four colors so that neighboring countries always have different colors). More recently, computers have double-checked the correctness of proofs that only a handful of people could understand, and in the process have even uncovered flaws in important proofs. There are also cases in which the proof itself is found by computer. And having computers verify the designs of operating systems and processors is now indispensable.</p>
+<p>Where is all this heading? In accuracy, computing power, memory capacity, communication speed and many other respects, humans already stand no chance of catching up with computers. If things go on like this, could computers one day become better mathematicians than humans? Could it be that the human soul, too, is in the end nothing more than a computer?</p>
+<p>In this article, I consider the question that lies at the starting point of such musings—“Can we build a computer that solves every mathematical problem?”—and look at the answer given by Alan Turing (1912–1954).</p>
+<h2 id="sec-2">Every Question Comes Down to the Halting Problem</h2>
+<p>Let us begin with the following <strong>halting problem</strong>:</p>
+<blockquote class="statement">
+<p>“Is there a computer that can determine whether a given computer program will stop within a finite amount of time?”</p>
+</blockquote>
+<p>For example, the following program stops as soon as it starts.</p>
+<div class="program"><p class="program-title">Program 1. Greeting</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Print “Hello!” and stop.</span></li></ol></div>
+
+<p>Other programs, like the one below, stop only after quite a long time.</p>
+<div class="program"><p class="program-title">Program 2. The Ten-Billion Game</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Assign 1 to the variable <em>x</em>.</span></li><li><span class="n">(2)</span><span class="t">Increase the value of <em>x</em> by one.</span></li><li><span class="n">(3)</span><span class="t">If the value of <em>x</em> is less than 10 billion, go back to (2); otherwise, go to (4).</span></li><li><span class="n">(4)</span><span class="t">Print the value of <em>x</em> and stop.</span></li></ol></div>
+
+<p>It is also all too common for a program to fall into an infinite loop and never stop. Scrawl “Look at the opposite wall” on both the left and the right wall of a toilet stall, and whoever sits there will be caught in an infinite loop. Let us express this as a program.</p>
+<div class="program"><p class="program-title">Program 3. Ping-Pong</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Print “Left” and go to (2).</span></li><li><span class="n">(2)</span><span class="t">Print “Right” and go to (1).</span></li></ol></div>
+
+<p>Deciding whether a given computer program will stop within a finite amount of time is also of great practical importance. Modern translators for programming languages (compilers) carry out this check quite efficiently, catching bugs in programs in advance. Could there be a compiler that does this job perfectly? Consider the following program.</p>
+<div class="program"><p class="program-title">Program 4. Goldbach’s Conjecture</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Assign 2 to <em>x</em>.</span></li><li><span class="n">(2)</span><span class="t">Increase the value of <em>x</em> by 2.</span></li><li><span class="n">(3)</span><span class="t">If there exist two primes <em>p</em> and <em>q</em> with 2 ≤ <em>p</em> ≤ <em>q</em> ≤ <em>x</em> such that <em>x</em> = <em>p</em> + <em>q</em>, go back to (2); if there are no such <em>p</em> and <em>q</em>, go to (4).</span></li><li><span class="n">(4)</span><span class="t">Stop.</span></li></ol></div>
+
+<p>It is obvious that the first two steps finish in a finite amount of time. What about the third? Given a natural number <em>x</em>, we need only increase <em>p</em> through 1, 2, 3, 4, 5, … and check whether <em>p</em> and <em>x</em> − <em>p</em> are both prime for some <em>p</em>. Many methods are known for deciding by computer whether a given number is prime, so step (3), too, finishes in a finite amount of time. Depending on the outcome of (3), however, we may repeat (2), or we may go on to (4). And the claim that this program repeats (2) and (3) forever is equivalent to the following statement:</p>
+<blockquote class="statement">
+<p>“Every even number greater than 2 can be written as the sum of two primes.”</p>
+</blockquote>
+<p>This statement is none other than <strong>Goldbach’s conjecture</strong>, put forward in 1742 by Christian Goldbach (1690–1764). As of 2021 the conjecture remains an impregnable open problem, and so no one in the world yet knows whether Program 4 stops.</p>
+<p>In this way, every mathematical problem can be expressed in the form of a halting problem. In other words, if we could build a machine that decides whether programs stop, that machine could solve every problem in mathematics. The connection between mathematics and the halting problem was formulated precisely in the early twentieth century by David Hilbert (1862–1943) and Wilhelm Ackermann (1896–1962). These two mathematicians posed the <strong>decision problem</strong>—“Is there a machine that, given any mathematical problem, can determine whether it is true or false?”—which is logically equivalent to the halting problem.</p>
+<h2 id="sec-3">Turing’s (Deliberate) Wrong Answer</h2>
+<p>In his 1936 paper “On Computable Numbers, with an Application to the Entscheidungsproblem,” Turing settled the Hilbert–Ackermann decision problem completely. In this paper, itself a legend of computer science, Turing gave rigorous definitions of the field’s modern concepts: the computer (the Turing machine), the distinction between hardware and software, computability, decidability, and more. Turing’s proof technique, based on the diagonal argument of Georg Cantor (1845–1918), is arguably the only method humankind has for establishing the limits of the activity we call “computation.”</p>
+<p>To treat the halting problem rigorously, let us define, for each program <em>p</em> and input <em>i</em>, the function value <span class="nw">halt(<em>p</em>, <em>i</em>)</span> as follows.</p>
+<div class="definition"><ol class="steps"><li><span class="n">(1)</span><span class="t">If the program <em>p</em> stops when given the input <em>i</em>, then <span class="nw">halt(<em>p</em>, <em>i</em>)</span> = <u>Stop</u>.</span></li><li><span class="n">(2)</span><span class="t">If the program <em>p</em> does not stop when given the input <em>i</em>, then <span class="nw">halt(<em>p</em>, <em>i</em>)</span> = <u>Infinite</u>.</span></li></ol></div>
+<p>For convenience, we will use the three words computation, program and computer more or less interchangeably. The goal of the halting problem is to compute the function <span class="nw">halt(<em>p</em>, <em>i</em>)</span> for an arbitrary pair (<em>p</em>, <em>i</em>). The most naive approach is to feed <em>i</em> into the program <em>p</em> and wait for the answer. If the waiting ever comes to an end, we conclude that <span class="nw">halt(<em>p</em>, <em>i</em>)</span> = <u>Stop</u>. But how long must we wait? Even if the program runs for more than 10 years, 100 years, or a billion years, we cannot rashly conclude that <span class="nw">halt(<em>p</em>, <em>i</em>)</span> = <u>Infinite</u>, since it might stop after 1.1 billion years.</p>
+<p>To guard against this, we simultaneously list all the texts in the world, <em>q</em><sub>1</sub>, <em>q</em><sub>2</sub>, <em>q</em><sub>3</sub>, …. Since a text is ultimately a string of symbols such as letters, this is entirely possible. The texts of a single character will all be listed in no time; then those of two characters… After a very, very long time, the list will include Hemingway’s novels and the entire Bible.</p>
+<p>At each stage of this process, we check whether the <em>j</em>-th listed text <em>q<sub>j</sub></em> (<em>j</em> = 1, 2, 3, …) is a proof of the following statement:</p>
+<blockquote class="statement">
+<p>“Given the input <em>i</em>, the program <em>p</em> runs forever; that is, <span class="nw">halt(<em>p</em>, <em>i</em>)</span> = <u>Infinite</u>.”</p>
+</blockquote>
+<p>It is a well-known fact that whether a given text proves a given statement can be checked easily. So even when the program runs forever, a suitable <em>q<sub>j</sub></em> will compute for us that <span class="nw">halt(<em>p</em>, <em>i</em>)</span> = <u>Infinite</u>. Now, if we run the program <em>p</em> on the input <em>i</em> and, at the same time, have the computer examine every text in the world, <em>q</em><sub>1</sub>, <em>q</em><sub>2</sub>, <em>q</em><sub>3</sub>, …, one by one, shouldn’t we eventually be able to tell whether <span class="nw">halt(<em>p</em>, <em>i</em>)</span> is Stop or Infinite?</p>
+<p>Turing, however, soon points out that this answer is wrong. For by a result of Kurt Gödel (1906–1978), which predates Turing’s, a mathematical system contains statements that can be neither proved nor disproved. If the statement “<span class="nw">halt(<em>p</em>, <em>i</em>)</span> = <u>Infinite</u>” happens to be one of Gödel’s statements that can be neither proved nor disproved, the proof <em>q<sub>j</sub></em> that we so eagerly await will never come.</p>
+<h2 id="sec-4">Cantor, Again</h2>
+<p>To get past this wrong answer, Turing makes use of Cantor’s idea that <strong>there are more functions than natural numbers</strong>. First, consider all functions <em>f</em> of the following form:</p>
+<p class="display"><em>f</em> : {1, 2, 3, …} → {Plum, Melon}</p>
+<p>We want to show that it is impossible to list all such functions as <em>f</em><sub>1</sub>, <em>f</em><sub>2</sub>, <em>f</em><sub>3</sub>, …. Arguing by contradiction, suppose that such a list is possible, as below.</p>
+<div class="table-wrap"><table class="grid">
+<thead>
+<tr>
+<th scope="col">Function \ Input</th>
+<th scope="col">1</th>
+<th scope="col">2</th>
+<th scope="col">3</th>
+<th scope="col">4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row"><em>f</em><sub>1</sub></th>
+<td class="diag"><strong>Melon</strong></td>
+<td>Plum</td>
+<td>Melon</td>
+<td>Plum</td>
+</tr>
+<tr>
+<th scope="row"><em>f</em><sub>2</sub></th>
+<td>Plum</td>
+<td class="diag"><strong>Melon</strong></td>
+<td>Plum</td>
+<td>Melon</td>
+</tr>
+<tr>
+<th scope="row"><em>f</em><sub>3</sub></th>
+<td>Melon</td>
+<td>Melon</td>
+<td class="diag"><strong>Plum</strong></td>
+<td>Melon</td>
+</tr>
+<tr>
+<th scope="row"><em>f</em><sub>4</sub></th>
+<td>Plum</td>
+<td>Plum</td>
+<td>Plum</td>
+<td class="diag"><strong>Plum</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>Now, for each <em>i</em> = 1, 2, 3, 4, …, define a function <em>g</em> so that the value <em>g</em>(<em>i</em>) differs from <em>f<sub>i</sub></em>(<em>i</em>).</p>
+<div class="table-wrap"><table class="grid">
+<thead>
+<tr>
+<th scope="col">Function \ Input</th>
+<th scope="col">1</th>
+<th scope="col">2</th>
+<th scope="col">3</th>
+<th scope="col">4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row"><em>g</em></th>
+<td>Plum</td>
+<td>Plum</td>
+<td>Melon</td>
+<td>Melon</td>
+</tr>
+</tbody>
+</table></div>
+<p>That is, if we swap Plum and Melon in the diagonal values <em>f</em><sub>1</sub>(1), <em>f</em><sub>2</sub>(2), <em>f</em><sub>3</sub>(3), … of the first table, we obtain the values <em>g</em>(1), <em>g</em>(2), <em>g</em>(3), …. Cantor’s discovery is that this <em>g</em> cannot appear in any row of the first table. For example, <em>g</em>(3) is Melon while <em>f</em><sub>3</sub>(3) is Plum, so <em>g</em> and <em>f</em><sub>3</sub> are different functions. In the same way, <em>g</em> cannot be equal to any of <em>f</em><sub>1</sub>, <em>f</em><sub>2</sub>, <em>f</em><sub>3</sub>, …. Hence our assumption that all the functions had been listed as <em>f</em><sub>1</sub>, <em>f</em><sub>2</sub>, <em>f</em><sub>3</sub>, … was false. <strong>Natural numbers can be listed—one, two, three, …—but functions cannot.</strong></p>
+<p>Turing’s brilliant idea was to apply exactly this argument to the halting problem. First, let us list all the programs in the world as <em>p</em><sub>1</sub>, <em>p</em><sub>2</sub>, <em>p</em><sub>3</sub>, …. Since a program (that is, a piece of code) is also a finite text, such a list is possible. Suppose that, for each program <em>p</em> and each input <em>i</em>, the values of <span class="nw">halt(<em>p</em>, <em>i</em>)</span> are as follows.</p>
+<div class="table-wrap"><table class="grid">
+
+<thead>
+<tr>
+<th scope="col">Program \ Input</th>
+<th scope="col"><em>i</em><sub>1</sub></th>
+<th scope="col"><em>i</em><sub>2</sub></th>
+<th scope="col"><em>i</em><sub>3</sub></th>
+<th scope="col"><em>i</em><sub>4</sub></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row"><em>p</em><sub>1</sub></th>
+<td class="diag"><strong><u>Infinite</u></strong></td>
+<td><u>Stop</u></td>
+<td><u>Infinite</u></td>
+<td><u>Stop</u></td>
+</tr>
+<tr>
+<th scope="row"><em>p</em><sub>2</sub></th>
+<td><u>Stop</u></td>
+<td class="diag"><strong><u>Infinite</u></strong></td>
+<td><u>Stop</u></td>
+<td><u>Infinite</u></td>
+</tr>
+<tr>
+<th scope="row"><em>p</em><sub>3</sub></th>
+<td><u>Infinite</u></td>
+<td><u>Infinite</u></td>
+<td class="diag"><strong><u>Stop</u></strong></td>
+<td><u>Infinite</u></td>
+</tr>
+<tr>
+<th scope="row"><em>p</em><sub>4</sub></th>
+<td><u>Stop</u></td>
+<td><u>Stop</u></td>
+<td><u>Stop</u></td>
+<td class="diag"><strong><u>Stop</u></strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>For example, <span class="nw">halt(<em>p</em><sub>1</sub>, <em>i</em><sub>1</sub>)</span> = <u>Infinite</u>, which means that <em>p</em><sub>1</sub> falls into an infinite loop when given the input <em>i</em><sub>1</sub>. Likewise, <span class="nw">halt(<em>p</em><sub>4</sub>, <em>i</em><sub>4</sub>)</span> = <u>Stop</u>, so <em>p</em><sub>4</sub> stops when given the input <em>i</em><sub>4</sub>.</p>
+<p>Now, to derive a contradiction, suppose there is a program that computes this entire table. Very much as in Cantor’s diagonal argument, we can build a new program <em>q</em> by adding a simple operation to the program halt.</p>
+<div class="program"><p class="program-title">Program <em>q</em></p><ol class="steps"><li><span class="n">(1)</span><span class="t">Accept an input <em>i<sub>x</sub></em>, where <em>x</em> is one of 1, 2, 3, ….</span></li><li><span class="n">(2)</span><span class="t">If <span class="nw">halt(<em>p<sub>x</sub></em>, <em>i<sub>x</sub></em>)</span> = <u>Infinite</u>, output <em>q</em>(<em>i<sub>x</sub></em>) = 777 and stop.</span></li><li><span class="n">(3)</span><span class="t">If <span class="nw">halt(<em>p<sub>x</sub></em>, <em>i<sub>x</sub></em>)</span> = <u>Stop</u>, go to step (4).</span></li><li><span class="n">(4)</span><span class="t">Go to step (3).</span></li></ol></div>
+
+<p>As we saw above, <em>p</em><sub>1</sub> falls into an infinite loop when given the input <em>i</em><sub>1</sub>. Hence <span class="nw">halt(<em>p</em><sub>1</sub>, <em>i</em><sub>1</sub>)</span> = <u>Infinite</u>, and <em>q</em>(<em>i</em><sub>1</sub>) stops after computing the value 777. This means that <span class="nw">halt(<em>q</em>, <em>i</em><sub>1</sub>)</span> = <u>Stop</u>. On the other hand, since <span class="nw">halt(<em>p</em><sub>4</sub>, <em>i</em><sub>4</sub>)</span> = <u>Stop</u>, <em>q</em>(<em>i</em><sub>4</sub>) is code that falls into an infinite loop, going back and forth between steps (3) and (4). In other words, <span class="nw">halt(<em>q</em>, <em>i</em><sub>4</sub>)</span> = <u>Infinite</u>.</p>
+<div class="table-wrap"><table class="grid">
+
+<thead>
+<tr>
+<th scope="col">Program \ Input</th>
+<th scope="col"><em>i</em><sub>1</sub></th>
+<th scope="col"><em>i</em><sub>2</sub></th>
+<th scope="col"><em>i</em><sub>3</sub></th>
+<th scope="col"><em>i</em><sub>4</sub></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row"><em>q</em></th>
+<td class="diag"><strong><u>Stop</u></strong></td>
+<td class="diag"><strong><u>Stop</u></strong></td>
+<td class="diag"><strong><u>Infinite</u></strong></td>
+<td class="diag"><strong><u>Infinite</u></strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>Now, just as the diagonal argument teaches, such a row can never appear in the table that computes <span class="nw">halt(<em>p</em>, <em>i</em>)</span>. That is, <em>q</em> cannot be any of <em>p</em><sub>1</sub>, <em>p</em><sub>2</sub>, <em>p</em><sub>3</sub>, …. This contradicts the assumption that <em>p</em><sub>1</sub>, <em>p</em><sub>2</sub>, <em>p</em><sub>3</sub>, … lists all programs, and therefore there is no mechanical way to compute halt, the function that tells whether a program stops. <strong>All the programs in the world can be listed mechanically, but whether they stop cannot.</strong></p>
+<h2 id="sec-5">Is Mathematics Complete?</h2>
+<p>Hilbert is known to have posed three questions about the foundations of mathematics: the <strong>completeness problem</strong>, the <strong>consistency problem</strong>, and the <strong>decidability problem</strong>. To Hilbert’s disappointment, all three were shown, one after another, to be impossible. Turing’s result is precisely that the provability of a given statement cannot be decided by a machine. Before that, Gödel had proved the first incompleteness theorem—that any reasonable mathematical system contains statements that can be neither proved nor disproved—thereby answering the first question in the negative. Gödel’s second incompleteness theorem, in turn, states that the consistency of a mathematical system, that is, the absence of contradictions in it, cannot be proved within that system; this answers Hilbert’s second question in the negative.</p>
+<p>Meanwhile, what Turing’s deliberate wrong answer tells us is that a weak form of the first incompleteness theorem can be proved by way of the halting problem. For if every true statement could be proved, the halting problem would have an answer as well. In other words, whether certain programs stop is a statement that can be neither proved nor disproved in our mathematical system.</p>
+<p>Turing’s idea even allows us to construct “a function that can never be computed in our mathematical system.” In a Turing machine, the notion of a <strong>state</strong> corresponds to the memory of a modern computer. Given a natural number <em>n</em> = 1, 2, 3, …, there can be only finitely many Turing machines with <em>n</em> states, including the input. If we pick out just those machines that eventually stop, how many steps do they take before stopping? We define the maximum number of such steps as the <strong>Busy Beaver function</strong> BB(<em>n</em>). In fact, since it is hard even to tell whether a program stops, picking out the ones that do stop and then counting their computation steps can hardly be easy. The values BB(1) = 1, BB(2) = 6, BB(3) = 21 and BB(4) = 107 can be found without much difficulty, but from BB(5) on, all that is known is that the value exceeds four million. BB(6) is greater than 10<sup>36,534</sup>. It is known that Goldbach’s conjecture is easier than computing BB(27), and that the Riemann hypothesis, a still more important open problem in number theory, is easier than computing BB(744). Whether the system of modern mathematics contains a contradiction is something no one yet knows, but it is at least easier than computing BB(748). (Scott Aaronson, “The Busy Beaver Frontier,” <em>ACM SIGACT News</em> 51, no. 3 (August 2020): 32–54.)</p>
+<p>Some functions are well defined yet impossible to compute. And some mathematical statements are true yet impossible to prove. What does this mean? That human intelligence has limits? That mathematics, built on rigorous proof, has some inborn limitation? Not at all. Reading the results of Turing and Gödel as limits on intelligence, or on mathematics, is a classic misreading. Both results concern only the scope of <strong>mechanical computation</strong> in mathematics, and mathematics clearly reaches beyond that scope. On a day when you find yourself doubting that humans are any match for machines, why not savor these words of Gödel’s? (Note: from <em>Mathematics</em>, a book published by Life in 1963.)</p>
+<figure class="closing-quote"><blockquote>
+<p>“By my theorem, one of two things holds … Either mathematics is too big for the human mind, or the human mind is more than a machine.”</p>
+</blockquote><figcaption>— Kurt Gödel</figcaption></figure>
+        </div>
+        <div class="essay-end">
+          <p>Korean original: <a href="turing-halting-problem-ko.html" hreflang="ko" lang="ko">튜링과 정지문제</a></p>
+          <p><a href="../culture.html#articles">More writing on the Culture page</a></p>
+        </div>
+      </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Sang-hyun Kim. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../js/script.js"></script>
+</body>
+</html>
