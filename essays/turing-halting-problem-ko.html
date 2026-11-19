@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>document.documentElement.className += ' js';</script>
     <title>튜링과 정지문제 — 김상현</title>
     <meta name="description" content="“모든 수학 문제를 풀어주는 컴퓨터를 만들 수 있을까”라는 질문과 이에 대한 앨런 튜링의 해답. 김상현, HORIZON (2021).">
     <meta name="author" content="김상현">
@@ -40,6 +41,17 @@
         </nav>
     </header>
 
+    <figure class="essay-hero" data-hero="goldbach" data-l-checked="지금까지 짝수 {n}개를 확인했다. 단계 (4)에는 아직 닿지 못했다." data-l-halted="{x} = p + q인 두 소수 p, q가 없다. 프로그램 4가 정지했다." data-l-pause="멈춤" data-l-play="재생">
+      <div class="hero-stage">
+        <canvas aria-hidden="true"></canvas>
+        <div class="container hero-ui">
+          <p class="hero-readout" aria-hidden="true"><span class="hero-num"></span><span class="hero-sub"></span></p>
+          <button class="hero-toggle" type="button"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.2v11.6a.6.6 0 0 0 .92.5l9-5.8a.6.6 0 0 0 0-1L3.92.7A.6.6 0 0 0 3 1.2z"/></svg></button>
+        </div>
+      </div>
+      <figcaption class="container"><p>본문의 <a href="#program-4">프로그램 4</a>가 지금 이 화면에서 돌아가고 있다. 점 하나가 짝수 <i>x</i> 하나이고, 높이는 <i>x</i>를 두 소수의 합으로 쓰는 방법의 수이다. 금빛 점은 3의 배수이다. 프로그램 4가 정지하는지 여부를 아는 사람은 아직 이 세상에 없다.</p></figcaption>
+    </figure>
+
     <main class="container">
       <article class="essay">
         <div class="essay-head">
@@ -47,7 +59,7 @@
           <h1>튜링과 정지문제</h1>
           <p class="essay-subtitle">인간, 수학, 컴퓨터</p>
           <p class="essay-byline"><span class="affil">고등과학원 수학부</span> <span class="name">김상현</span></p>
-          <p class="essay-pub">고등과학원 웹진 <a href="https://horizon.kias.re.kr/19364/">HORIZON</a>에 2021년 실린 글입니다.</p>
+          <p class="essay-pub">고등과학원 웹진 <a href="https://horizon.kias.re.kr/19364/" target="_blank" rel="noopener">HORIZON</a>에 2021년 실린 글입니다.</p>
         </div>
         <div class="essay-body">
 <h2 id="sec-1">생각하는 컴퓨터</h2>
@@ -59,20 +71,20 @@
 <p>먼저 다음과 같은 <strong>정지문제</strong>를 생각하여 보자.</p>
 <blockquote class="statement"><p>“주어진 컴퓨터 프로그램이 유한한 시간 안에 정지할지 여부를 판단할 수 있는 컴퓨터가 있는가?”</p></blockquote>
 <p>예를 들어, 다음의 프로그램은 시작과 동시에 정지할 것이다.</p>
-<div class="program"><p class="program-title">프로그램 1. 인사</p><ol class="steps"><li><span class="n">(1)</span><span class="t">“안녕?”을 출력하고 정지한다.</span></li></ol></div>
+<div class="program" id="program-1"><p class="program-title">프로그램 1. 인사</p><ol class="steps"><li><span class="n">(1)</span><span class="t">“안녕?”을 출력하고 정지한다.</span></li></ol></div>
 
 <p>혹은 시간이 꽤 지난 후에야 정지하는 아래와 같은 경우도 있다.</p>
-<div class="program"><p class="program-title">프로그램 2. 100억 게임</p><ol class="steps"><li><span class="n">(1)</span><span class="t">변수 <i>x</i> 에 1을 대입한다.</span></li><li><span class="n">(2)</span><span class="t"><i>x</i> 의 값을 하나 증가시킨다.</span></li><li><span class="n">(3)</span><span class="t"><i>x</i>의 값이 100억보다 작다면 (2)로 돌아가고, 만일 그렇지 않다면 (4)로 간다.</span></li><li><span class="n">(4)</span><span class="t"><i>x</i>의 값을 출력하고 정지한다.</span></li></ol></div>
+<div class="program" id="program-2"><p class="program-title">프로그램 2. 100억 게임</p><ol class="steps"><li><span class="n">(1)</span><span class="t">변수 <i>x</i> 에 1을 대입한다.</span></li><li><span class="n">(2)</span><span class="t"><i>x</i> 의 값을 하나 증가시킨다.</span></li><li><span class="n">(3)</span><span class="t"><i>x</i>의 값이 100억보다 작다면 (2)로 돌아가고, 만일 그렇지 않다면 (4)로 간다.</span></li><li><span class="n">(4)</span><span class="t"><i>x</i>의 값을 출력하고 정지한다.</span></li></ol></div>
 
 
 
 
 <p>프로그램이 무한루프에 빠져 영원히 정지하지 못하는 경우도 허다하다. 화장실 칸의 왼쪽과 오른쪽 벽에 각각 “반대쪽 벽을 보시오”라는 낙서를 써 넣으면 앉은 사람을 무한루프에 빠뜨릴 것이다. 프로그램으로 이를 표현해 보자.</p>
-<div class="program"><p class="program-title">프로그램 3. 탁구</p><ol class="steps"><li><span class="n">(1)</span><span class="t">“왼쪽”을 출력하고 (2)로 간다.</span></li><li><span class="n">(2)</span><span class="t">“오른쪽”을 출력하고 (1)로 간다.</span></li></ol></div>
+<div class="program" id="program-3"><p class="program-title">프로그램 3. 탁구</p><ol class="steps"><li><span class="n">(1)</span><span class="t">“왼쪽”을 출력하고 (2)로 간다.</span></li><li><span class="n">(2)</span><span class="t">“오른쪽”을 출력하고 (1)로 간다.</span></li></ol></div>
 
 
 <p>주어진 컴퓨터 프로그램이 유한한 시간 안에 정지할 지를 판별하는 것은 실용적으로도 매우 중요하다. 현대의 컴퓨터 프로그래밍 언어 번역기(컴파일러)는 이 과정을 상당히 효율적으로 하여 프로그램의 버그를 미리 차단한다. 혹시 그러한 작업을 완벽하게 해 내는 컴파일러가 있을까? 한번 다음의 프로그램을 생각하여 보자.</p>
-<div class="program"><p class="program-title">프로그램 4. 골드바흐 추측</p><ol class="steps"><li><span class="n">(1)</span><span class="t"><i>x</i> 에 2를 대입한다.</span></li><li><span class="n">(2)</span><span class="t"><i>x</i>의 값을 2만큼 증가시킨다.</span></li><li><span class="n">(3)</span><span class="t">만일 2 ≤ <i>p</i> ≤ <i>q</i> ≤ <i>x</i> 를 만족하는 두 소수 <i>p</i>, <i>q</i>가 존재하여 <i>x</i> = <i>p</i> + <i>q</i> 를 만족하면 (2)로 돌아간다; 그러한 <i>p</i>, <i>q</i> 가 없다면 (4)로 간다.</span></li><li><span class="n">(4)</span><span class="t">정지한다.</span></li></ol></div>
+<div class="program" id="program-4"><p class="program-title">프로그램 4. 골드바흐 추측</p><ol class="steps"><li><span class="n">(1)</span><span class="t"><i>x</i> 에 2를 대입한다.</span></li><li><span class="n">(2)</span><span class="t"><i>x</i>의 값을 2만큼 증가시킨다.</span></li><li><span class="n">(3)</span><span class="t">만일 2 ≤ <i>p</i> ≤ <i>q</i> ≤ <i>x</i> 를 만족하는 두 소수 <i>p</i>, <i>q</i>가 존재하여 <i>x</i> = <i>p</i> + <i>q</i> 를 만족하면 (2)로 돌아간다; 그러한 <i>p</i>, <i>q</i> 가 없다면 (4)로 간다.</span></li><li><span class="n">(4)</span><span class="t">정지한다.</span></li></ol></div>
 
 
 
@@ -206,7 +218,7 @@
 </table></div>
 <p>예를 들어, 프로그램 <span class="nw">halt(<i>p</i><sub>1</sub>, <i>i</i><sub>1</sub>)</span> = <u>무한</u> 인데 이는 <i>p</i><sub>1</sub>에 <i>i</i><sub>1</sub>를 입력할 경우 무한루프에 빠진다는 의미이다. 마찬가지로 <span class="nw">halt(<i>p</i><sub>4</sub>,<i>i</i><sub>4</sub>)</span> = <u>정지</u> 이므로 <i>p</i><sub>4</sub>에 <i>i</i><sub>4</sub> 를 입력하면 정지하게 된다.</p>
 <p>이제 모순을 이끌어 내기 위하여, 위의 표를 모두 계산해내는 프로그램이 있다고 하자. 칸토어의 대각논법과 매우 흡사하게, 우리는 halt 라는 프로그램에 간단한 작업을 추가하여 새로운 프로그램 <i>q</i> 를 만들 수 있다.</p>
-<div class="program"><p class="program-title">프로그램 <i>q</i></p><ol class="steps"><li><span class="n">(1)</span><span class="t">입력 <i>i<sub>x</sub></i> 를 받아들인다. 여기서 <i>x</i> = 1, 2, 3, … 중 하나이다.</span></li><li><span class="n">(2)</span><span class="t">만일 <span class="nw">halt(<i>p<sub>x</sub></i>,<i>i<sub>x</sub></i>)</span> = <u>무한</u> 이라면, <i>q</i>(<i>i<sub>x</sub></i>) = 777 을 출력하고 정지한다.</span></li><li><span class="n">(3)</span><span class="t">만일 <span class="nw">halt(<i>p<sub>x</sub></i>,<i>i<sub>x</sub></i>)</span> = <u>정지</u> 라면, 단계 (4) 로 이동한다.</span></li><li><span class="n">(4)</span><span class="t">단계 (3)으로 이동한다.</span></li></ol></div>
+<div class="program" id="program-q"><p class="program-title">프로그램 <i>q</i></p><ol class="steps"><li><span class="n">(1)</span><span class="t">입력 <i>i<sub>x</sub></i> 를 받아들인다. 여기서 <i>x</i> = 1, 2, 3, … 중 하나이다.</span></li><li><span class="n">(2)</span><span class="t">만일 <span class="nw">halt(<i>p<sub>x</sub></i>,<i>i<sub>x</sub></i>)</span> = <u>무한</u> 이라면, <i>q</i>(<i>i<sub>x</sub></i>) = 777 을 출력하고 정지한다.</span></li><li><span class="n">(3)</span><span class="t">만일 <span class="nw">halt(<i>p<sub>x</sub></i>,<i>i<sub>x</sub></i>)</span> = <u>정지</u> 라면, 단계 (4) 로 이동한다.</span></li><li><span class="n">(4)</span><span class="t">단계 (3)으로 이동한다.</span></li></ol></div>
 
 
 
@@ -255,5 +267,6 @@
     </footer>
 
     <script src="../js/script.js"></script>
+    <script src="hero.js" defer></script>
 </body>
 </html>

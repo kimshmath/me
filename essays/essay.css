@@ -26,6 +26,142 @@
   padding-top: calc(var(--nav-height) + 3rem);
 }
 
+/* ---------- Hero: a live computation (hero.js) ---------- */
+.essay-hero {
+  display: none;                     /* shown only when scripts run: see the inline script in the head */
+  margin: 0;
+}
+
+.js .essay-hero {
+  display: block;
+}
+
+.hero-stage {
+  position: relative;
+  height: clamp(19rem, 56vh, 36rem);
+  overflow: hidden;
+}
+
+.hero-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.essay-hero[data-hero="fourcolor"] canvas {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 56%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 56%, transparent 100%);
+}
+
+.hero-ui {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.hero-readout {
+  position: absolute;
+  left: 2rem;
+  top: calc(var(--nav-height) + 1.4rem);
+  margin: 0;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+  color: var(--text-main);
+}
+
+.hero-num {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.hero-sub {
+  display: block;
+  max-width: min(27rem, 60vw);       /* stays inside the empty corner of the plot */
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.essay-hero[data-hero="fourcolor"] .hero-readout {
+  left: 1.25rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(8, 8, 10, 0.66);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.hero-toggle {
+  position: absolute;
+  right: 2rem;
+  bottom: 1.1rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background: rgba(8, 8, 10, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--text-main);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.essay-hero[data-hero="goldbach"] .hero-toggle {
+  bottom: calc(7% + 0.9rem);         /* just above the axis of the plot */
+}
+
+.hero-toggle:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.essay-page .hero-toggle:focus-visible {
+  border-radius: 50%;                /* the focus ring follows the round button */
+}
+
+.hero-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.hero-toggle .i-play,
+.hero-toggle.is-paused .i-pause {
+  display: none;
+}
+
+.hero-toggle.is-paused .i-play {
+  display: block;
+}
+
+.essay-hero figcaption p {
+  max-width: var(--essay-measure);
+  margin: 0.9rem 0 0;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.essay-page:lang(ko) .essay-hero {
+  word-break: keep-all;              /* Korean lines break between words, as in the essay body */
+  overflow-wrap: break-word;
+}
+
+/* The hero already clears the fixed header. */
+.js .essay-hero ~ main .essay {
+  padding-top: 2.5rem;
+}
+
 /* ---------- Head ---------- */
 .essay-head {
   margin: 0.5rem 0 3rem;
@@ -176,6 +312,10 @@
   padding: 0;
   margin: 2.4em 0 0.8em;
   text-wrap: balance;
+  scroll-margin-top: calc(var(--nav-height) + 1.5rem);
+}
+
+.program {
   scroll-margin-top: calc(var(--nav-height) + 1.5rem);
 }
 
@@ -434,6 +574,31 @@ table.data tbody th {
     padding-top: calc(var(--nav-height) + 2rem);
   }
 
+  .hero-stage {
+    height: clamp(17rem, 46vh, 24rem);
+  }
+
+  .hero-readout {
+    left: 1.25rem;
+    top: calc(var(--nav-height) + 0.9rem);
+  }
+
+  .essay-hero[data-hero="fourcolor"] .hero-readout {
+    left: 0.6rem;
+  }
+
+  .hero-num {
+    font-size: 0.95rem;
+  }
+
+  .hero-toggle {
+    right: 1.25rem;
+  }
+
+  .js .essay-hero ~ main .essay {
+    padding-top: 2rem;
+  }
+
   .program,
   .definition {
     padding: 0.85rem 1rem;
@@ -470,6 +635,7 @@ table.data tbody th {
   .bg-blobs,
   body > header,
   body > footer,
+  .essay-hero,
   .lang-switch,
   .essay-toc,
   .essay-end {

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>document.documentElement.className += ' js';</script>
     <title>Turing and the Halting Problem — Sang-hyun Kim</title>
     <meta name="description" content="“Can we build a computer that solves every mathematical problem?” — and the answer given by Alan Turing. Sang-hyun Kim, HORIZON (2021), English version.">
     <meta name="author" content="Sang-hyun Kim">
@@ -37,6 +38,17 @@
         </nav>
     </header>
 
+    <figure class="essay-hero" data-hero="goldbach" data-l-checked="{n} even numbers checked so far. Step (4) has not been reached." data-l-halted="{x} is not a sum of two primes. Program 4 has halted." data-l-pause="Pause" data-l-play="Play">
+      <div class="hero-stage">
+        <canvas aria-hidden="true"></canvas>
+        <div class="container hero-ui">
+          <p class="hero-readout" aria-hidden="true"><span class="hero-num"></span><span class="hero-sub"></span></p>
+          <button class="hero-toggle" type="button"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.2v11.6a.6.6 0 0 0 .92.5l9-5.8a.6.6 0 0 0 0-1L3.92.7A.6.6 0 0 0 3 1.2z"/></svg></button>
+        </div>
+      </div>
+      <figcaption class="container"><p><a href="#program-4">Program 4</a> of this essay is running on this page. Each dot is one even number <i>x</i>; its height is the number of ways to write <i>x</i> as a sum of two primes. The gold dots are multiples of 3. No one in the world yet knows whether Program 4 stops.</p></figcaption>
+    </figure>
+
     <main class="container">
       <article class="essay">
         <div class="essay-head">
@@ -44,7 +56,7 @@
           <h1>Turing and the Halting Problem</h1>
           <p class="essay-subtitle">Humans, Mathematics, and Computers</p>
           <p class="essay-byline"><span class="name">Sang-hyun Kim</span> <span class="affil">School of Mathematics, Korea Institute for Advanced Study</span></p>
-          <p class="essay-pub">Originally published in Korean in <a href="https://horizon.kias.re.kr/19364/">HORIZON</a>, the KIAS webzine, in 2021.</p>
+          <p class="essay-pub">Originally published in Korean in <a href="https://horizon.kias.re.kr/19364/" target="_blank" rel="noopener">HORIZON</a>, the KIAS webzine, in 2021.</p>
         </div>
         <div class="essay-body">
 <h2 id="sec-1">Thinking Computers</h2>
@@ -58,16 +70,16 @@
 <p>“Is there a computer that can determine whether a given computer program will stop within a finite amount of time?”</p>
 </blockquote>
 <p>For example, the following program stops as soon as it starts.</p>
-<div class="program"><p class="program-title">Program 1. Greeting</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Print “Hello!” and stop.</span></li></ol></div>
+<div class="program" id="program-1"><p class="program-title">Program 1. Greeting</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Print “Hello!” and stop.</span></li></ol></div>
 
 <p>Other programs, like the one below, stop only after quite a long time.</p>
-<div class="program"><p class="program-title">Program 2. The Ten-Billion Game</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Assign 1 to the variable <em>x</em>.</span></li><li><span class="n">(2)</span><span class="t">Increase the value of <em>x</em> by one.</span></li><li><span class="n">(3)</span><span class="t">If the value of <em>x</em> is less than 10 billion, go back to (2); otherwise, go to (4).</span></li><li><span class="n">(4)</span><span class="t">Print the value of <em>x</em> and stop.</span></li></ol></div>
+<div class="program" id="program-2"><p class="program-title">Program 2. The Ten-Billion Game</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Assign 1 to the variable <em>x</em>.</span></li><li><span class="n">(2)</span><span class="t">Increase the value of <em>x</em> by one.</span></li><li><span class="n">(3)</span><span class="t">If the value of <em>x</em> is less than 10 billion, go back to (2); otherwise, go to (4).</span></li><li><span class="n">(4)</span><span class="t">Print the value of <em>x</em> and stop.</span></li></ol></div>
 
 <p>It is also all too common for a program to fall into an infinite loop and never stop. Scrawl “Look at the opposite wall” on both the left and the right wall of a toilet stall, and whoever sits there will be caught in an infinite loop. Let us express this as a program.</p>
-<div class="program"><p class="program-title">Program 3. Ping-Pong</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Print “Left” and go to (2).</span></li><li><span class="n">(2)</span><span class="t">Print “Right” and go to (1).</span></li></ol></div>
+<div class="program" id="program-3"><p class="program-title">Program 3. Ping-Pong</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Print “Left” and go to (2).</span></li><li><span class="n">(2)</span><span class="t">Print “Right” and go to (1).</span></li></ol></div>
 
 <p>Deciding whether a given computer program will stop within a finite amount of time is also of great practical importance. Modern translators for programming languages (compilers) carry out this check quite efficiently, catching bugs in programs in advance. Could there be a compiler that does this job perfectly? Consider the following program.</p>
-<div class="program"><p class="program-title">Program 4. Goldbach’s Conjecture</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Assign 2 to <em>x</em>.</span></li><li><span class="n">(2)</span><span class="t">Increase the value of <em>x</em> by 2.</span></li><li><span class="n">(3)</span><span class="t">If there exist two primes <em>p</em> and <em>q</em> with 2 ≤ <em>p</em> ≤ <em>q</em> ≤ <em>x</em> such that <em>x</em> = <em>p</em> + <em>q</em>, go back to (2); if there are no such <em>p</em> and <em>q</em>, go to (4).</span></li><li><span class="n">(4)</span><span class="t">Stop.</span></li></ol></div>
+<div class="program" id="program-4"><p class="program-title">Program 4. Goldbach’s Conjecture</p><ol class="steps"><li><span class="n">(1)</span><span class="t">Assign 2 to <em>x</em>.</span></li><li><span class="n">(2)</span><span class="t">Increase the value of <em>x</em> by 2.</span></li><li><span class="n">(3)</span><span class="t">If there exist two primes <em>p</em> and <em>q</em> with 2 ≤ <em>p</em> ≤ <em>q</em> ≤ <em>x</em> such that <em>x</em> = <em>p</em> + <em>q</em>, go back to (2); if there are no such <em>p</em> and <em>q</em>, go to (4).</span></li><li><span class="n">(4)</span><span class="t">Stop.</span></li></ol></div>
 
 <p>It is obvious that the first two steps finish in a finite amount of time. What about the third? Given a natural number <em>x</em>, we need only increase <em>p</em> through 1, 2, 3, 4, 5, … and check whether <em>p</em> and <em>x</em> − <em>p</em> are both prime for some <em>p</em>. Many methods are known for deciding by computer whether a given number is prime, so step (3), too, finishes in a finite amount of time. Depending on the outcome of (3), however, we may repeat (2), or we may go on to (4). And the claim that this program repeats (2) and (3) forever is equivalent to the following statement:</p>
 <blockquote class="statement">
@@ -199,7 +211,7 @@
 </table></div>
 <p>For example, <span class="nw">halt(<em>p</em><sub>1</sub>, <em>i</em><sub>1</sub>)</span> = <u>Infinite</u>, which means that <em>p</em><sub>1</sub> falls into an infinite loop when given the input <em>i</em><sub>1</sub>. Likewise, <span class="nw">halt(<em>p</em><sub>4</sub>, <em>i</em><sub>4</sub>)</span> = <u>Stop</u>, so <em>p</em><sub>4</sub> stops when given the input <em>i</em><sub>4</sub>.</p>
 <p>Now, to derive a contradiction, suppose there is a program that computes this entire table. Very much as in Cantor’s diagonal argument, we can build a new program <em>q</em> by adding a simple operation to the program halt.</p>
-<div class="program"><p class="program-title">Program <em>q</em></p><ol class="steps"><li><span class="n">(1)</span><span class="t">Accept an input <em>i<sub>x</sub></em>, where <em>x</em> is one of 1, 2, 3, ….</span></li><li><span class="n">(2)</span><span class="t">If <span class="nw">halt(<em>p<sub>x</sub></em>, <em>i<sub>x</sub></em>)</span> = <u>Infinite</u>, output <em>q</em>(<em>i<sub>x</sub></em>) = 777 and stop.</span></li><li><span class="n">(3)</span><span class="t">If <span class="nw">halt(<em>p<sub>x</sub></em>, <em>i<sub>x</sub></em>)</span> = <u>Stop</u>, go to step (4).</span></li><li><span class="n">(4)</span><span class="t">Go to step (3).</span></li></ol></div>
+<div class="program" id="program-q"><p class="program-title">Program <em>q</em></p><ol class="steps"><li><span class="n">(1)</span><span class="t">Accept an input <em>i<sub>x</sub></em>, where <em>x</em> is one of 1, 2, 3, ….</span></li><li><span class="n">(2)</span><span class="t">If <span class="nw">halt(<em>p<sub>x</sub></em>, <em>i<sub>x</sub></em>)</span> = <u>Infinite</u>, output <em>q</em>(<em>i<sub>x</sub></em>) = 777 and stop.</span></li><li><span class="n">(3)</span><span class="t">If <span class="nw">halt(<em>p<sub>x</sub></em>, <em>i<sub>x</sub></em>)</span> = <u>Stop</u>, go to step (4).</span></li><li><span class="n">(4)</span><span class="t">Go to step (3).</span></li></ol></div>
 
 <p>As we saw above, <em>p</em><sub>1</sub> falls into an infinite loop when given the input <em>i</em><sub>1</sub>. Hence <span class="nw">halt(<em>p</em><sub>1</sub>, <em>i</em><sub>1</sub>)</span> = <u>Infinite</u>, and <em>q</em>(<em>i</em><sub>1</sub>) stops after computing the value 777. This means that <span class="nw">halt(<em>q</em>, <em>i</em><sub>1</sub>)</span> = <u>Stop</u>. On the other hand, since <span class="nw">halt(<em>p</em><sub>4</sub>, <em>i</em><sub>4</sub>)</span> = <u>Stop</u>, <em>q</em>(<em>i</em><sub>4</sub>) is code that falls into an infinite loop, going back and forth between steps (3) and (4). In other words, <span class="nw">halt(<em>q</em>, <em>i</em><sub>4</sub>)</span> = <u>Infinite</u>.</p>
 <div class="table-wrap"><table class="grid">
@@ -247,5 +259,6 @@
     </footer>
 
     <script src="../js/script.js"></script>
+    <script src="hero.js" defer></script>
 </body>
 </html>

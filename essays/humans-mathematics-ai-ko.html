@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>document.documentElement.className += ' js';</script>
     <title>인간, 수학, AI — 김상현</title>
     <meta name="description" content="‘기계는 생각할 수 있는가’라는 물음을 둘러싼 논의를 수학의 사례를 중심으로 개관한다. 김상현 (고등과학원 수학부 교수).">
     <meta name="author" content="김상현">
@@ -39,6 +40,17 @@
             </ul>
         </nav>
     </header>
+
+    <figure class="essay-hero" data-hero="fourcolor" data-l-map="나라 {c}, 국경 {b}, 색 4" data-l-clash="같은 색끼리 맞닿은 국경 {k}" data-l-pause="멈춤" data-l-play="재생">
+      <div class="hero-stage">
+        <canvas aria-hidden="true"></canvas>
+        <div class="container hero-ui">
+          <p class="hero-readout" aria-hidden="true"><span class="hero-num"></span><span class="hero-sub"></span></p>
+          <button class="hero-toggle" type="button"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.2v11.6a.6.6 0 0 0 .92.5l9-5.8a.6.6 0 0 0 0-1L3.92.7A.6.6 0 0 0 3 1.2z"/></svg></button>
+        </div>
+      </div>
+      <figcaption class="container"><p>같은 색의 두 나라가 맞닿을 때마다, 기계가 네 가지 색만으로 지도를 고쳐 칠한다. 이웃한 나라의 색이 서로 다른지는 한눈에 확인할 수 있다. 네 가지 색으로 충분한 이유는 이 그림 어디에도 보이지 않는다. 검증과 이해는 별개의 문제이다(<a href="#sec-6">6절</a>).</p></figcaption>
+    </figure>
 
     <main class="container">
       <article class="essay">
@@ -164,5 +176,6 @@
     </footer>
 
     <script src="../js/script.js"></script>
+    <script src="hero.js" defer></script>
 </body>
 </html>

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>document.documentElement.className += ' js';</script>
     <title>Humans, Mathematics, and AI — Sang-hyun Kim</title>
     <meta name="description" content="A survey of the debate surrounding the question “Can machines think?”, with a focus on the case of mathematics. Sang-hyun Kim (KIAS).">
     <meta name="author" content="Sang-hyun Kim">
@@ -36,6 +37,17 @@
             </ul>
         </nav>
     </header>
+
+    <figure class="essay-hero" data-hero="fourcolor" data-l-map="{c} countries, {b} borders, 4 colors" data-l-clash="Borders with the same color on both sides: {k}" data-l-pause="Pause" data-l-play="Play">
+      <div class="hero-stage">
+        <canvas aria-hidden="true"></canvas>
+        <div class="container hero-ui">
+          <p class="hero-readout" aria-hidden="true"><span class="hero-num"></span><span class="hero-sub"></span></p>
+          <button class="hero-toggle" type="button"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.2v11.6a.6.6 0 0 0 .92.5l9-5.8a.6.6 0 0 0 0-1L3.92.7A.6.6 0 0 0 3 1.2z"/></svg></button>
+        </div>
+      </div>
+      <figcaption class="container"><p>Whenever two countries of the same color come to touch, the machine repairs the coloring, still using only four colors. That neighboring countries differ in color can be checked at a glance. Why four colors suffice is nowhere to be seen in the picture. Verification and understanding are separate matters (<a href="#sec-6">Section 6</a>).</p></figcaption>
+    </figure>
 
     <main class="container">
       <article class="essay">
@@ -161,5 +173,6 @@
     </footer>
 
     <script src="../js/script.js"></script>
+    <script src="hero.js" defer></script>
 </body>
 </html>
