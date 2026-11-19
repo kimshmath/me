@@ -8,15 +8,20 @@
               grows is known as Goldbach's comet. The program stops only at a counterexample to
               Goldbach's conjecture, so nobody knows whether it halts.
 
-   fourcolor  "Humans, Mathematics, and AI". A map (the Voronoi cells of slowly drifting points)
-              that the machine keeps properly coloured with four colours. Whenever the drift makes
-              two countries of the same colour touch, it repairs the colouring by recolouring as
-              few countries as it can. That a colouring is correct is visible at a glance; why four
-              colours always suffice (Appel-Haken 1976) is not.
+   unit       "Humans, Mathematics, and AI". The unit distance problem: how many pairs among n points
+              in the plane can be at distance exactly 1? Erdos (1946) conjectured n^(1 + o(1)); in May
+              2026 an AI model disproved it with lattices coming from number fields of large degree,
+              projected to the plane. The hero carries out that recipe in a field of degree 8: it
+              finds the 931 lattice points in a window and all 2,580 pairs at distance exactly 1, in
+              exact integer arithmetic, and draws them. The lattice lives in eight dimensions; its four
+              embeddings give four different pictures, and the hero turns the plane of projection
+              from one to the next. In between, the lengths spread out; at each embedding all are 1.
 
    Markup (see the essay pages): <figure class="essay-hero" data-hero="..."> with a <canvas>,
    a .hero-readout (.hero-num, .hero-sub) and a .hero-toggle button. Text templates live in
    data-* attributes on the figure, so the wording is edited in the HTML, not here.
+   The comet fills the whole stage; the lattice figure is round, so its hero places a square
+   canvas inside the stage and lays out its text beside or above it (see essay.css).
 
    Motion: honours prefers-reduced-motion (starts paused on a finished still), pauses when the
    hero is off screen or the tab is hidden, and has a pause/play button. */
@@ -35,6 +40,12 @@
     if (el && el.textContent !== s) el.textContent = s;
   }
 
+  /* The colours of both heroes, from 0 to 1: blue, violet, rose, gold, ivory. */
+  var STOPS = [
+    [0.00, 92, 134, 255], [0.22, 150, 142, 252], [0.38, 232, 150, 198],
+    [0.50, 255, 200, 124], [0.72, 255, 224, 168], [1.00, 255, 246, 226]
+  ];
+
   /* ------------------------------------------------------------------------------------------
      Runner shared by both heroes
      ------------------------------------------------------------------------------------------ */
@@ -45,11 +56,30 @@
     if (!stage || !canvas || !canvas.getContext) return;
 
     var ui = {
+      readout: root.querySelector('.hero-readout'),
       num: root.querySelector('.hero-num'),
       sub: root.querySelector('.hero-sub'),
       alignLeft: function () {              // left edge of the page's text column, in CSS px
         var r = root.querySelector('.hero-readout');
         return r ? r.getBoundingClientRect().left - stage.getBoundingClientRect().left : 24;
+      },
+      readoutBottom: function () {
+        var r = root.querySelector('.hero-readout');
+        return r ? r.getBoundingClientRect().bottom - stage.getBoundingClientRect().top : 0;
+      },
+      toggleBottom: function () {
+        return toggle ? toggle.getBoundingClientRect().bottom - stage.getBoundingClientRect().top : 0;
+      },
+      captionHeight: function (width) {     // how tall the caption would be if it were set this wide
+        var p = root.querySelector('figcaption p');
+        if (!p) return 0;
+        var m = p.cloneNode(true);
+        m.setAttribute('aria-hidden', 'true');
+        m.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;left:0;top:0;margin:0;max-width:none;width:' + width + 'px';
+        p.parentNode.appendChild(m);
+        var h = m.getBoundingClientRect().height;
+        p.parentNode.removeChild(m);
+        return h;
       },
       headerHeight: function () {
         var h = document.querySelector('body > header');
@@ -102,6 +132,7 @@
     label();
     size();
     kick();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(size);   // text may wrap differently once the fonts are in
   }
 
   /* ------------------------------------------------------------------------------------------
@@ -156,10 +187,6 @@
       if (v % 3 !== 0 && t > 0.38) t = 0.38;     // e.g. 5 * 7 * 11 * 13 | x would otherwise drift into gold
       return Math.round(255 * clamp(t, 0, 1));
     }
-    var STOPS = [
-      [0.00, 92, 134, 255], [0.22, 150, 142, 252], [0.38, 232, 150, 198],
-      [0.50, 255, 200, 124], [0.72, 255, 224, 168], [1.00, 255, 246, 226]
-    ];
     var ramp = new Float32Array(256 * 3);
     (function () {
       for (var i = 0; i < 256; i++) {
@@ -349,357 +376,420 @@
   }
 
   /* ------------------------------------------------------------------------------------------
-     fourcolor: a drifting map, kept four-coloured
+     unit: a lattice in eight dimensions and its shadows in the plane
      ------------------------------------------------------------------------------------------ */
-  function fourcolor(root, canvas, ui) {
+  function unit(root, canvas, ui) {
     var ctx = canvas.getContext('2d');
-    var W = 0, H = 0, dpr = 1;
-    var PAL = [[50, 86, 180], [200, 160, 86], [214, 206, 189], [116, 47, 81]];   // blue, gold, ivory, wine
-    var SPREAD = 0.8, HOLD = 0.42;                         // seconds: a recolouring spreading; a clash shown before its repair
-    var BG = '#08080a';
-    var N = 0, hx, hy, ax, ay, w1, w2, p1, p2, shade;     // homes and orbits of the points
-    var sx, sy, cand;                                      // positions now; candidate neighbours
-    var polyX = [], polyY = [], polyO = [];                // cell i: vertices, and who lies across each edge
-    var color, on, stamp, onList = [], nbrs = [], frameId = 0, use = [0, 0, 0, 0];
-    var mark, markId = 0;
-    var fromC, toC, t0C, reach;                            // displayed colour: the new one spreads over the old
-    var flashes = [];                                      // clashes being repaired
-    var time = 0, lastText = 0, shown = 0, ready = false;
-    var seedRand = 20261119;
-    function rnd() {                                       // small deterministic generator
-      seedRand = (seedRand + 0x6D2B79F5) | 0;
-      var t = Math.imul(seedRand ^ (seedRand >>> 15), 1 | seedRand);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    }
+    var glow = document.createElement('canvas'), gctx = glow.getContext('2d');   // small copy, drawn back enlarged: a soft halo
 
-    function layout() {
-      var area = clamp(W * H / 72, 5600, 15000);           // CSS px^2 per country
-      var s = Math.sqrt(area / 0.866), rowH = s * 0.866;
-      var cols = Math.ceil(W / s) + 4, rows = Math.ceil(H / rowH) + 4, r, c, i;
-      N = cols * rows;
-      hx = new Float32Array(N); hy = new Float32Array(N); ax = new Float32Array(N); ay = new Float32Array(N);
-      w1 = new Float32Array(N); w2 = new Float32Array(N); p1 = new Float32Array(N); p2 = new Float32Array(N);
-      shade = new Float32Array(N); sx = new Float32Array(N); sy = new Float32Array(N);
-      cand = [];
-      for (r = 0, i = 0; r < rows; r++) for (c = 0; c < cols; c++, i++) {
-        hx[i] = (c - 1.5 + (r & 1 ? 0.5 : 0) + (rnd() - 0.5) * 0.36) * s;
-        hy[i] = (r - 1.5 + (rnd() - 0.5) * 0.36) * rowH;
-        ax[i] = s * (0.30 + 0.16 * rnd()); ay[i] = s * (0.30 + 0.16 * rnd());
-        w1[i] = (rnd() < 0.5 ? -1 : 1) * 2 * Math.PI / (170 + 170 * rnd());   // a slow drift: one loop takes minutes
-        w2[i] = (rnd() < 0.5 ? -1 : 1) * 2 * Math.PI / (170 + 170 * rnd());
-        p1[i] = rnd() * 6.283; p2[i] = rnd() * 6.283;
-        shade[i] = 0.93 + 0.14 * rnd();
-        var list = [];
-        for (var dr = -3; dr <= 3; dr++) for (var dc = -3; dc <= 3; dc++) {
-          var rr = r + dr, cc = c + dc;
-          if ((dr || dc) && rr >= 0 && rr < rows && cc >= 0 && cc < cols) list.push(rr * cols + cc);
-        }
-        cand.push(list);
+    /* ---- arithmetic in Z[z], z = exp(2 pi i / 15): the integers of a number field of degree 8 ---- */
+    var M = 15, D = 8, F = 4;
+    var REPS = [1, 2, 4, 7];                       // the embeddings z -> z^1, z^2, z^4, z^7, one from each conjugate pair
+    var TOP = [-1, 1, 0, -1, 1, -1, 0, 1];         // z^8 = -1 + z - z^3 + z^4 - z^5 + z^7
+    var POW = [], EC = [], ES = [];                // z^j in the basis 1, z, ..., z^7; cosines and sines of the embeddings
+    (function () {
+      var v = [1, 0, 0, 0, 0, 0, 0, 0], j, k, top, nv;
+      for (j = 0; j < M; j++) {
+        POW.push(v);
+        top = v[D - 1]; nv = [0];
+        for (k = 0; k < D - 1; k++) nv.push(v[k]);
+        for (k = 0; k < D; k++) nv[k] += top * TOP[k];
+        v = nv;
       }
-      color = new Int8Array(N).fill(-1); use = [0, 0, 0, 0];
-      on = new Uint8Array(N * N); stamp = new Int32Array(N * N); onList = [];
-      mark = new Int32Array(N); markId = 0;
-      fromC = new Int8Array(N); toC = new Int8Array(N); t0C = new Float64Array(N); reach = new Float32Array(N);
-      polyX = []; polyY = []; polyO = []; nbrs = [];
-      for (i = 0; i < N; i++) { polyX.push([]); polyY.push([]); polyO.push([]); nbrs.push([]); }
-      flashes = []; ready = false; frameId = 0;
+      for (j = 0; j < F; j++) {
+        EC.push([]); ES.push([]);
+        for (k = 0; k < D; k++) {
+          EC[j].push(Math.cos(2 * Math.PI * REPS[j] * k / M));
+          ES[j].push(Math.sin(2 * Math.PI * REPS[j] * k / M));
+        }
+      }
+    })();
+    function mul(x, y) {
+      var c = [], out = [0, 0, 0, 0, 0, 0, 0, 0], i, j;
+      for (i = 0; i < 2 * D - 1; i++) c.push(0);
+      for (i = 0; i < D; i++) if (x[i]) for (j = 0; j < D; j++) c[i + j] += x[i] * y[j];
+      for (i = 0; i < 2 * D - 1; i++) if (c[i]) for (j = 0; j < D; j++) out[j] += c[i] * POW[i][j];
+      return out;
+    }
+    function conj(x) {                             // complex conjugation: z -> z^14
+      var out = [0, 0, 0, 0, 0, 0, 0, 0], i, j;
+      for (i = 0; i < D; i++) if (x[i]) for (j = 0; j < D; j++) out[j] += x[i] * POW[(M - i) % M][j];
+      return out;
     }
 
-    function resize(cw, chh, d) {
-      var first = !W;
-      dpr = d;
-      canvas.width = Math.round(cw * dpr); canvas.height = Math.round(chh * dpr);
-      if (first || Math.abs(cw - W) > 40 || Math.abs(chh - H) > 40) { W = cw; H = chh; layout(); update(0); }
-      else { W = cw; H = chh; }
-    }
+    /* ---- the configuration ----
+       The recipe is Sawin's form of the construction (arXiv:2605.20579), with the ideal taken to be Z[z] itself and
+       the window centred at 0. Take alpha in the real subfield, positive in every embedding. The points are the
+       x in Z[z] with |s_j(x)|^2 <= R^2 s_j(alpha) for all four embeddings s_j. Two points are joined when their
+       difference b satisfies b * conj(b) = alpha. In the plane of s_j, scaled by 1 / sqrt(s_j(alpha)), joined
+       points are at distance exactly 1, and no other two points are (s_j is injective on the field).
+       Here alpha is a prime above 31 (31 = 2 * 15 + 1 splits completely), so there are 2 * 30 such b.
+       In a field of degree 8 this does not beat a square grid; the disproof needs fields of far larger degree. */
+    var BETA = [1, -1, -1, 2, -1, 0, 1, -2];       // one b, of norm 31
+    var ALPHA = mul(BETA, conj(BETA));
+    var RWIN = 1.45;
+    var SC = [];                                   // 1 / sqrt(s_j(alpha))
+    var n = 0, pairs = 0;
+    var PX = [], PY = [];                          // PX[j][i], PY[j][i]: point i in the plane of embedding j
+    var DEG = null, maxDeg = 1;                    // number of partners of each point
+    var EA = null, EB = null, ELV = null;          // pairs: the later point, the earlier point, the level that completes the pair
+    var LVL = null, LN = [], LP = [], levels = 0;  // level of each point (its place in the order of arrival); points and pairs of each level
+    var UX = [], UY = [];                          // the 60 differences b in each embedding (unit complex numbers)
 
-    /* Voronoi cell of point i inside the stage: start from the rectangle, cut by each bisector. */
-    var tx = [], ty = [], to = [], dd = [];
-    function cell(i) {
-      var X = polyX[i], Y = polyY[i], O = polyO[i], m, k, a, b, j, c, list = cand[i];
-      X.length = 4; Y.length = 4; O.length = 4;
-      X[0] = 0; Y[0] = 0; X[1] = W; Y[1] = 0; X[2] = W; Y[2] = H; X[3] = 0; Y[3] = H;
-      O[0] = O[1] = O[2] = O[3] = -1;
-      var px = sx[i], py = sy[i];
-      for (c = 0; c < list.length; c++) {
-        j = list[c];
-        var nx = sx[j] - px, ny = sy[j] - py, mx = (sx[j] + px) / 2, my = (sy[j] + py) / 2, cut = false;
-        m = X.length;
-        if (m === 0) return;
-        for (k = 0; k < m; k++) { dd[k] = (X[k] - mx) * nx + (Y[k] - my) * ny; if (dd[k] > 0) cut = true; }
-        if (!cut) continue;
-        tx.length = 0; ty.length = 0; to.length = 0;
-        for (a = 0; a < m; a++) {
-          b = a + 1 === m ? 0 : a + 1;
-          var da = dd[a], db = dd[b];
-          if (da <= 0) {
-            tx.push(X[a]); ty.push(Y[a]); to.push(O[a]);
-            if (db > 0) { var u = da / (da - db); tx.push(X[a] + (X[b] - X[a]) * u); ty.push(Y[a] + (Y[b] - Y[a]) * u); to.push(j); }
-          } else if (db <= 0) {
-            var v = da / (da - db); tx.push(X[a] + (X[b] - X[a]) * v); ty.push(Y[a] + (Y[b] - Y[a]) * v); to.push(O[a]);
+    function lattice(R) {
+      var B = [], L = [], out = [], cf = [0, 0, 0, 0, 0, 0, 0, 0], lim = R * R * (1 + 1e-9), i, j, k, s;
+      for (j = 0; j < F; j++) {
+        B.push([]); B.push([]);
+        for (k = 0; k < D; k++) { B[2 * j].push(EC[j][k] * SC[j]); B[2 * j + 1].push(ES[j][k] * SC[j]); }
+      }
+      for (i = 0; i < D; i++) {                    // Cholesky factor of the Gram matrix of the columns of B
+        L.push([0, 0, 0, 0, 0, 0, 0, 0]);
+        for (j = 0; j <= i; j++) {
+          s = 0;
+          for (k = 0; k < 2 * F; k++) s += B[k][i] * B[k][j];
+          for (k = 0; k < j; k++) s -= L[i][k] * L[j][k];
+          L[i][j] = i === j ? Math.sqrt(s) : s / L[j][j];
+        }
+      }
+      // The sum over the embeddings of |s_j(x)|^2 / s_j(alpha) is sum_i (sum_{k >= i} L[k][i] c_k)^2 <= 4 R^2.
+      // Fix c_7, c_6, ..., c_0 in turn, each within the range the remaining budget allows (Fincke and Pohst).
+      (function down(i, rem) {
+        var k, t, s, r, rad, rest, re, im, j;
+        if (i < 0) {
+          for (j = 0; j < F; j++) {
+            re = 0; im = 0;
+            for (k = 0; k < D; k++) { re += cf[k] * B[2 * j][k]; im += cf[k] * B[2 * j + 1][k]; }
+            if (re * re + im * im > lim) return;
           }
+          out.push(cf.slice());
+          return;
         }
-        X.length = Y.length = O.length = tx.length;
-        for (k = 0; k < tx.length; k++) { X[k] = tx[k]; Y[k] = ty[k]; O[k] = to[k]; }
-      }
-    }
-
-    /* Which countries share a border now. A border counts once it is 2 px long and until it
-       shrinks under 0.6 px, so a border that is being born or dying does not flicker. */
-    function borderScan() {
-      var i, k, m, j, key, len, fresh = [];
-      frameId++;
-      for (i = 0; i < N; i++) {
-        var X = polyX[i], Y = polyY[i], O = polyO[i];
-        m = X.length;
-        if (m < 3) continue;
-        for (k = 0; k < m; k++) {
-          j = O[k];
-          if (j <= i) continue;                                   // each pair once (j > i); -1 is the frame
-          if (polyX[j].length < 3) continue;
-          var b = k + 1 === m ? 0 : k + 1;
-          len = Math.hypot(X[b] - X[k], Y[b] - Y[k]);
-          key = i * N + j;
-          if (len > 2 || (on[key] && len > 0.6)) {
-            stamp[key] = frameId;
-            if (!on[key]) { on[key] = 1; onList.push(key); fresh.push(key); }
-          }
+        s = 0;
+        for (k = i + 1; k < D; k++) s += L[k][i] * cf[k];
+        r = L[i][i]; rad = Math.sqrt(rem > 0 ? rem : 0);
+        for (t = Math.ceil((-rad - s) / r - 1e-12); t <= Math.floor((rad - s) / r + 1e-12); t++) {
+          cf[i] = t;
+          rest = rem - (r * t + s) * (r * t + s);
+          if (rest >= -1e-9) down(i - 1, rest);
         }
+        cf[i] = 0;
+      })(D - 1, F * lim);
+      return out;
+    }
+    function key(c) {                              // one number per lattice point (coordinates stay far inside +-16)
+      var v = 0, k;
+      for (k = D - 1; k >= 0; k--) v = v * 33 + c[k] + 16;
+      return v;
+    }
+    function build() {
+      var i, j, k, s, t, re, im, r;
+      for (j = 0; j < F; j++) {
+        s = 0;
+        for (k = 0; k < D; k++) s += ALPHA[k] * EC[j][k];
+        SC.push(1 / Math.sqrt(s));
       }
-      for (k = onList.length - 1; k >= 0; k--) {
-        key = onList[k];
-        if (stamp[key] !== frameId) { on[key] = 0; onList[k] = onList[onList.length - 1]; onList.pop(); }
-      }
-      for (i = 0; i < N; i++) nbrs[i].length = 0;
-      for (k = 0; k < onList.length; k++) {
-        key = onList[k]; i = (key / N) | 0; j = key - i * N;
-        nbrs[i].push(j); nbrs[j].push(i);
-      }
-      return fresh;
-    }
-
-    /* ---- colouring ---- */
-    function maskOf(i) {                                   // colours taken by the neighbours of country i
-      var m = 0, a = nbrs[i], k;
-      for (k = 0; k < a.length; k++) if (color[a[k]] >= 0) m |= 1 << color[a[k]];
-      return m;
-    }
-    function leastUsed(mask) {                             // a free colour, the rarest first: keeps the four in balance
-      var best = -1, c;
-      for (c = 0; c < 4; c++) if (!(mask & (1 << c)) && (best < 0 || use[c] < use[best])) best = c;
-      return best;
-    }
-    function put(i, c) {
-      if (color[i] >= 0) use[color[i]]--;
-      color[i] = c;
-      if (c >= 0) use[c]++;
-    }
-    function show(i, when) {                               // let the displayed colour follow, starting at `when`
-      if (time - t0C[i] > SPREAD * 0.5) fromC[i] = toC[i];  // (interrupted halfway: start from whichever colour covers more)
-      toC[i] = color[i] < 0 ? 0 : color[i];
-      t0C[i] = when;
-    }
-
-    /* Kempe chain: every country coloured a or b that can be reached from `starts` through
-       countries coloured a or b, without passing through `skip`. Exchanging a and b on the whole
-       chain keeps every border properly coloured. This exchange is Kempe's idea of 1879, and
-       it is still at the heart of the proof of the four colour theorem. */
-    function chain(starts, a, b, skip) {
-      var cells = [], depth = [], head = 0, k, x, y, list;
-      markId++;
-      for (k = 0; k < starts.length; k++) if (mark[starts[k]] !== markId) { mark[starts[k]] = markId; cells.push(starts[k]); depth.push(0); }
-      while (head < cells.length) {
-        x = cells[head]; list = nbrs[x];
-        for (k = 0; k < list.length; k++) {
-          y = list[k];
-          if (y !== skip && mark[y] !== markId && (color[y] === a || color[y] === b)) { mark[y] = markId; cells.push(y); depth.push(depth[head] + 1); }
+      var pts = lattice(RWIN), info = [];
+      for (i = 0; i < pts.length; i++) {
+        var p = { c: pts[i], x: [], y: [], r: 0 };
+        for (j = 0; j < F; j++) {
+          re = 0; im = 0;
+          for (k = 0; k < D; k++) { re += pts[i][k] * EC[j][k]; im += pts[i][k] * ES[j][k]; }
+          p.x.push(re * SC[j]); p.y.push(im * SC[j]);
+          r = Math.sqrt(re * re + im * im) * SC[j];
+          if (r > p.r) p.r = r;
         }
-        head++;
+        info.push(p);
       }
-      return { a: a, b: b, cells: cells, depth: depth };
-    }
-
-    /* How to give country w a colour that none of its neighbours has, changing as little as possible:
-       a free colour if there is one; otherwise the smallest Kempe chain whose exchange frees one. */
-    function plan(w) {
-      var c = leastUsed(maskOf(w));
-      if (c >= 0) return { paint: c, swap: null, cost: 1 };
-      var best = null, a, b, k, list = nbrs[w], A;
-      for (a = 0; a < 4; a++) {
-        A = [];
-        for (k = 0; k < list.length; k++) if (color[list[k]] === a) A.push(list[k]);
-        for (b = 0; b < 4; b++) {
-          if (b === a) continue;
-          var ch = chain(A, a, b, w), bad = false;
-          for (k = 0; k < list.length; k++) if (color[list[k]] === b && mark[list[k]] === markId) { bad = true; break; }
-          if (!bad && (!best || ch.cells.length < best.cells.length)) best = ch;
+      info.sort(function (a, b) { return a.r - b.r; });   // the order in which a growing window meets the points
+      n = info.length;
+      for (j = 0; j < F; j++) { PX.push(new Float32Array(n)); PY.push(new Float32Array(n)); }
+      LVL = new Int32Array(n); DEG = new Int32Array(n);
+      var at = new Map();
+      for (i = 0; i < n; i++) {
+        if (i === 0 || info[i].r - info[i - 1].r > 1e-7) { LN.push(0); LP.push(0); }
+        LVL[i] = LN.length - 1; LN[LVL[i]]++;
+        for (j = 0; j < F; j++) { PX[j][i] = info[i].x[j]; PY[j][i] = info[i].y[j]; }
+        at.set(key(info[i].c), i);
+      }
+      levels = LN.length;
+      // the differences b with b * conj(b) = alpha: exact, in integers
+      var steps = lattice(1 + 1e-7).filter(function (c) {
+        var q = mul(c, conj(c)), k;
+        for (k = 0; k < D; k++) if (q[k] !== ALPHA[k]) return false;
+        return true;
+      });
+      for (j = 0; j < F; j++) {
+        UX.push([]); UY.push([]);
+        for (s = 0; s < steps.length; s++) {
+          re = 0; im = 0;
+          for (k = 0; k < D; k++) { re += steps[s][k] * EC[j][k]; im += steps[s][k] * ES[j][k]; }
+          UX[j].push(re * SC[j]); UY[j].push(im * SC[j]);
         }
       }
-      return best ? { paint: best.a, swap: best, cost: 1 + best.cells.length } : null;
-    }
-    function exchange(ch, when, lag) {
-      for (var k = 0; k < ch.cells.length; k++) {
-        var x = ch.cells[k];
-        put(x, color[x] === ch.a ? ch.b : ch.a);
-        if (when !== undefined) show(x, when + lag * ch.depth[k]);
+      var ea = [], eb = [], sum = [0, 0, 0, 0, 0, 0, 0, 0];
+      for (i = 0; i < n; i++) {
+        for (s = 0; s < steps.length; s++) {
+          for (k = 0; k < D; k++) sum[k] = info[i].c[k] + steps[s][k];
+          t = at.get(key(sum));
+          if (t !== undefined && t > i) { ea.push(t); eb.push(i); DEG[t]++; DEG[i]++; LP[LVL[t]]++; }
+        }
       }
-    }
-    function carry(w, pl, when) {                          // carry out a plan; with `when`, animate it
-      var last = 0;
-      if (pl.swap) {
-        exchange(pl.swap, when, 0.075);
-        last = pl.swap.depth[pl.swap.depth.length - 1] || 0;
-      }
-      put(w, pl.paint);
-      if (when !== undefined) show(w, when + (pl.swap ? Math.min(0.5, 0.075 * last) : 0));
-    }
-    function settle(w, when) {                             // w must get a proper colour, whatever it takes
-      var pl = plan(w), tries, list, x, b;
-      for (tries = 0; !pl && tries < 400; tries++) {       // no single exchange works: shake nearby chains and look again
-        list = nbrs[w];
-        x = list[(rnd() * list.length) | 0];
-        b = (color[x] + 1 + ((rnd() * 3) | 0)) % 4;
-        exchange(chain([x], color[x], b, w), when, 0.05);
-        pl = plan(w);
-      }
-      if (!pl) return false;
-      carry(w, pl, when);
-      return true;
+      pairs = ea.length;
+      var order = [];
+      for (i = 0; i < pairs; i++) order.push(i);
+      order.sort(function (p, q) { return LVL[ea[p]] - LVL[ea[q]] || p - q; });   // in order of arrival
+      EA = new Int32Array(pairs); EB = new Int32Array(pairs); ELV = new Int32Array(pairs);
+      for (i = 0; i < pairs; i++) { EA[i] = ea[order[i]]; EB[i] = eb[order[i]]; ELV[i] = LVL[EA[i]]; }
+      for (i = 0; i < n; i++) if (DEG[i] > maxDeg) maxDeg = DEG[i];
     }
 
-    /* Colour the whole map. Order: repeatedly set aside a country with the fewest remaining
-       neighbours (a planar map always has one with at most five), then colour in reverse. */
-    function colorAll() {
-      var i, k, deg = new Int32Array(N), gone = new Uint8Array(N), order = [], vis = [];
-      for (i = 0; i < N; i++) { color[i] = -1; if (polyX[i].length > 2) { vis.push(i); deg[i] = nbrs[i].length; } }
-      use = [0, 0, 0, 0];
-      for (k = 0; k < vis.length; k++) {
-        var best = -1;
-        for (i = 0; i < vis.length; i++) if (!gone[vis[i]] && (best < 0 || deg[vis[i]] < deg[best])) best = vis[i];
-        gone[best] = 1; order.push(best);
-        for (i = 0; i < nbrs[best].length; i++) deg[nbrs[best][i]]--;
+    /* ---- the show: the window opens; then the direction of projection turns from one embedding to the next ---- */
+    var RISE = 1.25, HOLD = 7.5, TURN = 14;                   // seconds: one level arriving; rest; one turn
+    var TOUR = [[0, 1], [2, -1], [3, -1], [1, -1]];           // embedding and mirror sign of the four shadows, in order
+    var phase = 'grow', clock = 0, stop = 0, theta = 0, lastText = -1;
+    var moved = true, dirty = true, glint = 0, settled = false;   // the figure changed; the canvas needs repainting; a glow as a shadow settles
+    var nf2 = new Intl.NumberFormat(lang === 'ko' ? 'ko-KR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    function ease(u) { return u * u * u * (u * (6 * u - 15) + 10); }
+    function due(k) { return 0.3 + (k < 3 ? 0.7 * k : 2.1 + 0.95 * (k - 3)); }   // when level k starts to arrive
+    function rise(k) { return clamp((clock - due(k)) / RISE, 0, 1); }            // how far it has arrived
+
+    /* ---- drawing: lines are summed into a buffer of floats, then mapped to colour, as for the comet ---- */
+    var S = 0, acc = null, img = null, pix = null, lo = null, hi = null, unit0 = 1, TXv = null, TYv = null;
+    var LUT = new Uint32Array(4096);               // summed line weight -> one RGBA pixel
+    var LITTLE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+    var quality = 1, slow = 0, seen = [0, 0, 1];   // fewer buffer cells on a device that cannot keep up
+    function tone(gain) {                          // few lines: blue and violet; many lines through one place: gold, then ivory
+      for (var i = 0; i < 4096; i++) {
+        var v = gain * i / 256, t = 1 - Math.exp(-0.85 * v), k = 1;
+        while (k < STOPS.length - 1 && STOPS[k][0] < t) k++;
+        var a = STOPS[k - 1], b = STOPS[k], u = (t - a[0]) / (b[0] - a[0]);
+        var R = (a[1] + (b[1] - a[1]) * u) | 0, G = (a[2] + (b[2] - a[2]) * u) | 0, B = (a[3] + (b[3] - a[3]) * u) | 0;
+        var A = (255 * (1 - Math.exp(-2.2 * v))) | 0;
+        LUT[i] = (LITTLE ? (A << 24) | (B << 16) | (G << 8) | R : (R << 24) | (G << 16) | (B << 8) | A) >>> 0;
       }
-      for (k = order.length - 1; k >= 0; k--) if (!settle(order[k])) return false;
-      return true;
+      LUT[0] = 0;
     }
 
-    function update(dt) {
-      var i, k;
-      time += dt;
-      for (i = 0; i < N; i++) {
-        sx[i] = hx[i] + ax[i] * Math.cos(w1[i] * time + p1[i]);
-        sy[i] = hy[i] + ay[i] * Math.sin(w2[i] * time + p2[i]);
+    var WIDE = window.matchMedia   // the same test as in essay.css
+      ? window.matchMedia('(min-width: 900px) and (min-aspect-ratio: 1/1), (min-width: 480px) and (min-aspect-ratio: 4/3)') : { matches: true };
+    function rem() { return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16; }
+    function reserve() {                           // room for the longest readout, so that nothing below it moves when the text changes
+      var ro = ui.readout, data = root.dataset, h = 0, a, b;
+      if (!ro || !ui.num || !ui.sub) return;
+      var keep = [ui.num.textContent, ui.sub.textContent];
+      var nums = [fill(data.lCount, { n: nf.format(n), u: nf.format(pairs) }), fill(data.lLengths, { n: nf.format(n), lo: nf2.format(0.88), hi: nf2.format(1.88) })];
+      var subs = [data.lGrow || '', fill(data.lView, { k: 4 }), data.lTurn || ''];
+      ro.style.minHeight = '';
+      for (a = 0; a < nums.length; a++) for (b = 0; b < subs.length; b++) {
+        ui.num.textContent = nums[a]; ui.sub.textContent = subs[b];
+        h = Math.max(h, ro.getBoundingClientRect().height);
       }
-      for (i = 0; i < N; i++) cell(i);
-      var fresh = borderScan();
-      if (!ready) {
-        for (k = 0; k < 8 && !colorAll(); k++);            // (a retry reshuffles the random exchanges)
-        for (i = 0; i < N; i++) { fromC[i] = toC[i] = color[i] < 0 ? 0 : color[i]; t0C[i] = -10; }
-        ready = true;
+      ui.num.textContent = keep[0]; ui.sub.textContent = keep[1];
+      ro.style.minHeight = Math.ceil(h) + 'px';
+    }
+    function resize(cw, chh, dpr) {
+      var head = ui.headerHeight(), left = ui.alignLeft(), d, px, py, y, w;
+      seen = [cw, chh, dpr];
+      if (WIDE.matches) {                          // a column of text at the left, the figure beside it (see essay.css)
+        var em = rem(), free = cw - 24 - left - 40;        // what the column and the figure share: a gap of 40 between them, 24 at the right
+        d = Math.max(140, Math.min(chh - head - 20, free - 21 * em));
+        var room = Math.round(Math.min(free - d, 26 * em));         // the column: 21rem to 26rem wide (less only on a very small screen)
+        py = head + (chh - head) / 2;
+        px = left + room + 40 + d / 2;
+        root.style.setProperty('--hero-col', room + 'px');
+        reserve();
+        // the caption joins the column if it fits under the button; otherwise it stays below the figure
+        root.classList.toggle('caption-beside', ui.toggleBottom() + 24 + ui.captionHeight(room) + 24 <= chh);
+      } else {
+        root.classList.remove('caption-beside');   // the readout on top, the figure below it
+        reserve();
+        y = Math.max(ui.readoutBottom(), head + 40) + 6;
+        d = Math.max(60, Math.min(cw - 12, chh - y - 6));
+        px = cw / 2; py = y + d / 2;
+      }
+      var side = d * 1.12, scale = clamp(dpr, 1.5, cw < 700 ? 1.6 : 2);   // finer than the screen's own grid: thin lines
+      if (side * scale > 960) scale = 960 / side;
+      scale *= quality;
+      canvas.style.left = (px - side / 2) + 'px'; canvas.style.top = (py - side / 2) + 'px';
+      canvas.style.width = side + 'px'; canvas.style.height = side + 'px';
+      S = Math.max(64, Math.round(side * scale));
+      canvas.width = S; canvas.height = S;
+      glow.width = glow.height = Math.max(8, Math.round(S / 6));
+      acc = new Float32Array(S * S);
+      img = ctx.createImageData(S, S);
+      pix = new Uint32Array(img.data.buffer);
+      lo = new Int32Array(S); hi = new Int32Array(S);      // only the inscribed disc is ever drawn
+      for (y = 0; y < S; y++) {
+        w = Math.sqrt(Math.max(0, S * S / 4 - (y + 0.5 - S / 2) * (y + 0.5 - S / 2)));
+        lo[y] = Math.max(1, Math.floor(S / 2 - w)); hi[y] = Math.min(S - 1, Math.ceil(S / 2 + w));
+      }
+      unit0 = S / 2 / 1.12 / RWIN;
+      tone(clamp(0.25 * unit0 / 250, 0.12, 0.34));          // a smaller figure packs more lines into each cell: keep the brightness the same
+      if (!TXv) { TXv = new Float32Array(n); TYv = new Float32Array(n); }
+      moved = true;
+    }
+
+    function seg(x0, y0, x1, y1, w) {              // one line of weight w, two buffer cells wide, anti-aliased
+      var dx = x1 - x0, dy = y1 - y0, t, g, k, x, y, i, f, e;
+      if (!(x0 > 1 && x0 < S - 2 && x1 > 1 && x1 < S - 2 && y0 > 1 && y0 < S - 2 && y1 > 1 && y1 < S - 2)) return;
+      if ((dx < 0 ? -dx : dx) >= (dy < 0 ? -dy : dy)) {
+        if (dx < 0) { t = x0; x0 = x1; x1 = t; t = y0; y0 = y1; y1 = t; dx = -dx; dy = -dy; }
+        if (dx < 1e-6) return;
+        g = dy / dx; k = w * Math.sqrt(1 + g * g);
+        x = Math.ceil(x0); e = Math.floor(x1); y = y0 + (x - x0) * g;
+        for (; x <= e; x++, y += g) { i = y | 0; f = y - i; i = i * S + x; acc[i] += k * (1 - f); acc[i + S] += k * f; }
+      } else {
+        if (dy < 0) { t = x0; x0 = x1; x1 = t; t = y0; y0 = y1; y1 = t; dx = -dx; dy = -dy; }
+        g = dx / dy; k = w * Math.sqrt(1 + g * g);
+        y = Math.ceil(y0); e = Math.floor(y1); x = x0 + (y - y0) * g;
+        for (; y <= e; y++, x += g) { i = x | 0; f = x - i; i = y * S + i; acc[i] += k * (1 - f); acc[i + 1] += k * f; }
+      }
+    }
+
+    function trace() {                             // the figure as it stands now, into the buffer and through the colour map
+      var a = TOUR[stop % 4], b = TOUR[(stop + 1) % 4], c = Math.cos(theta), s = Math.sin(theta);
+      var ax = PX[a[0]], ay = PY[a[0]], bx = PX[b[0]], by = PY[b[0]], i, k, x, y, r, ext = RWIN * RWIN, p, q;
+      for (i = 0; i < n; i++) {                    // the plane of projection, turned by theta from shadow a towards shadow b
+        x = c * ax[i] + s * bx[i]; y = c * a[1] * ay[i] + s * b[1] * by[i];
+        TXv[i] = x; TYv[i] = y;
+        r = x * x + y * y; if (r > ext) ext = r;
+      }
+      var u = unit0 * Math.min(1, 1.04 * RWIN / Math.sqrt(ext)), h = S / 2;  // step back while the shadow is wider
+      for (i = 0; i < n; i++) { TXv[i] = h + u * TXv[i]; TYv[i] = h - u * TYv[i]; }
+
+      acc.fill(0);
+      var growing = phase === 'grow', lv = -1, t = 1, e = 1;
+      for (k = 0; k < pairs; k++) {
+        if (growing) {
+          if (ELV[k] !== lv) { lv = ELV[k]; t = rise(lv); e = clamp((t - 0.08) / 0.92, 0, 1); e = 1 - (1 - e) * (1 - e) * (1 - e); }
+          if (e <= 0) break;                       // later pairs belong to levels that have not arrived
+        }
+        p = EA[k]; q = EB[k];
+        if (e >= 1) seg(TXv[p], TYv[p], TXv[q], TYv[q], 1);
+        else if (LVL[q] === lv) {                  // both ends are new: the thread grows from both
+          seg(TXv[p], TYv[p], TXv[p] + (TXv[q] - TXv[p]) * e / 2, TYv[p] + (TYv[q] - TYv[p]) * e / 2, 1);
+          seg(TXv[q], TYv[q], TXv[q] + (TXv[p] - TXv[q]) * e / 2, TYv[q] + (TYv[p] - TYv[q]) * e / 2, 1);
+        } else seg(TXv[p], TYv[p], TXv[p] + (TXv[q] - TXv[p]) * e, TYv[p] + (TYv[q] - TYv[p]) * e, 1);
+      }
+
+      var v, row, end;
+      for (y = 0; y < S; y++) {
+        row = y * S; end = row + hi[y];
+        for (k = row + lo[y]; k < end; k++) {
+          v = acc[k] * 256;
+          pix[k] = LUT[v > 4095 ? 4095 : v | 0];
+        }
+      }
+    }
+
+    function show() {                              // onto the canvas: the lines, the points, a halo
+      var growing = phase === 'grow', px1 = S / 560, i, t, v, r;
+      ctx.putImageData(img, 0, 0);
+      ctx.fillStyle = 'rgb(255, 246, 226)';        // the points themselves, brighter the more partners they have
+      for (i = 0; i < n; i++) {
+        t = growing ? clamp(rise(LVL[i]) / 0.3, 0, 1) : 1;
+        if (t <= 0) break;                         // later levels have not arrived (the points are in order of arrival)
+        v = DEG[i] / maxDeg;
+        ctx.globalAlpha = t * (0.5 + 0.5 * v);
+        r = px1 * (0.85 + 0.75 * v) * (1 + 1.6 * (1 - t));
+        ctx.beginPath(); ctx.arc(TXv[i], TYv[i], r, 0, 6.2832); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      gctx.clearRect(0, 0, glow.width, glow.height);
+      gctx.drawImage(canvas, 0, 0, glow.width, glow.height);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.4 + 0.3 * glint;
+      ctx.drawImage(glow, 0, 0, S, S);
+      if (growing) {                               // a point arriving: a short flash
+        for (i = 0; i < n; i++) {
+          t = rise(LVL[i]);
+          if (t <= 0) break;
+          if (t >= 0.6) continue;
+          v = 1 - t / 0.6; r = px1 * (2.2 + 2.6 * v);
+          var grd = ctx.createRadialGradient(TXv[i], TYv[i], 0, TXv[i], TYv[i], r);
+          grd.addColorStop(0, 'rgba(255, 240, 210, ' + (0.55 * v * v).toFixed(3) + ')');
+          grd.addColorStop(1, 'rgba(255, 240, 210, 0)');
+          ctx.globalAlpha = 1; ctx.fillStyle = grd;
+          ctx.fillRect(TXv[i] - r, TYv[i] - r, 2 * r, 2 * r);
+        }
+      }
+      ctx.restore();
+    }
+
+    function text(now) {
+      if (now - lastText < 90 && lastText >= 0) return;
+      lastText = now;
+      var data = root.dataset, shown = n, made = pairs, k, t;
+      if (phase === 'turn') {                      // a difference seen as u in one shadow and v in the next now has length
+                                                   // |cos(theta) u + sin(theta) v| = sqrt(1 + sin(2 theta) g), g = cosine of the angle from u to v
+        var a = TOUR[stop % 4], b = TOUR[(stop + 1) % 4], s2 = Math.sin(2 * theta), mn = 1, mx = -1, g;
+        for (k = 0; k < UX[0].length; k++) {
+          g = UX[a[0]][k] * UX[b[0]][k] + a[1] * UY[a[0]][k] * b[1] * UY[b[0]][k];
+          if (g < mn) mn = g; if (g > mx) mx = g;
+        }
+        write(ui.num, fill(data.lLengths, { n: nf.format(n), lo: nf2.format(Math.sqrt(Math.max(0, 1 + s2 * mn))), hi: nf2.format(Math.sqrt(1 + s2 * mx)) }));
+        write(ui.sub, data.lTurn || '');
         return;
       }
-      for (i = 0; i < N; i++) {                            // a country drifting into view for the first time
-        if (color[i] < 0 && polyX[i].length > 2) { settle(i); show(i, time - 10); }
+      if (phase === 'grow') {
+        shown = 0; made = 0;
+        for (k = 0; k < levels; k++) {
+          t = rise(k);
+          if (t <= 0) break;
+          shown += LN[k]; made += Math.round(LP[k] * clamp((t - 0.08) / 0.92, 0, 1));
+        }
       }
-      for (k = 0; k < fresh.length; k++) {
-        var u = (fresh[k] / N) | 0, v = fresh[k] - u * N;
-        if (color[u] !== color[v] || color[u] < 0) continue;
-        // a new border with the same colour on both sides: repair it at the cheaper end
-        var pu = plan(u), pv = plan(v), w = u, pl = pu;
-        if (pv && (!pu || pv.cost < pu.cost)) { w = v; pl = pv; }
-        flashes.push({ u: u, v: v, t: time });
-        if (pl) carry(w, pl, time + HOLD);
-        else if (!settle(u, time + HOLD)) { colorAll(); for (i = 0; i < N; i++) show(i, time + HOLD); }
-      }
-      for (k = flashes.length - 1; k >= 0; k--) if (time - flashes[k].t > HOLD + 0.6) flashes.splice(k, 1);
+      write(ui.num, fill(data.lCount, { n: nf.format(shown), u: nf.format(made) }));
+      write(ui.sub, phase === 'grow' ? (data.lGrow || '') : fill(data.lView, { k: stop % 4 + 1 }));
     }
 
-    function step(dt) { update(dt); }
-
-    function trace(i) {
-      var X = polyX[i], Y = polyY[i], k;
-      ctx.beginPath();
-      ctx.moveTo(X[0], Y[0]);
-      for (k = 1; k < X.length; k++) ctx.lineTo(X[k], Y[k]);
-      ctx.closePath();
-    }
-
-    function ink(c, i) {
-      var p = PAL[c], f = shade[i];
-      return 'rgb(' + ((p[0] * f) | 0) + ',' + ((p[1] * f) | 0) + ',' + ((p[2] * f) | 0) + ')';
+    function step(dt) {
+      clock += dt;
+      if (phase === 'grow') {
+        moved = true;
+        if (clock > due(levels - 1) + RISE) { phase = 'hold'; clock = 0; settled = true; }
+      } else if (phase === 'hold') {               // nothing moves: every segment has length 1
+        if (settled) {                             // the figure has just locked into place: it glows for a moment
+          glint = clock < 0.2 ? clock / 0.2 : Math.exp(-(clock - 0.2) / 0.55);
+          if (glint < 0.01) { glint = 0; settled = false; }
+          dirty = true;
+        }
+        if (clock > HOLD) { phase = 'turn'; clock = 0; glint = 0; settled = false; }
+      } else {
+        moved = true;
+        theta = Math.PI / 2 * ease(clamp(clock / TURN, 0, 1));
+        if (clock >= TURN) { phase = 'hold'; clock = 0; theta = 0; stop++; settled = true; }
+      }
     }
 
     function draw(now) {
-      if (!ready) return;
-      var i, k, u, e;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, W, H);
-      ctx.lineJoin = 'round';
-      shown = 0;
-      for (i = 0; i < N; i++) {
-        if (polyX[i].length < 3) continue;
-        shown++;
-        u = (time - t0C[i]) / SPREAD;
-        trace(i);
-        if (u >= 1 || fromC[i] === toC[i]) {
-          ctx.fillStyle = ink(toC[i], i);
-          ctx.fill();
-        } else {
-          ctx.fillStyle = ink(fromC[i], i);
-          ctx.fill();
-          if (u > 0) {                                       // the new colour spreads from the middle of the country
-            var X = polyX[i], Y = polyY[i], far = 0, d;
-            for (k = 0; k < X.length; k++) { d = Math.hypot(X[k] - sx[i], Y[k] - sy[i]); if (d > far) far = d; }
-            e = u * u * (3 - 2 * u);
-            ctx.save();
-            ctx.clip();
-            ctx.beginPath();
-            ctx.arc(sx[i], sy[i], far * e, 0, 6.2832);
-            ctx.fillStyle = ink(toC[i], i);
-            ctx.fill();
-            ctx.restore();
-            trace(i);
-          }
+      if (!img) return;
+      var t0 = moved ? performance.now() : 0;
+      if (moved) { moved = false; dirty = true; trace(); }
+      if (dirty) { dirty = false; show(); }
+      if (t0) {                                    // a frame of motion: if such frames keep taking too long, use a coarser buffer
+        slow = performance.now() - t0 > 13 ? slow + 1 : Math.max(0, slow - 2);
+        if (slow > 24 && quality > 0.7) {
+          quality *= 0.8; slow = 0;
+          resize(seen[0], seen[1], seen[2]);
+          moved = false; trace(); show();          // (the canvas was cleared: repaint it in the same frame)
         }
-        ctx.strokeStyle = BG; ctx.lineWidth = 2.2;
-        ctx.stroke();
       }
-      var lx = W * (0.62 + 0.2 * Math.sin(time * 0.05)), ly = H * 0.18, glowR = Math.max(W, H) * 0.75;
-      var light = ctx.createRadialGradient(lx, ly, 0, lx, ly, glowR);   // light behind the glass, slowly moving
-      light.addColorStop(0, 'rgba(255, 246, 226, 0.34)');
-      light.addColorStop(1, 'rgba(255, 246, 226, 0)');
-      ctx.globalCompositeOperation = 'soft-light';
-      ctx.fillStyle = light;
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalCompositeOperation = 'source-over';
-      for (k = 0; k < flashes.length; k++) {                // two countries of one colour have just met
-        var f = flashes[k], age = time - f.t, al = age < HOLD ? Math.min(1, age / 0.12) : Math.max(0, 1 - (age - HOLD) / 0.6);
-        if (polyX[f.u].length < 3 || polyX[f.v].length < 3) continue;
-        ctx.strokeStyle = 'rgba(255, 250, 238, ' + (0.9 * al).toFixed(3) + ')';
-        ctx.lineWidth = 2.2;
-        ctx.shadowColor = 'rgba(255, 244, 214, 0.8)'; ctx.shadowBlur = 14 * al;
-        trace(f.u); ctx.stroke();
-        trace(f.v); ctx.stroke();
-        ctx.shadowBlur = 0;
-      }
-      if ((now || 0) - lastText > 180 || !lastText) {
-        lastText = now || 1;
-        var clashes = 0, borders = 0;
-        for (k = 0; k < flashes.length; k++) if (time - flashes[k].t < HOLD) clashes++;
-        for (k = 0; k < onList.length; k++) borders++;
-        write(ui.num, fill(root.dataset.lMap, { c: nf.format(shown), b: nf.format(borders) }));
-        write(ui.sub, fill(root.dataset.lClash, { k: nf.format(clashes) }));
-      }
+      text(now || 0);
     }
 
-    function still() { update(0); }
+    function still() {                             // for readers who prefer no motion: the first shadow, complete
+      phase = 'hold'; clock = 0; theta = 0; stop = 0; glint = 0; settled = false; moved = true;
+    }
 
+    build();
     return { resize: resize, step: step, draw: draw, still: still };
   }
 
   /* ------------------------------------------------------------------------------------------ */
-  var kinds = { goldbach: goldbach, fourcolor: fourcolor };
+  var kinds = { goldbach: goldbach, unit: unit };
   function start() {
     var roots = document.querySelectorAll('.essay-hero[data-hero]');
     for (var i = 0; i < roots.length; i++) {
