@@ -16,7 +16,7 @@
     <meta property="og:url" content="https://me.kimsh.kr/essays/turing-halting-problem-en.html">
     <meta property="og:locale" content="en_US">
     <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="essay.css?v=20261120a">
+    <link rel="stylesheet" href="essay.css?v=20261120b">
 </head>
 <body class="essay-page">
     <div class="bg-blobs">
@@ -40,7 +40,7 @@
 
     <figure class="essay-hero essay-hero-tm" id="hero" aria-describedby="about-hero">
       <div class="tm-frame">
-        <turing-3n1 theme="dark"></turing-3n1>
+        <turing-3n1 theme="dark" start="random" sequence ridges></turing-3n1>
       </div>
     </figure>
 
@@ -243,7 +243,7 @@
         <div class="essay-end">
           <div class="essay-note" id="about-hero">
             <p class="essay-note-title"><a href="#hero">About the picture at the top</a></p>
-            <p>The picture at the top is a working Turing machine. The tape holds a number written in binary; the machine keeps halving the number when it is even and multiplying it by 3 and adding 1 when it is odd, and halts when the number reaches 1. The head only reads, writes and moves, one cell at a time, and a rule table with six states decides what it does. Starting from 27, the number climbs as high as 9,232 over 111 operations before coming down to 1, and the machine halts after 962 steps. The Collatz conjecture asserts that the machine halts whatever number it starts from. As with <a href="#program-4">Program 4</a> in this essay, no one in the world yet knows whether it always does. Click or tap the picture to pause it, and again to resume.</p>
+            <p>The picture at the top is a working Turing machine. The tape holds a number written in binary; the machine keeps halving the number when it is even and multiplying it by 3 and adding 1 when it is odd, and halts when the number reaches 1. The head only reads, writes and moves, one cell at a time, and a rule table with six states decides what it does. The starting number is chosen afresh on each visit, and each time the machine halts it is started again from the next number. The landscape under the machine shows how the numbers have changed. There is one line for each starting number: the gold line in front is the number being computed now, and the lines behind it are the numbers just before it. The height of a line is the size of the number (each line is drawn relative to its own largest value), and when a line touches the floor and goes flat, the number has reached 1 and the machine has halted. Starting from 27, for example, the number climbs as high as 9,232 over 111 operations before coming down to 1, and the machine takes 962 steps on the way. The Collatz conjecture asserts that every line goes flat in the end, whatever number it starts from. As with <a href="#program-4">Program 4</a> in this essay, no one in the world yet knows whether that is so. Click or tap the picture to pause it, and again to resume.</p>
           </div>
           <p>Korean original: <a href="turing-halting-problem-ko.html" hreflang="ko" lang="ko">튜링과 정지문제</a></p>
           <p><a href="../culture.html#articles">More writing on the Culture page</a></p>
@@ -258,6 +258,6 @@
     </footer>
 
     <script src="../js/script.js"></script>
-    <script src="/assets/js/turing-3n1.js" defer></script>
+    <script src="/assets/js/turing-3n1.js?v=1.2" defer></script>
 </body>
 </html>

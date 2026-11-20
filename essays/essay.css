@@ -54,13 +54,42 @@
    It paints its own ground, #0d0d10 in its dark theme: the band takes the same colour, so the
    picture has no visible edge, and fades into the page at the bottom. */
 .essay-hero-tm {
-  padding: calc(var(--nav-height) + 1.5rem) 0 2.5rem;
-  background: linear-gradient(to bottom, #0d0d10 calc(100% - 2.5rem), rgba(13, 13, 16, 0));
+  padding: calc(var(--nav-height) + 1.5rem) 0 1.75rem;
+  background: linear-gradient(to bottom, #0d0d10 calc(100% - 1.75rem), rgba(13, 13, 16, 0));
 }
 
+/* The picture is 1920 x 832: the machine above, the landscape of its runs below. It takes the width
+   of the page, but with the header and the padding no more than 78% of the window's height,
+   so that the title under it stays in sight. */
 .essay-hero-tm .tm-frame {
-  width: min(100% - 3rem, 1500px);
+  width: min(100% - 3rem, 1500px, max(640px, (78vh - var(--nav-height) - 3.25rem) * 2.3077));
   margin: 0 auto;
+}
+
+.js .essay-hero.essay-hero-tm ~ main .essay {
+  padding-top: 1.5rem;               /* the picture ends in empty ground: less air is needed under it */
+}
+
+.essay-hero-tm turing-3n1 {
+  display: block;
+  aspect-ratio: 1920 / 832;          /* holds the place before the script has run: no jump */
+  --turing-3n1-layout: wide;         /* the component reads this to choose its layout */
+}
+
+/* An upright phone or tablet: the component's narrow layout, 1120 x 1210. */
+@media (max-width: 899px) and (orientation: portrait) {
+  .essay-hero-tm {
+    padding-top: calc(var(--nav-height) + 1rem);
+  }
+
+  .essay-hero-tm .tm-frame {
+    width: min(100%, max(320px, (78vh - var(--nav-height) - 2.75rem) * 0.9256));
+  }
+
+  .essay-hero-tm turing-3n1 {
+    aspect-ratio: 1120 / 1210;
+    --turing-3n1-layout: narrow;
+  }
 }
 
 /* The lattice hero is a round figure: a taller stage, and hero.js places a square canvas in it. */
@@ -693,14 +722,6 @@ table.data tbody th {
 
   .hero-stage {
     height: clamp(17rem, 46vh, 24rem);
-  }
-
-  .essay-hero-tm {
-    padding-top: calc(var(--nav-height) + 1rem);
-  }
-
-  .essay-hero-tm .tm-frame {
-    width: 100%;                       /* every pixel of a small screen goes to the picture */
   }
 
   .hero-readout {

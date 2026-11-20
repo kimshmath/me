@@ -1,5 +1,8 @@
 /*!
- * turing-3n1.js · v1.1 · 2026-11-20  (v1.0에 영어 화면 글을 더함 — 한국어 화면은 v1.0과 같음)
+ * turing-3n1.js · v1.2 · 2026-11-20
+ *   v1.1  v1.0에 영어 화면 글을 더함
+ *   v1.2  sequence(멈추면 다음 수로 이어 감)와 ridges('수의 변화' 그림)를 더함
+ *   sequence · ridges를 쓰지 않으면 화면은 v1.0과 같음 (한국어 화면은 픽셀까지 같음)
  * 3n+1(콜라츠) 튜링 기계 애니메이션 — 웹 컴포넌트 <turing-3n1>
  *
  * 「인간, 수학, AI — 생각을 생각하다」 강연 덱의 튜링 기계 영상(tm_video2.py가 PIL로 그려 만든 1920×496 영상)을
@@ -9,12 +12,19 @@
  *   <script src="turing-3n1.js" defer></script>
  *   <turing-3n1></turing-3n1>                                   흰 바탕 · 27에서 출발 · 자동 재생 · 반복
  *   <turing-3n1 start="97" theme="dark" controls></turing-3n1>  어두운 바탕 · 97에서 출발 · 아래에 단추 줄
+ *   <turing-3n1 theme="dark" start="random" sequence ridges></turing-3n1>
+ *                                              수를 바꿔 가며 끝없이 · 아래에 '수의 변화' 그림
  *
  * ── 속성 (모두 고르지 않아도 됨) ───────────────────────────────────────────
- *   start     출발 수, 1 – 1000000 (기본 27)
+ *   start     출발 수, 1 – 1000000 (기본 27). random 이면 27 – 999 가운데 하나를 고름
+ *   sequence  (이름만) 멈춘 뒤 같은 수로 되풀이하지 않고 다음 수(+1)로 넘어가 끝없이 이어 감
+ *   ridges    (이름만) 아래에 '수의 변화' 그림을 그림: 출발한 수마다 줄 하나, 가로 = 계산 횟수, 높이 = 수의 크기.
+ *             맨 앞의 금빛 줄이 지금 수이고, 앞선 수들의 줄은 뒤로 물러나 있음. 줄이 바닥에 닿아 평평해지면 멈춘 것.
+ *             (이때 오른쪽의 작은 그래프 대신 출발한 수를 보여 줌)
  *   theme     light | dark — light = 강연 덱의 흰 바탕 영상, dark = 원래 영상(0D0D10 바탕) (기본 light)
  *   numbers   on | off — 상태 번호 ①–⑥과 규칙표의 '다음 상태' 표시 (기본: light는 off, dark는 on — 각 영상과 같게)
- *   layout    auto | wide | narrow — narrow는 값과 그래프를 규칙표 아래로 내린 배치 (기본 auto: 폭 640px 미만이면 narrow)
+ *   layout    auto | wide | narrow — narrow는 값과 그래프를 규칙표 아래로 내린 배치 (기본 auto: 폭 640px 미만이면 narrow.
+ *             페이지의 CSS가 이 요소에 --turing-3n1-layout: wide | narrow 를 주면 auto는 그것을 따름)
  *   speed     배속 (기본 1, 0.1 – 16)
  *   autoplay  off 이면 한 장면을 보여 주고 기다림 (기본: 자동 재생. 단 기기에서 '동작 줄이기'를 켰으면 기다림)
  *   loop      off 이면 '멈춤' 장면에서 끝남 (기본: 반복)
@@ -67,6 +77,10 @@
       stage: '3n+1 튜링 기계 — 누르면 일시정지/재생',
       play: '재생', pause: '일시정지', playTitle: '재생 (스페이스)', pauseTitle: '일시정지 (스페이스)',
       restart: '처음부터', restartTitle: '처음부터 (R)', startLabel: '출발 수', speedLabel: '속도',
+      from: '출발한 수', ridge: '수 의  변 화', ridgeLegend: '줄 하나  =  출발한 수 하나 · 높이는 수의 크기',
+      ariaSeq: (n, ridges) => `3n+1 튜링 기계 애니메이션: 테이프에 적힌 수가 짝수면 2로 나누고 홀수면 3을 곱해 1을 더하기를 되풀이하다가 ` +
+                 `1이 되면 멈춤. ${n}에서 출발해, 멈출 때마다 다음 수로 넘어가 끝없이 이어 감.` +
+                 (ridges ? ' 아래 그림은 출발한 수마다 줄 하나로, 수가 커졌다 작아지며 1에 이르는 모습을 보여 줌.' : ''),
     },
     en: {
       rows: ['If 0', 'If 1', 'If blank'],
@@ -86,6 +100,12 @@
       stage: '3n+1 Turing machine — click to pause or play',
       play: 'Play', pause: 'Pause', playTitle: 'Play (Space)', pauseTitle: 'Pause (Space)',
       restart: 'Restart', restartTitle: 'Restart (R)', startLabel: 'Start at', speedLabel: 'Speed',
+      from: 'Started from', ridge: 'How the number changes',
+      ridgeLegend: 'One line  =  one starting number · height = size of the number',
+      ariaSeq: (n, ridges) => `Animation of a 3n+1 Turing machine: it halves the number on the tape when it is even and replaces it ` +
+                 `by 3n+1 when it is odd, and halts when the number reaches 1. It starts from ${n} and, each time it halts, ` +
+                 `goes on to the next number, without end.` +
+                 (ridges ? ' The picture below has one line per starting number, showing the number rise and fall on its way to 1.' : ''),
     },
   };
   const headName = (T, s, num) => (num ? CIRCLED[s] + ' ' : '') + T.head[s];
@@ -151,21 +171,24 @@
   const D0 = 0.62, DFAST = 0.066, KAPPA = 30, DEND = 0.42, KAPPA2 = 9;
   const T_EMPTY = 0.8, T_IN_ANIM = 0.55, T_HEAD_IN = 0.8, T_HALT = 4.2, T_OUT = 1.4, TAU = 0.42;
   const phaseAB = d => (d >= 0.30 ? [0.30, 0.55] : [0.12, 0.40]);    // 한 걸음 안에서 읽기 | 쓰기 | 이동의 경계
+  // sequence(이어 달리기): 멈춘 장면을 짧게 두고, 둘째 수부터는 빈 화면 · 느린 첫걸음을 줄인다
+  const T_HALT_SEQ = 2.6, T_EMPTY_NEXT = 0.5, D0_NEXT = 0.32, KAPPA_NEXT = 10, T_GEOM = 0.5;
 
-  function buildModel(n) {
+  function buildModel(n, seq, cont) {         // seq = 이어 달리기, cont = 그 가운데 둘째 수부터
     const sim = simulate(n), S = sim.steps, N = S.length;
     const start = n.toString(2);
     const stagger = start.length > 1 ? Math.min(0.26, 2.2 / (start.length - 1)) : 0.26;
-    const IN_T0 = T_EMPTY;
+    const IN_T0 = cont ? T_EMPTY_NEXT : T_EMPTY;
+    const d0 = cont ? D0_NEXT : D0, kap = cont ? KAPPA_NEXT : KAPPA;
     const HEAD_T0 = IN_T0 + stagger * (start.length - 1) + T_IN_ANIM + 0.25;
     const T0 = new Float64Array(N);
     let t = HEAD_T0 + T_HEAD_IN + 0.45;
     for (let k = 0; k < N; k++) {
-      const d = Math.max(DFAST + (D0 - DFAST) * Math.exp(-k / KAPPA),
+      const d = Math.max(DFAST + (d0 - DFAST) * Math.exp(-k / kap),
                          DFAST + (DEND - DFAST) * Math.exp(-(N - 1 - k) / KAPPA2));
       S[k].t0 = t; S[k].d = d; T0[k] = t; t += d;
     }
-    const HALT_T0 = t, OUT_T0 = HALT_T0 + T_HALT, TOTAL = OUT_T0 + T_OUT + 0.5;
+    const HALT_T0 = t, OUT_T0 = HALT_T0 + (seq ? T_HALT_SEQ : T_HALT), TOTAL = OUT_T0 + T_OUT + 0.5;
     const VCH = [{ t: IN_T0, it: 0, val: n, op: null }];            // 값이 바뀌는 시각
     const LCH = [{ t: IN_T0, L: 0, len: start.length }];            // 끝자리 위치 · 자릿수가 바뀌는 시각 (카메라용)
     for (const st of S) {
@@ -177,7 +200,13 @@
     const traj = sim.traj;
     let VMAX = 0, IT_MAX = 0;
     traj.forEach((v, i) => { if (v > VMAX) { VMAX = v; IT_MAX = i; } });
+    const REC = [];                                                  // 그때까지의 최고값을 새로 쓴 계산들 (ridges의 눈금)
+    VCH.forEach((v, i) => {
+      const last = REC[REC.length - 1];
+      if (!last || v.val > last.val) REC.push({ i, t: v.t, val: v.val, prev: last ? last.val : v.val });
+    });
     return {
+      seq: !!seq, cont: !!cont, REC, REC_T: Float64Array.from(REC, r => r.t),
       n, start, stagger, steps: S, N, T0, IN_T0, HEAD_T0, HALT_T0, OUT_T0, TOTAL,
       VCH, VCH_T: Float64Array.from(VCH, v => v.t), LCH, LCH_T: Float64Array.from(LCH, v => v.t),
       NIT: traj.length - 1, VMAX, IT_MAX, end: sim.end, posEnd: sim.posEnd, maxLen: sim.maxLen,
@@ -249,6 +278,9 @@
       gx0: 173, glab: 126, gcol: 156, gyHdr: 244, gyLine: 274, gyHead: 284, gyRow: 330, gpitch: 47,
       V: { x: 1747, hdrY: 244, binY: 306, subY: 312, opY: 352, bigY: 468, bigMinX: 1430, flashTop: 372, flashBot: 474, binMinX: null },
       Gr: { x0: 1268, x1: 1462, y0: 362, y1: 466, labY: 306 },
+      Fr: { x: 1268, labY: 400, numY: 468, px: 58, maxW: 150 },
+      Rg: { h: 336, hx0: 173, hx1: 1747, x0: 173, x1: 1747, hdrY: 10, hor: 20, base: 298, ph: 156, dz: 0.062, rows: 48,
+            smMin: 110, lw: 1, halo: 1, labPx: 22, subPx: 16, peakPx: 18, tails: 3, sway: 44 },
     },
     narrow: {
       W: 1120, H: 790, phaseX: 52, phaseY: 8, taskX: 1088, taskY: 8,
@@ -256,6 +288,9 @@
       gx0: 32, glab: 126, gcol: 156, gyHdr: 244, gyLine: 274, gyHead: 284, gyRow: 330, gpitch: 47,
       V: { x: 1088, hdrY: 520, binY: 582, subY: 588, opY: 630, bigY: 752, bigMinX: 560, flashTop: 670, flashBot: 758, binMinX: 560 },
       Gr: { x0: 32, x1: 520, y0: 590, y1: 752, labY: 538 },
+      Fr: { x: 32, labY: 640, numY: 752, px: 84, maxW: 420 },
+      Rg: { h: 420, hx0: 32, hx1: 1088, x0: 104, x1: 1032, hdrY: 14, hor: 44, base: 378, ph: 200, dz: 0.075, rows: 40,
+            smMin: 110, lw: 1.9, halo: 0.45, labPx: 34, subPx: 23, peakPx: 28, tails: 2, sway: 26 },
     },
   };
 
@@ -268,6 +303,9 @@
       hdrText: '#55535C', hdrLine: '#B5B2BB', cellText: '#8A8791', cellTextOn: '#5F5D66', cellDot: '#C9C7CE',
       bin: '#6A6772', stepLabel: '#6A6772', stepCount: '#8F8C97', peak: '#8F8C97',
       glow: '#FFD478', glowGain: 0.6, glowMode: 'multiply', cutA: 0.6,
+      from: '#8F8C97', ridgeLive: '#9A7628', mist: 0.10, mistLive: 0.16,
+      ridge: [[0, '#1F1E24', 0.80], [0.12, '#55535C', 0.70], [0.40, '#8F8C97', 0.55], [0.75, '#B3B0B9', 0.36], [1, '#DCDAE0', 0]],
+      sky: '#DCDAE0', skyA: 0,
     },
     dark: {    // 원래 영상(tm_video2.py)의 색
       bg: '#0D0D10', ink: '#EEEBE3', gold: '#C6A660', hot: '#F2D99A',
@@ -277,6 +315,9 @@
       hdrText: '#9C99A3', hdrLine: '#55535D', cellText: '#7C7A84', cellTextOn: '#9C99A3', cellDot: '#55535D',
       bin: '#9C99A3', stepLabel: '#9C99A3', stepCount: '#55535D', peak: '#9C99A3',
       glow: '#C6A660', glowGain: 1.4, glowMode: 'add', cutA: 1,
+      from: '#83818A', ridgeLive: '#F2D99A', mist: 0.24, mistLive: 0.22,
+      ridge: [[0, '#EEEBE3', 0.80], [0.12, '#C4BEE2', 0.70], [0.40, '#767ED6', 0.58], [0.75, '#4652B0', 0.34], [1, '#343C8C', 0]],
+      sky: '#3A46B0', skyA: 0.16,
     },
   };
 
@@ -303,6 +344,33 @@
   }
   function rgba(h, a) { const c = rgb(h); return `rgba(${c[0]},${c[1]},${c[2]},${clamp01(a)})`; }
 
+  // ── ridges: 줄의 색(깊이 0 = 방금 끝난 줄 … 1 = 지평선), 줄의 높이, 3n+1 궤적
+  function ridgeTone(TH, u) {
+    let lut = TH.ridgeLut;
+    if (!lut) {
+      lut = TH.ridgeLut = [];
+      const st = TH.ridge;
+      for (let q = 0; q <= 64; q++) {
+        const x = q / 64;
+        let i = 1;
+        while (i < st.length - 1 && x > st[i][0]) i++;
+        const a = st[i - 1], b = st[i], f = clamp01((x - a[0]) / (b[0] - a[0])), ca = rgb(a[1]), cb = rgb(b[1]);
+        const c = [0, 1, 2].map(j => Math.round(lerp(ca[j], cb[j], f)));
+        lut.push({ rgb: c, c: c.join(','), a: lerp(a[2], b[2], f) });
+      }
+    }
+    return lut[Math.round(clamp01(u) * 64)];
+  }
+  // 큰 수까지 올라간 줄일수록 조금 더 높게: 최고값 9,232인 줄이 기준 높이, 작은 줄은 그 0.42배까지
+  const softAmp = v => Math.max(0.42, Math.min(1.12, 0.36 + 0.64 * Math.log(Math.max(2, v)) / Math.log(9232)));
+  function ridgeRow(n) {                        // 앞선 수의 줄 (기계를 돌리지 않고 3n+1 계산만)
+    const v = [n];
+    let x = n, vmax = n;
+    while (x !== 1) { x = x % 2 ? 3 * x + 1 : x / 2; v.push(x); if (x > vmax) vmax = x; }
+    return { n, v, nit: v.length - 1, vmax };
+  }
+  const SWAY_T = 58, RIDGE_KEEP = 64;
+
   function geometry(LY, M) {     // 칸 크기: 가장 긴 테이프(+ 올림 칸 + 오른쪽 빈칸 둘)가 들어가게, 최대 84
     const fit = Math.floor((LY.xmax - LY.xmin) / (M.maxLen + 3));
     const cell = Math.max(LY.cellMin, Math.min(LY.cellMax, fit));
@@ -319,6 +387,7 @@
     let s = '(2) 0123456789,÷×+–←→·?';
     for (const T of Object.values(TEXT)) {
       s += T.task + T.phases.join('') + T.table + T.legend + T.tape + T.start + T.nth(0) + T.steps(0) + T.peak(0) + T.rows.join('');
+      s += T.from + T.ridge + T.ridgeLegend;
       for (const st of STATES) {
         s += headName(T, st, true) + pillName(T, st, true);
         for (const [sym] of ROWS) s += cellText(T, st, sym, true);
@@ -476,7 +545,7 @@
   const reducedMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   class Turing3n1 extends HTMLElement {
-    static get observedAttributes() { return ['start', 'theme', 'numbers', 'layout', 'speed', 'loop', 'controls', 'lang']; }
+    static get observedAttributes() { return ['start', 'theme', 'numbers', 'layout', 'speed', 'loop', 'controls', 'lang', 'sequence', 'ridges']; }
 
     constructor() {
       super();
@@ -509,6 +578,9 @@
       this._info = root.querySelector('.info');
       this._t = 0; this._cam = 0; this._playing = false; this._started = false; this._ended = false;
       this._visible = true; this._fontsReady = false; this._raf = 0; this._last = 0;
+      this._seq = false; this._ridges = false; this._rows = null; this._n0 = 27; this._rnd = 0; this._Gold = null;
+      this._sm = 110; this._smSnap = true; this._clock = 0; this._rowsVer = 0; this._rcan = null; this._rkey = '';
+      this._rx = new Float64Array(1024); this._ry = new Float64Array(1024);
       this._tick = this._tick.bind(this);
 
       this._stage.addEventListener('click', () => this.toggle());
@@ -531,7 +603,7 @@
       if (!this._M) return;
       this._t = Math.max(0, Math.min(this._M.TOTAL - 0.001, +v || 0));
       this._cam = camTarget(this._M, this._G, this._t);
-      this._started = true; this._ended = false;
+      this._started = true; this._ended = false; this._smSnap = true;
       this._render();
     }
     get paused() { return !this._playing; }
@@ -542,7 +614,10 @@
     }
     pause() { this._setPlaying(false); }
     toggle() { if (this._playing) this.pause(); else this.play(); }
-    restart() { this._t = 0; this._cam = 0; this._started = true; this._ended = false; this._render(); }
+    restart() {
+      if (this._M && this._M.cont) this._build();              // 이어 달리던 중이면 첫 수로 돌아간다
+      this._t = 0; this._cam = 0; this._started = true; this._ended = false; this._smSnap = true; this._render();
+    }
 
     // ── 수명
     connectedCallback() {
@@ -577,7 +652,9 @@
       this._readAll();
       if (name === 'start') {
         const n = this._readStart();
-        if (n !== this._M.n) { this._build(); this.restart(); }
+        if (n !== this._n0) { this._build(); this.restart(); }
+      } else if (name === 'sequence' || name === 'ridges' || (name === 'loop' && this.hasAttribute('sequence'))) {
+        this._build(); this._base = null; this._resize(true); this.restart();
       } else if (name === 'layout') {
         this._resize(true);
       } else {
@@ -587,7 +664,9 @@
 
     // ── 안쪽
     _readStart() {
-      const n = Math.floor(Number(this.getAttribute('start')));
+      const a = this.getAttribute('start');
+      if (a === 'random') return this._rnd || (this._rnd = 27 + Math.floor(Math.random() * 973));   // 27 – 999
+      const n = Math.floor(Number(a));
       return Number.isFinite(n) && n >= 1 ? Math.min(n, 1000000) : 27;
     }
     _lang() {
@@ -605,12 +684,41 @@
       this._speed = Number.isFinite(sp) ? Math.max(0.1, Math.min(16, sp)) : 1;
       const lp = this.getAttribute('loop');
       this._loop = !(lp === 'off' || lp === 'false');
+      const on = name => { const v = this.getAttribute(name); return v !== null && v !== 'off' && v !== 'false'; };
+      this._seq = on('sequence') && this._loop;
+      this._ridges = on('ridges');
       this._bar.hidden = !this.hasAttribute('controls') || this.getAttribute('controls') === 'off';
     }
     _build() {
-      this._M = buildModel(this._readStart());
+      this._n0 = this._readStart();
+      this._M = buildModel(this._n0, this._seq, false);
+      this._Gold = null; this._smSnap = true;
+      this._rows = null; this._rowsVer++;
+      if (this._ridges) {                             // 앞선 수들의 줄을 미리 놓는다: n−1, n−2, …
+        this._rows = [];
+        for (let k = 1; k <= RIDGE_KEEP && this._n0 - k >= 2; k++) this._rows.push(ridgeRow(this._n0 - k));
+      }
       if (this._LY) this._G = geometry(this._LY, this._M);
       this._syncBar();
+    }
+    _nextRun() {                                      // sequence: 멈춘 수의 줄을 뒤로 보내고 다음 수로
+      const M = this._M;
+      if (this._rows) {
+        this._rows.unshift({ n: M.n, v: M.VCH.map(v => v.val), nit: M.NIT, vmax: M.VMAX });
+        if (this._rows.length > RIDGE_KEEP) this._rows.length = RIDGE_KEEP;
+        this._rowsVer++;
+      }
+      this._Gold = this._G;
+      this._M = buildModel(M.n < 1000000 ? M.n + 1 : 2, true, true);
+      this._G = geometry(this._LY, this._M);
+      this._syncBar();
+    }
+    _smTarget() {                                     // ridges의 가로 눈금: 보이는 줄 가운데 가장 긴 것이 들어가게
+      const M = this._M, R = this._LY.Rg;
+      let m = M.VCH[Math.max(0, bisectRight(M.VCH_T, this._t) - 1)].it + 4;
+      const rows = this._rows || [];
+      for (let j = Math.min(rows.length, R.rows) - 1; j >= 0; j--) if (rows[j].nit > m) m = rows[j].nit;
+      return Math.max(R.smMin, 10 * Math.ceil((m + 6) / 10));
     }
     _syncBar() {
       const M = this._M;
@@ -621,7 +729,8 @@
       this._select.value = sv;
       const T = this._T;
       this._info.textContent = T.info(M.NIT, M.N, M.VMAX);
-      this._canvas.setAttribute('aria-label', T.aria(M));
+      const aria = this._seq ? T.ariaSeq(this._n0, this._ridges) : T.aria(M);
+      if (this._canvas.getAttribute('aria-label') !== aria) this._canvas.setAttribute('aria-label', aria);
       this._stage.setAttribute('aria-label', T.stage);
       const rb = this.shadowRoot.querySelector('[data-act="restart"]');
       rb.title = T.restartTitle; rb.setAttribute('aria-label', T.restart);
@@ -648,23 +757,28 @@
       const tt = M.NIT >= 1 ? M.VCH[Math.min(6, M.NIT)].t + 0.6 : M.HALT_T0 + 1;
       this._t = Math.min(tt, M.OUT_T0 - 0.01);
       if (this._G) this._cam = camTarget(M, this._G, this._t);
-      this._started = false;
+      this._started = false; this._smSnap = true;
     }
     _resize(force) {
       const cssW = this.clientWidth;
       if (!cssW) return;
       const mode = this.getAttribute('layout');
-      const name = mode === 'wide' || mode === 'narrow' ? mode : (cssW < 640 ? 'narrow' : 'wide');
+      let name = mode === 'wide' || mode === 'narrow' ? mode : '';
+      if (!name) {                                    // auto: 페이지의 CSS가 정했으면 그것을, 아니면 폭으로
+        const v = getComputedStyle(this).getPropertyValue('--turing-3n1-layout').trim();
+        name = v === 'wide' || v === 'narrow' ? v : (cssW < 640 ? 'narrow' : 'wide');
+      }
       if (force || this._LY !== LAYOUTS[name]) {
         this._LY = LAYOUTS[name];
         this._G = geometry(this._LY, this._M);
+        this._Gold = null; this._smSnap = true;
         if (!this._started) this._showPoster();
         this._fades = null;
       }
       const LY = this._LY;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const pw = Math.min(Math.round(cssW * dpr), 2560);
-      const ph = Math.round(pw * LY.H / LY.W);
+      const ph = Math.round(pw * (LY.H + (this._ridges ? LY.Rg.h : 0)) / LY.W);
       if (this._canvas.width !== pw || this._canvas.height !== ph) {
         this._canvas.width = pw; this._canvas.height = ph;
         this._gcan.width = this._gmask.width = Math.max(1, Math.ceil(pw / 4));
@@ -678,20 +792,23 @@
       if (!this._playing || !this._visible) return;
       const dt = this._last ? Math.min(0.1, (now - this._last) / 1000) : 0;
       this._last = now;
+      this._clock += dt;
       if (this._fontsReady && this._G) this._advance(dt * this._speed);
       this._render();
       this._schedule();
     }
     _advance(dt) {
-      const M = this._M;
+      let M = this._M;
       let t = this._t + dt;
       if (t >= M.TOTAL) {
-        if (this._loop) { t -= M.TOTAL; this._cam = 0; }
+        if (this._seq) { t -= M.TOTAL; this._cam = 0; this._nextRun(); M = this._M; t = Math.min(t, M.TOTAL - 0.001); }
+        else if (this._loop) { t -= M.TOTAL; this._cam = 0; }
         else { t = M.OUT_T0 - 0.001; this._ended = true; this._t = t; this._setPlaying(false); return; }
       }
       const tgt = camTarget(M, this._G, t);
       this._cam += (tgt - this._cam) * (1 - Math.exp(-dt / TAU));
       this._t = t;
+      if (this._ridges && !this._smSnap) this._sm += (this._smTarget() - this._sm) * (1 - Math.exp(-dt / 0.55));
     }
 
     _render() {
@@ -702,7 +819,7 @@
     // 고정 층: 바탕 · 할 일 · 규칙표 머리글 · 줄 이름 · 쉬고 있는 규칙표. 크기 · 배치 · 색 · 글꼴이 바뀔 때만 다시 그린다
     _baseLayer() {
       const cw = this._canvas.width, ch = this._canvas.height, LY = this._LY, TH = this._TH, num = this._numbers, T = this._T;
-      const key = [cw, ch, LY.W, this._themeName, num, this._fontsReady, this._langName].join('|');
+      const key = [cw, ch, LY.W, this._themeName, num, this._fontsReady, this._langName, this._ridges].join('|');
       if (this._base && this._baseKey === key) return this._base;
       const b = this._base || (this._base = document.createElement('canvas'));
       b.width = cw; b.height = ch; this._baseKey = key;
@@ -717,11 +834,21 @@
       ctx.beginPath(); ctx.moveTo(LY.gx0, LY.gyLine); ctx.lineTo(gRight, LY.gyLine); ctx.stroke();
       T.rows.forEach((lab, r) => text(ctx, lab, LY.gx0, LY.gyRow + r * LY.gpitch + 5, F.row, TH.rowLabel, 'la'));
       for (let c = 0; c < STATES.length; c++) drawColumn(ctx, LY, TH, T, num, c, false, null, false);
+      if (this._ridges) {
+        const R = LY.Rg;
+        text(ctx, T.ridge, R.hx0, LY.H + R.hdrY, F.hdr, TH.label, 'la');
+        text(ctx, T.ridgeLegend, R.hx1, LY.H + R.hdrY, F.hdr, TH.label, 'ra');
+      }
       return b;
     }
 
     _draw(tt) {
-      const ctx = this._ctx, M = this._M, LY = this._LY, G = this._G, TH = this._TH, num = this._numbers, T = this._T;
+      const ctx = this._ctx, M = this._M, LY = this._LY, TH = this._TH, num = this._numbers, T = this._T;
+      let G = this._G;
+      if (M.cont && this._Gold && tt < T_GEOM && this._Gold.cell !== G.cell) {   // 칸 크기가 다른 수로 넘어갈 때
+        const cell = lerp(this._Gold.cell, G.cell, ease(tt / T_GEOM));
+        G = { cell, s: cell / 84, anchor: LY.xmax - 3 * cell, xmin: G.xmin };
+      }
       const cw = this._canvas.width, ch = this._canvas.height, k = cw / LY.W;
       const S = stateAt(M, tt), cam = this._cam, oa = S.outA;
       const cell = G.cell, sc = G.s, tapeY = LY.tapeY;
@@ -877,6 +1004,12 @@
             const oa2 = !S.fast ? Math.max(0, 1 - vt / 1.1) : Math.max(0.25, 1 - vt / 0.5);
             text(ctx, S.op, V.x, V.opY, F.op, TH.gold, 'rs', ra * Math.min(1, oa2));
           }
+          if (this._ridges) {                                  // 작은 그래프 대신 출발한 수 (그래프는 아래 큰 그림에)
+            const Fr = LY.Fr, fs = fmt(M.n);
+            const fw = textW(ctx, fs, F.bin(Fr.px));
+            text(ctx, T.from, Fr.x, Fr.labY, F.hdr, TH.label, 'ls', ra);
+            text(ctx, fs, Fr.x, Fr.numY, F.bin(fw > Fr.maxW ? Fr.px * Fr.maxW / fw : Fr.px), TH.from, 'ls', ra);
+          } else {
           // 그래프
           ctx.globalAlpha = ra; ctx.strokeStyle = TH.rule; ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.moveTo(Gr.x0, Gr.y1); ctx.lineTo(Gr.x1, Gr.y1); ctx.stroke();
@@ -898,8 +1031,10 @@
             const rx = Math.min(Math.max(lerp(Gr.x0, Gr.x1, M.IT_MAX / NIT) - 10, Gr.x0 + pkw), Gr.x1 + 30);
             text(ctx, pk, rx, Gr.y0 + 6, F.sub, TH.peak, 'rs', pa);
           }
+          }
         }
       }
+      if (this._ridges) this._drawRidges(ctx, M, S, tt, glow);
 
       // ── 테이프 띠의 양 끝을 바탕색으로 흐리게
       if (!this._fades || this._fades.theme !== TH || this._fades.LY !== LY) {
@@ -923,6 +1058,18 @@
         gm.globalCompositeOperation = isCut ? 'destination-out' : 'lighter';
         gm.fillStyle = `rgba(0,0,0,${clamp01(isCut ? a : a * TH.glowGain)})`;
         rr(gm, x0 * s4, y0 * s4, x1 * s4, y1 * s4, r * s4); gm.fill();
+      }
+      const halo = this._halo;
+      this._halo = null;
+      if (halo && halo.a > 0.004) {                            // ridges: 지금 수의 줄을 따라 번지는 빛
+        gm.globalCompositeOperation = 'lighter';
+        gm.strokeStyle = `rgba(0,0,0,${clamp01(halo.a * TH.glowGain)})`;
+        gm.lineWidth = halo.w * s4; gm.lineJoin = 'round'; gm.lineCap = 'round';
+        gm.beginPath(); gm.moveTo(this._rx[0] * s4, this._ry[0] * s4);
+        for (let i = 1; i < halo.n; i++) gm.lineTo(this._rx[i] * s4, this._ry[i] * s4);
+        if (halo.xTail !== null) gm.lineTo(halo.xTail * s4, halo.yb * s4);
+        gm.stroke();
+        glows.push(null);                                      // (빛번짐을 그리게)
       }
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.globalCompositeOperation = 'source-over';
@@ -949,11 +1096,136 @@
       }
 
       // ── 처음과 끝: 화면 전체가 바탕색에서 떠오르고, 바탕색으로 사라진다
-      const fadeIn = ease(tt / (M.IN_T0 + 0.8));
-      const whole = tt < M.IN_T0 + 0.8 ? fadeIn : (tt >= M.OUT_T0 ? oa : 1);
+      const fadeIn = ease(tt / (M.IN_T0 + 0.8));               // (sequence에서는 처음 한 번만 떠오르고, 수 사이에는 사라지지 않는다)
+      const whole = M.cont ? 1 : (tt < M.IN_T0 + 0.8 ? fadeIn : (tt >= M.OUT_T0 && !M.seq ? oa : 1));
       if (whole < 1) {
         ctx.globalAlpha = 1 - whole; ctx.fillStyle = TH.bg; ctx.fillRect(0, 0, cw, ch); ctx.globalAlpha = 1;
       }
+    }
+
+    // ── '수의 변화' 그림 (ridges). 출발한 수마다 줄 하나: 가로 = 계산 횟수, 높이 = 수의 크기(그 줄에서 가장 컸던 값이 기준).
+    //    맨 앞의 금빛 줄이 지금 수이고, 그 높이 눈금은 '지금까지의 최고값'이라 새 최고값이 나올 때마다 줄이 내려앉는다.
+    //    수가 1이 되면 줄이 바닥에 닿아 평평해지고, 줄 전체가 한 칸 뒤로 물러난다. 뒤의 줄들은 앞선 수(n−1, n−2, …).
+    _drawRidges(ctx, M, S, tt, glow) {
+      const LY = this._LY, R = LY.Rg, TH = this._TH, top = LY.H, lw = R.lw;
+      if (this._smSnap) { this._sm = this._smTarget(); this._smSnap = false; }
+      const x0 = R.x0, x1 = R.x1, base = top + R.base, hor = top + R.hor, dx = (x1 - x0) / this._sm;
+      // 소실점이 천천히 좌우로 움직인다. 반 픽셀 단위로만 옮겨, 뒤의 줄들을 그려 둔 층은 그때만 다시 그린다
+      const vpx = LY.W / 2 + Math.round(2 * R.sway * Math.sin(this._clock * 2 * Math.PI / SWAY_T)) / 2;
+      const slide = M.seq && tt >= M.OUT_T0 ? ease((tt - M.OUT_T0) / (M.TOTAL - M.OUT_T0 - 0.15)) : 0;
+      const sAt = d => 1 / (1 + d * R.dz);
+      const rx = this._rx, ry = this._ry, bg = rgb(TH.bg);
+      const rows = this._rows || [], nR = Math.min(rows.length, R.rows);
+
+      // 줄 하나: 뒤의 줄을 가리는 면(바탕색에 줄의 색을 조금 섞어 아래로 갈수록 바탕색) + 선. 점은 rx · ry의 앞 n개
+      const paint = (c, n, yb, xTail, col, alpha, width, mist, halo) => {
+        c.beginPath(); c.moveTo(rx[0], yb + 1);
+        let ymin = yb;
+        for (let i = 0; i < n; i++) { c.lineTo(rx[i], ry[i]); if (ry[i] < ymin) ymin = ry[i]; }
+        c.lineTo(rx[n - 1], yb + 1); c.closePath();
+        c.globalAlpha = 1;
+        if (mist > 0.004 && ymin < yb - 2) {
+          const g = c.createLinearGradient(0, ymin, 0, yb);
+          g.addColorStop(0, `rgb(${[0, 1, 2].map(j => Math.round(lerp(bg[j], col[j], mist))).join(',')})`);
+          g.addColorStop(1, TH.bg);
+          c.fillStyle = g;
+        } else c.fillStyle = TH.bg;
+        c.fill();
+        const cs = col.join(',');
+        c.beginPath(); c.moveTo(rx[0], ry[0]);
+        for (let i = 1; i < n; i++) c.lineTo(rx[i], ry[i]);
+        if (xTail !== null) c.lineTo(xTail, yb);
+        c.lineJoin = halo > 0 ? 'round' : 'bevel';
+        if (halo > 0.3) { c.strokeStyle = `rgba(${cs},${0.13 * halo})`; c.lineWidth = width * 2.8; c.stroke(); }
+        c.strokeStyle = `rgba(${cs},${alpha})`; c.lineWidth = width; c.stroke();
+      };
+      // 앞선 수의 이름: 평평해진 줄의 오른쪽 끝에 작게 (가까운 두세 줄만, 뒤로 갈수록 흐리게)
+      const tailLabel = (c, d, n, a) => {
+        if (a <= 0.01) return;
+        const s = sAt(d);
+        text(c, fmt(n), vpx + (x1 - vpx) * s + 11 * lw, hor + (base - hor) * s, sansFont(400, R.subPx), TH.ink, 'lm', a);
+      };
+      const fadeBack = d => 0.62 * Math.pow(0.7, d - 1);
+
+      // 1. 앞선 수들: 따로 그려 둔 층. 줄이 바뀌거나, 물러나는 중이거나, 가로 눈금 · 소실점이 달라질 때만 다시 그린다
+      const cw = this._canvas.width, k = cw / LY.W, oy = Math.round(top * k), lh = this._canvas.height - oy;
+      const key = [cw, lh, LY.W, this._themeName, this._fontsReady, this._rowsVer, this._sm.toFixed(3), slide.toFixed(4), vpx].join('|');
+      const layer = this._rcan || (this._rcan = document.createElement('canvas'));
+      if (key !== this._rkey) {
+        this._rkey = key;
+        if (layer.width !== cw || layer.height !== lh) { layer.width = cw; layer.height = lh; }
+        const c = layer.getContext('2d');
+        c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cw, lh);
+        c.setTransform(k, 0, 0, k, 0, -oy);
+        c.lineCap = 'round';
+        if (TH.skyA > 0) {                                     // 줄들이 사라지는 지평선의 옅은 빛
+          const sy = hor + (base - hor) * sAt(R.rows), g = c.createRadialGradient(vpx, sy, 0, vpx, sy, 560);
+          g.addColorStop(0, rgba(TH.sky, TH.skyA)); g.addColorStop(1, rgba(TH.sky, 0));
+          c.save(); c.translate(0, sy); c.scale(1, 0.13); c.translate(0, -sy);
+          c.fillStyle = g; c.fillRect(vpx - 560, sy - 560, 1120, 1120); c.restore();
+        }
+        for (let j = nR - 1; j >= 0; j--) {                    // 먼 줄부터
+          const d = j + 1 + slide, tn = ridgeTone(TH, (d - 1) / (R.rows - 1.5));
+          if (tn.a < 0.03) continue;
+          const s = sAt(d), yb = hor + (base - hor) * s, row = rows[j], v = row.v, m = Math.min(row.nit, rx.length - 1);
+          const amp = R.ph * softAmp(row.vmax) * s, den = row.vmax > 1 ? row.vmax - 1 : 1;
+          for (let i = 0; i <= m; i++) { rx[i] = vpx + (x0 + i * dx - vpx) * s; ry[i] = yb - (v[i] - 1) / den * amp; }
+          paint(c, m + 1, yb, vpx + (x1 - vpx) * s, tn.rgb, tn.a, Math.max(0.7, 1.7 * Math.sqrt(s)) * lw,
+                TH.mist * tn.a * (0.3 + 0.7 * clamp01((d - 1) / 14)), 0);
+        }
+        for (let j = Math.min(nR, R.tails) - 1; j >= 0; j--) {
+          tailLabel(c, j + 1 + slide, rows[j].n, fadeBack(j + 1 + slide) * (j === R.tails - 1 ? 1 - slide : 1));
+        }
+      }
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1; ctx.drawImage(layer, 0, oy);
+      ctx.restore();
+      if (S.inProg === null) return;
+
+      // 2. 지금 수
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, top, LY.W, R.h); ctx.clip();
+      ctx.lineCap = 'round';
+      const liveA = ease(S.inProg / 0.6);
+      const s = sAt(slide), yb = hor + (base - hor) * s, VCH = M.VCH, vi = Math.min(S.vi, rx.length - 1);
+      const rec = M.REC[Math.max(0, bisectRight(M.REC_T, tt) - 1)];
+      const emax = rec.prev + (rec.val - rec.prev) * easeOut((tt - rec.t) / 0.7);      // 눈금이 새 최고값을 따라간다
+      const amp = R.ph * softAmp(emax) * s * easeOut(S.inProg / 0.9), den = emax > 1 ? emax - 1 : 1;   // (첫 점은 바닥에서 떠오른다)
+      for (let i = 0; i <= vi; i++) {
+        rx[i] = vpx + (x0 + i * dx - vpx) * s; ry[i] = yb - Math.min(1.4, (VCH[i].val - 1) / den) * amp;
+      }
+      if (vi > 0 && S.valueT !== null && S.valueT < 0.3) {                             // 방금 생긴 선분이 그려지는 중
+        const u = easeOut(S.valueT / 0.3);
+        rx[vi] = lerp(rx[vi - 1], rx[vi], u); ry[vi] = lerp(ry[vi - 1], ry[vi], u);
+      }
+      let xTail = null, tailU = 0;
+      if (tt >= M.HALT_T0) {                                                           // 멈춤: 바닥을 따라 오른쪽 끝까지 평평하게
+        tailU = easeOut((tt - M.HALT_T0) / 1.0);
+        xTail = lerp(rx[vi], vpx + (x1 - vpx) * s, tailU);
+      }
+      const t1 = ridgeTone(TH, 0), lc = rgb(TH.ridgeLive);
+      const col = [0, 1, 2].map(j => Math.round(lerp(lc[j], t1.rgb[j], slide)));
+      paint(ctx, vi + 1, yb, xTail, col, lerp(1, t1.a, slide) * liveA, lerp(2.4, 1.7 * Math.sqrt(s), slide) * lw,
+            lerp(TH.mistLive, TH.mist * t1.a * 0.3, slide) * liveA, (1 - slide) * liveA * R.halo);
+      this._halo = { n: vi + 1, xTail, yb, a: 0.42 * (1 - slide) * liveA * R.halo, w: 7 * lw };
+
+      // 3. 머리점 · 지금까지의 최고값 · 출발한 수
+      const ha = liveA * (1 - slide) * (xTail !== null ? 1 - ease((tailU - 0.55) / 0.45) : 1);
+      if (ha > 0.01) {
+        const hx = xTail !== null ? xTail : rx[vi], hy = xTail !== null ? yb : ry[vi];
+        ctx.globalAlpha = ha; ctx.fillStyle = TH.hot;
+        ctx.beginPath(); ctx.arc(hx, hy, 4.5 * lw, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+        glow(hx - 9 * lw, hy - 9 * lw, hx + 9 * lw, hy + 9 * lw, 9 * lw, 0.8 * ha);
+      }
+      const pa = rec.i > 0 && rec.i <= vi ? ease((tt - rec.t - 0.12) / 0.5) * (1 - slide) * liveA : 0;
+      if (pa > 0.01) {
+        const str = fmt(rec.val), font = sansFont(400, R.peakPx), w = textW(ctx, str, font);
+        text(ctx, str, Math.min(Math.max(rx[rec.i], x0 + w / 2 - 20), x1 - w / 2), ry[rec.i] - 9 * lw, font, TH.peak, 'ms', pa);
+      }
+      text(ctx, fmt(M.n), x0 - 14 * lw, base + 2 * lw, sansFont(700, R.labPx), TH.gold, 'rs', liveA * (1 - ease(slide * 2)));
+      if (slide > 0.01) tailLabel(ctx, slide, M.n, liveA * slide * fadeBack(1));
+      ctx.restore();
     }
   }
 
