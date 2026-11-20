@@ -3,6 +3,10 @@
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{kotex}
+% xetexko 4 (TeX Live 2022 and later) sets parentheses and quotation marks in the Hangul font,
+% even in English text. Keep them in Latin Modern, as in the TeX Live 2020 builds of this CV.
+\ifdefined\latinparens \latinparens \fi
+\ifdefined\latincjksymbols \latincjksymbols \fi
 \usepackage{geometry}
 \geometry{left=1in,right=1in,top=1in,bottom=1in}
 \usepackage{hyperref}
@@ -192,6 +196,7 @@ Geometric group theory, low-dimensional topology.
 
 \section*{Talks}
 \begin{enumerate}[leftmargin=1.5em, label=\arabic*.]
+\item "Human, mathematics and AI: Case studies on the roles and responsibilities of mathematicians", Asia-Pacific Mathematical Network (APMN) Meeting, Forum "Mathematics and AI" (keynote, 20 min), Vietnam Institute for Advanced Study in Mathematics (VIASM), Hanoi, Vietnam, November 28 (Saturday), 2026 (scheduled).
 \item Siji High School, Daegu, Korea. November 24, 2026 (scheduled).
 \item 2026 Seoul$\cdot$Arts$\cdot$Future Talks (SAFT), Dongdaemun Design Plaza (DDP) Art Hall 2, Seoul, Korea, November 17, 2026 (scheduled).
 \item Humanity Symposium, November 6, 2026, Seoul National University, Seoul, Korea (scheduled).
