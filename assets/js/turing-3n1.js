@@ -1,9 +1,10 @@
 /*!
- * turing-3n1.js · v1.4 · 2026-11-20
+ * turing-3n1.js · v1.4.1 · 2026-11-20
  *   v1.1  v1.0에 영어 화면 글을 더함
  *   v1.2  sequence(멈추면 다음 수로 이어 감)와 ridges('수의 변화' 그림)를 더함
  *   v1.3  tree('1로 가는 길' 나무 그림)를 더했다가
  *   v1.4  그 자리에 trace('기계가 지나온 길': 테이프 · 머리 · 상태의 역사를 입체로 세운 그림)를 넣음 (tree는 뺌)
+ *   v1.4.1  trace: 좁은 화면에서 상태 이름이 오른쪽 끝에서 잘리지 않게 자리를 남김 · 돌려 볼 때 제목 줄이 가려지지 않게 함
  *   sequence · ridges · trace를 쓰지 않으면 화면은 v1.0과 같음 (한국어 화면은 픽셀까지 같음)
  * 3n+1(콜라츠) 튜링 기계 애니메이션 — 웹 컴포넌트 <turing-3n1>
  *
@@ -562,6 +563,7 @@
     HFOV: 30 * Math.PI / 180,
     SY: 4, SZ: 11,                       // 자리 하나의 높이, 상태 하나의 깊이 (걸음 하나의 길이가 1)
     GAP: 16,                             // 한 계산과 다음 계산 사이(걸음)
+    LAG: 5,                              // 따라가는 동안 '지금'이 사진기보다 앞서는 걸음 수(오른쪽 자리를 잡을 때 셈에 넣는다)
     FLOOR: -1.7,                         // 바닥의 높이(자리)
     VIEW: { solid: [0.09, 0.56], tape: [0, 0], states: [0, Math.PI / 2], orbit: [1.36, 0.12] },   // [돌린 각, 내려다보는 각]
     LEVEL: { H: 0, P: 1, Q: 2, C0: 3, C1: 4, C2: 5, R: 6 },
@@ -673,6 +675,7 @@
       this.w = 0; this.h = 0; this.dpr = 1; this.narrow = false; this.cut = 0; this.slow = 0; this.bloom = true;
       this.psi = TRACE.VIEW.solid[0]; this.theta = TRACE.VIEW.solid[1]; this.psiT = this.psi; this.thetaT = this.theta; this.view = 'solid';
       this.camX = null; this.top = 12; this.sPx = 2.5; this.shift = 0; this.mvp = new Float32Array(16);
+      this.push = 0; this.mKey = ''; this.m = [0, 0, 1];   // '지금'을 왼쪽으로 민 만큼(px), 상태 이름의 폭
       this.hover = null; this.hoverUntil = 0; this.ptr = null; this.drag = null;
       this.dirty = true; this.raf = 0; this.last = 0;
       this._frame = this._frame.bind(this);
@@ -896,7 +899,7 @@
       const cp = Math.cos(this.psi), sp = Math.sin(this.psi), ct = Math.cos(this.theta), st = Math.sin(this.theta);
       const f = [-sp * ct, -st, -cp * ct], r = [cp, 0, -sp];
       const u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
-      const D = this.w / (2 * s * Math.tan(TRACE.HFOV / 2)), back = 0.31 * this.w / s;
+      const D = this.w / (2 * s * Math.tan(TRACE.HFOV / 2)), back = (0.31 * this.w - this.push) / s;
       const yc = (TRACE.FLOOR + this.top) / 2 * TRACE.SY, zc = 3 * TRACE.SZ;
       const T = [this.camX - back + u[0] * shift, yc + u[1] * shift, zc + u[2] * shift];
       const e = [T[0] - f[0] * D, T[1] - f[1] * D, T[2] - f[2] * D];
@@ -916,21 +919,50 @@
       return [(0.5 + 0.5 * (m[0] * X + m[4] * Y + m[8] * Z + m[12]) / w) * this.w, (0.5 - 0.5 * (m[1] * X + m[5] * Y + m[9] * Z + m[13]) / w) * this.h, w];
     }
     _fit() {                                           // 지금의 걸음 둘레(자리 × 상태)가 그림 칸의 높이에 꼭 들어가게
-      const padT = this.narrow ? 28 : 36, padB = this.narrow ? 44 : 46, usable = this.h - padT - padB, want = padT + usable / 2;
+      const padT = this.narrow ? 28 : 36, padB = this.narrow ? 50 : 46, usable = this.h - padT - padB, want = padT + usable / 2;
       let s = this.sPx, shift = this.shift;
-      for (let it = 0; it < 4; it++) {
-        this._cam(s, shift);
-        let lo = 1e9, hi = -1e9;
-        for (const x of [this.camX - 2, this.camX + 2]) for (const y of [TRACE.FLOOR, this.top]) for (const z of [-0.2, 6.3]) {
-          const p = this._P(x, y, z);
-          if (p[1] < lo) lo = p[1]; if (p[1] > hi) hi = p[1];
+      const F = TRACE.FLOOR, m = this._measure(), cp = Math.cos(this.psi);
+      for (let pass = 0; pass < 3; pass++) {
+        for (let it = 0; it < (pass ? 2 : 4); it++) {
+          this._cam(s, shift);
+          let lo = 1e9, hi = -1e9;
+          for (const x of [this.camX - 2, this.camX + 2]) for (const y of [F, this.top]) for (const z of [-0.2, 6.3]) {
+            const p = this._P(x, y, z);
+            if (p[1] < lo) lo = p[1]; if (p[1] > hi) hi = p[1];
+          }
+          s = Math.max(0.3, Math.min(30, s * usable / Math.max(1, hi - lo)));
+          shift += (want - (lo + hi) / 2) / s;
         }
-        s = Math.max(0.3, Math.min(30, s * usable / Math.max(1, hi - lo)));
-        shift += (want - (lo + hi) / 2) / s;
+        this._cam(s, shift);
+        // 오른쪽에 글자가 들어갈 자리: 바닥의 줄 끝에 적는 상태의 이름들(줄이 벌어져 보일 때), 아니면 머리 옆에 적는 지금 상태의 이름.
+        // 넓은 화면에서는 늘 남는다. 좁은 화면에서는 모자라므로 그만큼 '지금'을 왼쪽으로 민다 (끝에서 볼 때는 밀지 않는다)
+        const Xa = this.camX + TRACE.LAG;                  // 따라가는 동안 '지금'은 사진기보다 몇 걸음 앞서 있다
+        const gap = Math.abs(this._P(Xa + 13, F, 1)[1] - this._P(Xa + 13, F, 0)[1]);
+        let xn = -1e9, xh = -1e9;
+        for (let l = 0; l <= 6; l++) xn = Math.max(xn, this._P(Xa + 14.5, F, l)[0]);
+        for (const y of [F, this.top]) for (const z of [0, 6.3]) xh = Math.max(xh, this._P(Xa, y, z)[0]);
+        const need = lerp(xh + 12 + m[0], xn + 2 + m[1], clamp01((gap / m[2] - 0.8) / 0.2)) + 6;
+        const push = Math.max(0, Math.min(0.2 * this.w * clamp01((cp - 0.3) / 0.3), this.push + (need - this.w) / Math.max(0.35, cp)));
+        const moved = Math.abs(push - this.push);
+        this.push = push;
+        if (moved < 0.5) break;
       }
       this._cam(s, shift);
       const e = ease((this.psi - 1.0) / 0.5);             // 끝에서 볼수록 가까운 걸음만 남긴다(겹쳐서 뭉개지지 않게)
-      this.ageStart = lerp(0.60 * this.w / s / Math.max(Math.cos(this.psi), 0.5), 110, e); this.ageLen = 0.5 * this.ageStart;
+      this.ageStart = lerp((0.60 * this.w - this.push) / s / Math.max(cp, 0.5), 110, e); this.ageLen = 0.5 * this.ageStart;
+    }
+    _measure() {                                       // [머리 옆에 적는 이름의 폭, 줄 끝에 적는 이름의 폭, 이름을 모두 적기 시작하는 줄 간격]
+      const host = this.host, T = host._T || TEXT.ko, num = host._numbers, fpx = this.narrow ? 10.5 : 12.5;
+      const key = (host._langName || '') + (num ? '#' : '') + fpx + (host._fontsReady ? 'f' : '');
+      if (this.mKey !== key) {
+        let a = 0, b = 0;
+        for (let l = 0; l <= 6; l++) {
+          const str = l ? headName(T, TRACE.ORDER[l], num) : T.halt;
+          a = Math.max(a, textW(this.octx, str, sansFont(700, fpx))); b = Math.max(b, textW(this.octx, str, sansFont(700, fpx - 1)));
+        }
+        this.mKey = key; this.m = [a, b, (fpx - 1) * (this.narrow ? 1.16 : 0.9)];
+      }
+      return this.m;
     }
 
     // ── WebGL로: 벽(테이프의 역사), 바닥의 줄(상태), 머리의 길과 그 그림자 둘
@@ -1043,6 +1075,9 @@
       if (!cur || !this.sPx) return;
       const narrow = this.narrow, fpx = narrow ? 10.5 : 12.5, font = sansFont(400, fpx), bold = sansFont(700, fpx);
       const edge = this.host._traceEdges ? this.host._traceEdges() : [16, this.w - 16];
+      const gh = narrow ? 26 : 34, gt = ctx.createLinearGradient(0, 0, 0, gh);        // 돌려 보다가 기록이 제목 줄 뒤로 지나가도 글자가 읽히게
+      gt.addColorStop(0, rgba(TH.bg, 0.9)); gt.addColorStop(0.62, rgba(TH.bg, 0.74)); gt.addColorStop(1, rgba(TH.bg, 0));
+      ctx.fillStyle = gt; ctx.fillRect(0, 0, this.w, gh);
       text(ctx, T.traceTitle, edge[0], 10, font, TH.label, 'la');
       text(ctx, T.from + '  ' + fmt(cur.n), edge[0] + textW(ctx, T.traceTitle, font) + 22, 10, font, TH.gold, 'la', 0.9 * cur.a);
       if (!narrow || this.w > 430) text(ctx, narrow ? T.traceLegendS : T.traceLegend, edge[1], 10, font, TH.label, 'ra');
@@ -1060,13 +1095,17 @@
 
       // 상태의 이름: 바닥의 줄 끝에. 줄 사이가 좁아 보일 때는 지금 상태의 이름만 머리 옆에
       const a0 = this._P(X + 13, TRACE.FLOOR, 0), a1 = this._P(X + 13, TRACE.FLOOR, 1);
-      const lpx = fpx - 1, showAll = Math.abs(a1[1] - a0[1]) >= lpx * (narrow ? 1.16 : 0.9) ? 1 : 0;   // 줄들이 세로로 벌어져 보일 때: 이름을 모두
+      const lpx = fpx - 1, showAll = Math.abs(a1[1] - a0[1]) >= this._measure()[2] ? 1 : 0;   // 줄들이 세로로 벌어져 보일 때: 이름을 모두
       const marks = (1 - showAll) * clamp01((Math.abs(a1[0] - a0[0]) - 13) / 4);          // 가로로 벌어져 보일 때: 번호만
       if (showAll > 0) {
+        const at = [], fs = [];
+        let dx = 0;                                       // 오른쪽 끝을 넘으면 다 함께 그만큼 당긴다
         for (let l = 0; l <= 6; l++) {
-          const p = this._P(X + 14.5, TRACE.FLOOR, l);
-          text(ctx, name(l), p[0] + 2, p[1], sansFont(l === lv ? 700 : 400, lpx), C.st[l], 'lm', l === lv ? 1 : 0.55);
+          const p = this._P(X + 14.5, TRACE.FLOOR, l), f = sansFont(l === lv ? 700 : 400, lpx);
+          at.push(p); fs.push(f);
+          dx = Math.min(dx, this.w - 5 - (p[0] + 2 + textW(ctx, name(l), f)));
         }
+        for (let l = 0; l <= 6; l++) text(ctx, name(l), at[l][0] + 2 + dx, at[l][1], fs[l], C.st[l], 'lm', l === lv ? 1 : 0.55);
       } else if (marks > 0) {
         for (let l = 1; l <= 6; l++) {
           const p = this._P(X + 2, TRACE.FLOOR, l);
