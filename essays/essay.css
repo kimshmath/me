@@ -58,9 +58,10 @@
   background: linear-gradient(to bottom, #0d0d10 calc(100% - 1.75rem), rgba(13, 13, 16, 0));
 }
 
-/* The machine (1920 x 496) keeps to the middle; under it the tree of every number's road to 1 runs
-   the full width of the window. With the header and the padding the two take about 80% of the window's
-   height, so that the title under them stays in sight: the tree gets a third of the window, the machine the rest. */
+/* The machine (1920 x 496) keeps to the middle; under it the record of where the machine has been
+   (its tape, head and state at every step, in three dimensions) runs the full width of the window.
+   With the header and the padding the two take about 80% of the window's height, so that the title
+   under them stays in sight: the record gets a third of the window, the machine the rest. */
 .essay-hero-tm .tm-frame {
   width: 100%;
   margin: 0 auto;
@@ -72,12 +73,12 @@
 
 .essay-hero-tm turing-3n1 {
   display: block;
-  --tm-tree: clamp(220px, 34vh, 400px);
-  --tm-machine: min(100vw - 3rem, 1500px, max(640px, (80vh - var(--nav-height) - 3.25rem - var(--tm-tree)) * 3.871));
+  --tm-trace: clamp(220px, 34vh, 400px);
+  --tm-machine: min(100vw - 3rem, 1500px, max(640px, (80vh - var(--nav-height) - 3.25rem - var(--tm-trace)) * 3.871));
   --turing-3n1-layout: wide;         /* the component reads these three: its layout, */
   --turing-3n1-machine-width: var(--tm-machine);             /* the width of the machine, */
-  --turing-3n1-tree-height: var(--tm-tree);                  /* and the height of the tree */
-  min-height: calc(var(--tm-machine) / 3.871 + var(--tm-tree));   /* holds the place before the script has run: no jump */
+  --turing-3n1-trace-height: var(--tm-trace);                 /* and the height of the record under it */
+  min-height: calc(var(--tm-machine) / 3.871 + var(--tm-trace));   /* holds the place before the script has run: no jump */
 }
 
 /* An upright phone or tablet: the component's narrow layout (the machine is 1120 x 790). */
@@ -87,10 +88,10 @@
   }
 
   .essay-hero-tm turing-3n1 {
-    --tm-tree: clamp(200px, 30vh, 280px);
-    --tm-machine: min(100vw, max(320px, (84vh - var(--nav-height) - 2.75rem - var(--tm-tree)) * 1.4177));
+    --tm-trace: clamp(200px, 30vh, 280px);
+    --tm-machine: min(100vw, max(320px, (84vh - var(--nav-height) - 2.75rem - var(--tm-trace)) * 1.4177));
     --turing-3n1-layout: narrow;
-    min-height: calc(var(--tm-machine) / 1.4177 + var(--tm-tree));
+    min-height: calc(var(--tm-machine) / 1.4177 + var(--tm-trace));
   }
 }
 

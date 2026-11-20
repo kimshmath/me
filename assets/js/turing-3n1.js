@@ -1,9 +1,10 @@
 /*!
- * turing-3n1.js · v1.3 · 2026-11-20
+ * turing-3n1.js · v1.4 · 2026-11-20
  *   v1.1  v1.0에 영어 화면 글을 더함
  *   v1.2  sequence(멈추면 다음 수로 이어 감)와 ridges('수의 변화' 그림)를 더함
- *   v1.3  tree('1로 가는 길' 그림: 모든 수를 한 그루 나무로 그려, 돌려 보고 눌러서 수를 고르는 그림)를 더함
- *   sequence · ridges · tree를 쓰지 않으면 화면은 v1.0과 같음 (한국어 화면은 픽셀까지 같음)
+ *   v1.3  tree('1로 가는 길' 나무 그림)를 더했다가
+ *   v1.4  그 자리에 trace('기계가 지나온 길': 테이프 · 머리 · 상태의 역사를 입체로 세운 그림)를 넣음 (tree는 뺌)
+ *   sequence · ridges · trace를 쓰지 않으면 화면은 v1.0과 같음 (한국어 화면은 픽셀까지 같음)
  * 3n+1(콜라츠) 튜링 기계 애니메이션 — 웹 컴포넌트 <turing-3n1>
  *
  * 「인간, 수학, AI — 생각을 생각하다」 강연 덱의 튜링 기계 영상(tm_video2.py가 PIL로 그려 만든 1920×496 영상)을
@@ -15,8 +16,8 @@
  *   <turing-3n1 start="97" theme="dark" controls></turing-3n1>  어두운 바탕 · 97에서 출발 · 아래에 단추 줄
  *   <turing-3n1 theme="dark" start="random" sequence ridges></turing-3n1>
  *                                              수를 바꿔 가며 끝없이 · 아래에 '수의 변화' 그림
- *   <turing-3n1 theme="dark" start="random" sequence tree></turing-3n1>
- *                                              수를 바꿔 가며 끝없이 · 아래에 '1로 가는 길' 그림
+ *   <turing-3n1 theme="dark" start="random" sequence trace></turing-3n1>
+ *                                              수를 바꿔 가며 끝없이 · 아래에 '기계가 지나온 길' 그림
  *
  * ── 속성 (모두 고르지 않아도 됨) ───────────────────────────────────────────
  *   start     출발 수, 1 – 1000000 (기본 27). random 이면 27 – 999 가운데 하나를 고름
@@ -24,11 +25,13 @@
  *   ridges    (이름만) 아래에 '수의 변화' 그림을 그림: 출발한 수마다 줄 하나, 가로 = 계산 횟수, 높이 = 수의 크기.
  *             맨 앞의 금빛 줄이 지금 수이고, 앞선 수들의 줄은 뒤로 물러나 있음. 줄이 바닥에 닿아 평평해지면 멈춘 것.
  *             (이때 오른쪽의 작은 그래프 대신 출발한 수를 보여 줌)
- *   tree      (이름만) 아래에 '1로 가는 길' 그림을 그림(WebGL). 수 하나가 점 하나, 계산 한 번이 선 하나인 나무이고
- *             뿌리가 1. 위에서 보면 수들이 합쳐지는 모습이, 옆에서 보면 수가 오르내리는 모습(높이 = 수의 크기)이 보임.
- *             저절로 구르고, 끌면 돌아가며, 점에 올리면 그 수가 1까지 가는 길이 나오고, 누르면 기계가 그 수를 계산함.
- *             WebGL을 쓸 수 없으면 ridges 그림으로 대신함. 그림의 높이는 CSS 변수 --turing-3n1-tree-height(기본 300px),
- *             기계 그림의 폭은 --turing-3n1-machine-width(기본 100%)로 정함 → 나무만 화면 폭을 다 쓰게 할 수 있음
+ *   trace     (이름만) 아래에 '기계가 지나온 길' 그림을 그림(WebGL). 기계의 역사를 세 축으로 세운 것:
+ *             가로 = 걸음, 세로 = 자릿수(맨 아래가 1의 자리), 깊이 = 상태. 뒷벽에는 걸음마다의 테이프(밝은 칸 = 1),
+ *             그 앞에는 머리가 지나온 길이 상태의 색으로 그려지고, 벽과 바닥에 그 그림자가 놓임.
+ *             기계가 한 걸음 걸을 때마다 한 걸음씩 자람(그 밖에 움직이는 것은 없음). 끌면 돌아가고, 단추로
+ *             앞(테이프의 역사) · 위(상태의 역사) · 끝(머리의 궤도)에서 볼 수 있으며, 한 걸음을 누르면 기계가 그 걸음으로 돌아감.
+ *             WebGL을 쓸 수 없으면 ridges 그림으로 대신함. 그림의 높이는 CSS 변수 --turing-3n1-trace-height(기본 300px),
+ *             기계 그림의 폭은 --turing-3n1-machine-width(기본 100%)로 정함 → 아래 그림만 화면 폭을 다 쓰게 할 수 있음
  *   theme     light | dark — light = 강연 덱의 흰 바탕 영상, dark = 원래 영상(0D0D10 바탕) (기본 light)
  *   numbers   on | off — 상태 번호 ①–⑥과 규칙표의 '다음 상태' 표시 (기본: light는 off, dark는 on — 각 영상과 같게)
  *   layout    auto | wide | narrow — narrow는 값과 그래프를 규칙표 아래로 내린 배치 (기본 auto: 폭 640px 미만이면 narrow.
@@ -86,13 +89,17 @@
       play: '재생', pause: '일시정지', playTitle: '재생 (스페이스)', pauseTitle: '일시정지 (스페이스)',
       restart: '처음부터', restartTitle: '처음부터 (R)', startLabel: '출발 수', speedLabel: '속도',
       from: '출발한 수', ridge: '수 의  변 화', ridgeLegend: '줄 하나  =  출발한 수 하나 · 높이는 수의 크기',
-      treeTitle: '1 로  가 는  길',
-      treeLegend: '선 한 마디  =  계산 한 번 · 높이와 색  =  수의 크기 · 끌면 돌아가고, 누르면 그 수를 계산',
-      treeLegendS: '끌어서 돌리고 · 눌러서 그 수를 계산',
-      treeInfo: (n, k, v) => `${fmt(n)}  ·  1까지 계산 ${fmt(k)}번  ·  가장 클 때 ${fmt(v)}`,
-      treeTop: '위에서', treeSide: '옆에서', treeAuto: '저절로',
-      treeAria: '3n+1 계산으로 이어진 수들의 나무. 수 하나가 점 하나, 계산 한 번이 선 하나이고 뿌리가 1이다. ' +
-                '끌어서 돌려 볼 수 있고, 수를 누르면 기계가 그 수를 계산한다.',
+      traceTitle: '기 계 가  지 나 온  길',
+      traceLegend: '가로  =  걸음 · 세로  =  자릿수 · 깊이  =  상태 · 끌면 돌아가고, 누르면 그 걸음으로 돌아감',
+      traceLegendS: '끌어서 돌리고 · 눌러서 그 걸음으로',
+      traceViews: ['입체', '테이프', '상태', '궤도'],
+      traceViewTitles: ['비스듬히: 세 축을 함께', '앞에서: 테이프의 역사 (가로 걸음 · 세로 자릿수)',
+                        '위에서: 상태의 역사 (가로 걸음 · 세로 상태)', '끝에서: 머리의 궤도 (가로 상태 · 세로 자릿수)'],
+      traceInfo: (n, k, name, r, w, mv, halt) => `${fmt(n)}  ·  ${fmt(k)}번째 걸음  ·  ${name}  ·  ${r === '_' ? '빈칸' : r}을 읽고 ` +
+                 (w === r ? '' : (w === '_' ? '지우고 ' : `${w}을 쓰고 `)) + (halt ? '멈춤' : (mv < 0 ? '왼쪽으로' : '오른쪽으로')),
+      traceHalted: (n, k) => `${fmt(n)}  ·  ${fmt(k)}걸음 만에 멈춤`,
+      traceAria: '튜링 기계가 지나온 길을 입체로 세운 그림. 가로는 걸음, 세로는 자릿수, 깊이는 상태이다. 뒷벽에는 걸음마다의 테이프가, ' +
+                 '그 앞에는 머리가 지나온 길이 상태의 색으로 그려진다. 끌어서 돌려 볼 수 있고, 한 걸음을 누르면 기계가 그 걸음으로 돌아간다.',
       ariaSeq: (n, ridges) => `3n+1 튜링 기계 애니메이션: 테이프에 적힌 수가 짝수면 2로 나누고 홀수면 3을 곱해 1을 더하기를 되풀이하다가 ` +
                  `1이 되면 멈춤. ${n}에서 출발해, 멈출 때마다 다음 수로 넘어가 끝없이 이어 감.` +
                  (ridges ? ' 아래 그림은 출발한 수마다 줄 하나로, 수가 커졌다 작아지며 1에 이르는 모습을 보여 줌.' : ''),
@@ -116,13 +123,18 @@
       play: 'Play', pause: 'Pause', playTitle: 'Play (Space)', pauseTitle: 'Pause (Space)',
       restart: 'Restart', restartTitle: 'Restart (R)', startLabel: 'Start at', speedLabel: 'Speed',
       from: 'Started from', ridge: 'How the number changes',
-      treeTitle: 'Every road to 1',
-      treeLegend: 'one segment  =  one operation · height and colour  =  size of the number · drag to turn, click a number to run it',
-      treeLegendS: 'drag to turn · tap a number to run it',
-      treeInfo: (n, k, v) => `${fmt(n)}  ·  ${fmt(k)} operation${k === 1 ? '' : 's'} to 1  ·  peak ${fmt(v)}`,
-      treeTop: 'From above', treeSide: 'From the side', treeAuto: 'Auto',
-      treeAria: 'The tree of numbers joined by the 3n+1 rule: one dot for each number, one line for each operation, with 1 at the root. ' +
-                'Drag to turn it; click a number and the machine computes it.',
+      traceTitle: 'Where the machine has been',
+      traceLegend: 'across  =  steps · up  =  digits · depth  =  state · drag to turn, click a step to go back to it',
+      traceLegendS: 'drag to turn · tap a step to go back to it',
+      traceViews: ['3D', 'Tape', 'States', 'Orbit'],
+      traceViewTitles: ['At an angle: all three axes', 'From the front: the history of the tape (steps across, digits up)',
+                        'From above: the history of the state (steps across, states down)', 'From the end: the orbit of the head (states across, digits up)'],
+      traceInfo: (n, k, name, r, w, mv, halt) => `${fmt(n)}  ·  step ${fmt(k)}  ·  ${name}  ·  reads ${r === '_' ? 'a blank' : r}` +
+                 (w === r ? '' : (w === '_' ? ', erases it' : `, writes ${w}`)) + (halt ? ', halts' : `, moves ${mv < 0 ? 'left' : 'right'}`),
+      traceHalted: (n, k) => `${fmt(n)}  ·  halted after ${fmt(k)} step${k === 1 ? '' : 's'}`,
+      traceAria: 'The path of the Turing machine, stood up in three dimensions: steps across, digits up, states in depth. ' +
+                 'The back wall shows the tape at every step; in front of it runs the path of the head, coloured by state. ' +
+                 'Drag to turn it; click a step and the machine goes back to that step.',
       ridgeLegend: 'One line  =  one starting number · height = size of the number',
       ariaSeq: (n, ridges) => `Animation of a 3n+1 Turing machine: it halves the number on the tape when it is even and replaces it ` +
                  `by 3n+1 when it is odd, and halts when the number reaches 1. It starts from ${n} and, each time it halts, ` +
@@ -410,7 +422,8 @@
     for (const T of Object.values(TEXT)) {
       s += T.task + T.phases.join('') + T.table + T.legend + T.tape + T.start + T.nth(0) + T.steps(0) + T.peak(0) + T.rows.join('');
       s += T.from + T.ridge + T.ridgeLegend;
-      s += T.treeTitle + T.treeLegend + T.treeLegendS + T.treeInfo(0, 0, 0) + T.treeTop + T.treeSide + T.treeAuto;
+      s += T.traceTitle + T.traceLegend + T.traceLegendS + T.traceViews.join('') + T.traceHalted(0, 2) +
+           T.traceInfo(0, 0, '', '_', '1', -1, false) + T.traceInfo(0, 0, '', '1', '_', 1, true) + T.traceInfo(0, 0, '', '0', '0', 1, false);
       for (const st of STATES) {
         s += headName(T, st, true) + pillName(T, st, true);
         for (const [sym] of ROWS) s += cellText(T, st, sym, true);
@@ -536,88 +549,100 @@
     });
   }
 
-  // ───────────────────────────── 나무(tree): 모든 수가 1로 가는 길 ─────────────────────────────
-  // 수 하나가 점 하나, 계산 한 번이 선 하나. n을 n÷2나 3n+1과 이으면 수들은 1에 뿌리를 둔 나무 한 그루가 된다.
-  // 뿌리에서 바깥으로 그려 가며 짝수에서 나온 선은 한쪽으로, 홀수에서 나온 선은 반대쪽으로 조금씩 꺾고, 수의 크기(로그 눈금)를 높이로 준다.
-  //   위에서 보면: 깃털 같은 나무 — 어떤 수들이 어디에서 한 길로 합쳐지는가
-  //   옆에서 보면: 격자 — 수가 어떻게 오르내리는가 (÷2는 한 칸 아래로, ×3+1은 약 1.58칸 위로)
-  // WebGL로 그리고(쓸 수 없으면 ridges 그림으로 대신한다), 글자와 지금 수의 금빛 길은 그 위의 2D 캔버스에 그린다.
-  const TREE = {
-    HFOV: 26 * Math.PI / 180,            // 가로 시야각
-    RATIO: 1.8,                          // 홀수에서 꺾는 각 ÷ 짝수에서 꺾는 각
-    A_MIN: 2.2 * Math.PI / 180, A_MAX: 9.5 * Math.PI / 180,      // 짝수에서 꺾는 각: 그림 칸의 비율에 맞춰 이 사이에서 고른다
-    ZMAX: 2.6,                           // 비트 하나의 높이(선 하나의 길이가 1)의 한계
-    ROCK: 48,                            // 위 → 옆 → 위로 한 번 구르는 시간(초)
-    SWAY: 13 * Math.PI / 180, SWAY_T: 29,
-    GROW: 3.4,                           // 처음에 뿌리에서 자라나는 시간(초)
-    STOPS: [0, 0.24, 0.48, 0.64, 0.80, 1],
-    PAL: {                               // 수의 크기 0 … 1 (1 … 2^palMax)의 색 여섯 개
-      dark: ['#3550DC', '#6878F0', '#A78BF5', '#F08FB8', '#FFC97A', '#FFF4DC'],
-      light: ['#2B3FC9', '#5448D6', '#8A45C8', '#C2407F', '#B8660F', '#4A3006'],
+  // ───────────────────────────── 자취(trace): 기계가 지나온 길 ─────────────────────────────
+  // 기계의 한 순간은 (테이프, 머리가 있는 칸, 상태) 셋이다. 그 역사를 그대로 입체로 세운다.
+  //   가로 = 걸음(시간) · 세로 = 자릿수(맨 아래가 1의 자리) · 깊이 = 상태(멈춤, ① … ⑥)
+  //   뒷벽    : 걸음마다의 테이프. 밝은 칸 = 1, 어두운 칸 = 0. 벽의 높이가 곧 수의 크기(이진 자릿수)
+  //   머리의 길: 걸음마다 (걸음, 머리가 있는 자리, 상태)를 이은 선. 색 = 상태
+  //   그림자 둘: 벽에 비친 것 = 머리가 읽어 온 칸, 바닥에 비친 것 = 상태가 바뀌어 온 차례
+  // 앞에서 보면 테이프의 역사(시공간 그림), 위에서 보면 상태의 역사, 끝에서 보면 머리의 궤도가 된다.
+  // 움직이는 것은 기계가 한 걸음 걸을 때마다 한 칸씩 자라는 이 기록뿐이다.
+  // WebGL로 그리고(쓸 수 없으면 ridges 그림으로 대신한다), 글자와 지금 자리의 표시는 그 위의 2D 캔버스에 그린다.
+  const TRACE = {
+    HFOV: 30 * Math.PI / 180,
+    SY: 4, SZ: 11,                       // 자리 하나의 높이, 상태 하나의 깊이 (걸음 하나의 길이가 1)
+    GAP: 16,                             // 한 계산과 다음 계산 사이(걸음)
+    FLOOR: -1.7,                         // 바닥의 높이(자리)
+    VIEW: { solid: [0.09, 0.56], tape: [0, 0], states: [0, Math.PI / 2], orbit: [1.36, 0.12] },   // [돌린 각, 내려다보는 각]
+    LEVEL: { H: 0, P: 1, Q: 2, C0: 3, C1: 4, C2: 5, R: 6 },
+    ORDER: ['H', 'P', 'Q', 'C0', 'C1', 'C2', 'R'],
+    COL: {                               // 상태의 색: 멈춤, ① … ⑥, (여덟째는 쉬는 줄의 색) / 테이프의 0과 1
+      dark: { st: ['#FFFFFF', '#FFF1D0', '#4FD6C4', '#5E86FF', '#A98BFA', '#F58BB6', '#E9B65C', '#4A4852'], bit0: '#171C4A', bit1: '#9C947E' },
+      light: { st: ['#1F1E24', '#8A6A1E', '#0E8F82', '#2B4FD6', '#6D45C8', '#C2407F', '#B8660F', '#C4C2CA'], bit0: '#DCE2F2', bit1: '#3A3550' },
     },
-    VS: `
-      attribute vec3 a_p;                // 이쪽 끝
+    LINE_VS: `
+      attribute vec3 a_p;                // 이쪽 끝 (걸음, 자리, 상태)
       attribute vec3 a_o;                // 저쪽 끝
-      attribute vec4 a_s;                // 선의 어느 쪽(±1), 뿌리 쪽 끝인가(0 · 1), 굵기(0 … 1), 수의 크기(비트)
-      attribute vec2 a_t;                // 1까지 남은 계산 횟수
+      attribute vec4 a_s;                // 선의 어느 쪽(±1), 뒤쪽 끝인가(0 · 1), 색 번호, 이쪽 끝의 걸음
       uniform mat4 u_mvp;
-      uniform vec4 u_vp;                 // 화면의 반(px) 가로 · 세로, 반 굵기(px): 바탕 · 굵기에 따라 더하는 양
+      uniform vec4 u_vp;                 // 화면의 반(px) 가로 · 세로, 반 굵기(px), 굵기의 기준 거리
+      uniform vec3 u_sq;                 // 좌표마다 곱하는 값 (0이면 그쪽으로 납작해진다: 그림자)
+      uniform vec3 u_fl;                 // 더하는 값
+      uniform vec3 u_col[8];
       varying vec4 v_a;                  // 선에서 떨어진 거리(px), 선을 따라간 거리(px), 선의 길이(px), 반 굵기(px)
-      varying vec4 v_b;                  // 수의 크기(비트), 남은 계산 횟수, 굵기, 사진기에서의 거리
-      varying float v_y;
-      varying float v_x;
+      varying vec3 v_b;                  // 걸음, 사진기에서의 거리
+      varying vec3 v_c;
       void main() {
-        vec4 c0 = u_mvp * vec4(a_p, 1.0), c1 = u_mvp * vec4(a_o, 1.0);
+        vec4 c0 = u_mvp * vec4(a_p * u_sq + u_fl, 1.0), c1 = u_mvp * vec4(a_o * u_sq + u_fl, 1.0);
         vec2 d = (c1.xy / c1.w - c0.xy / c0.w) * u_vp.xy;
         float len = length(d);
         d = len > 1e-3 ? d / len : vec2(1.0, 0.0);
-        float R = u_vp.z + u_vp.w * a_s.z * a_s.z, ext = R + 1.0, sg = a_s.y < 0.5 ? a_s.x : -a_s.x;
+        float R = u_vp.z * clamp(u_vp.w / c0.w, 0.5, 2.2), ext = R + 1.0, sg = a_s.y < 0.5 ? a_s.x : -a_s.x;
         vec2 off = vec2(-d.y, d.x) * sg * ext - d * ext;
         gl_Position = vec4(c0.xy + off / u_vp.xy * c0.w, c0.zw);
         v_a = vec4(a_s.x * ext, a_s.y < 0.5 ? -ext : len + ext, len, R);
-        v_b = vec4(a_s.w, a_t.x, a_s.z, c0.w);
-        v_y = a_p.y; v_x = a_p.x;
+        v_b = vec3(a_s.w, c0.w, 0.0);
+        v_c = u_col[int(a_s.z + 0.5)];
       }`,
-    FS: `
+    LINE_FS: `
       #ifdef GL_FRAGMENT_PRECISION_HIGH
       precision highp float;
       #else
       precision mediump float;
       #endif
-      uniform vec4 u_fs;                 // 1 = 빛번짐용, 진하기, 흐르는 빛의 세기, 색 눈금의 끝(비트)
-      uniform vec4 u_ph;                 // 흐르는 빛 둘의 자리(시간에 따라 간다), 자라난 데까지(남은 계산 횟수), 밝기
-      uniform vec3 u_fog;                // 안개가 시작하는 거리, 1 ÷ 안개의 깊이, 세기
-      uniform vec3 u_hi;                 // 흐르는 빛의 색
-      uniform vec3 u_pal[6];
+      uniform vec4 u_rv;                 // 보이는 걸음: 부터 · 까지, 진하기
+      uniform vec4 u_fog;                // 안개가 시작하는 거리, 1 ÷ 깊이, 세기
+      uniform vec4 u_age;                // 지금(걸음), 흐려지기 시작하는 나이, 1 ÷ 흐려지는 길이
       varying vec4 v_a;
-      varying vec4 v_b;
-      varying float v_y;
-      varying float v_x;
-      vec3 pal(float u) {
-        if (u < 0.24) return mix(u_pal[0], u_pal[1], u / 0.24);
-        if (u < 0.48) return mix(u_pal[1], u_pal[2], (u - 0.24) / 0.24);
-        if (u < 0.64) return mix(u_pal[2], u_pal[3], (u - 0.48) / 0.16);
-        if (u < 0.80) return mix(u_pal[3], u_pal[4], (u - 0.64) / 0.16);
-        return mix(u_pal[4], u_pal[5], (u - 0.80) / 0.20);
-      }
-      float streak(float x, float period, float tail) {        // 머리는 또렷하고 꼬리는 길게: 뿌리 쪽으로 달리는 빛
-        float q = fract(x / period) * period;
-        return exp(-q / tail) * smoothstep(0.0, 0.7, q);
-      }
+      varying vec3 v_b;
+      varying vec3 v_c;
       void main() {
+        if (v_b.x > u_rv.y || v_b.x < u_rv.x) discard;
         float dx = max(max(-v_a.y, v_a.y - v_a.z), 0.0), dist = length(vec2(dx, v_a.x)), R = max(v_a.w, 0.6);
         float cov = (1.0 - smoothstep(R - 0.6, R + 0.6, dist)) * min(1.0, v_a.w / 0.6);
-        cov *= 1.0 - smoothstep(u_ph.z - 5.0, u_ph.z, v_b.y);                      // 아직 자라지 않은 데
         if (cov < 0.004) discard;
-        vec3 col = pal(clamp(v_b.x / u_fs.w, 0.0, 1.0));
-        float w = v_b.z;
-        float flow = (streak(v_b.y + 1.5 * v_y + 6.0 * sin(0.07 * v_x) + u_ph.x, 53.0, 4.5) +
-                      0.8 * streak(v_b.y - 2.2 * v_y + 5.0 * sin(0.11 * v_x + 1.0) + u_ph.y, 37.0, 3.0)) * u_fs.z;
-        float tip = smoothstep(u_ph.z - 9.0, u_ph.z - 2.0, v_b.y);                 // 자라는 끝은 밝게
-        float fog = 1.0 - u_fog.z * clamp((v_b.w - u_fog.x) * u_fog.y, 0.0, 1.0);
-        vec3 c = mix(col, u_hi, min(0.5 * flow + tip, 1.0)) * (u_ph.w + 0.3 * flow) * fog;
-        float a = cov * (u_fs.x < 0.5 ? min(1.0, mix(0.55, 1.0, pow(w, 0.7)) + 0.4 * flow) : min(1.0, 0.10 + 0.55 * w + 0.45 * flow + tip)) * u_fs.y;
-        gl_FragColor = vec4(c * a, a);
+        float fog = 1.0 - u_fog.z * clamp((v_b.y - u_fog.x) * u_fog.y, 0.0, 1.0);
+        float age = 1.0 - clamp((u_age.x - v_b.x - u_age.y) * u_age.z, 0.0, 1.0);
+        float a = cov * u_rv.z * fog * age;
+        gl_FragColor = vec4(v_c * a, a);
+      }`,
+    BAR_VS: `
+      attribute vec3 a_p;                // 걸음, 자리(칸의 아랫변 · 윗변), 0 · 1
+      uniform mat4 u_mvp;
+      uniform vec3 u_geo;                // 이 계산이 시작한 걸음, 자리 하나의 높이
+      varying vec3 v_b;                  // 걸음, 0 · 1, 사진기에서의 거리
+      void main() {
+        gl_Position = u_mvp * vec4(u_geo.x + a_p.x, a_p.y * u_geo.y, 0.0, 1.0);
+        v_b = vec3(a_p.x, a_p.z, gl_Position.w);
+      }`,
+    BAR_FS: `
+      #ifdef GL_FRAGMENT_PRECISION_HIGH
+      precision highp float;
+      #else
+      precision mediump float;
+      #endif
+      uniform vec4 u_rv;
+      uniform vec4 u_fog;
+      uniform vec4 u_age;
+      uniform vec3 u_c0;
+      uniform vec3 u_c1;
+      varying vec3 v_b;
+      void main() {
+        if (v_b.x > u_rv.y || v_b.x < u_rv.x) discard;
+        float fog = 1.0 - u_fog.z * clamp((v_b.z - u_fog.x) * u_fog.y, 0.0, 1.0);
+        float age = 1.0 - clamp((u_age.x - v_b.x - u_age.y) * u_age.z, 0.0, 1.0);
+        float a = u_rv.z * fog * age;
+        gl_FragColor = vec4(mix(u_c0, u_c1, v_b.y) * a, a);
       }`,
     POST_VS: `
       attribute vec2 a_xy;
@@ -636,22 +661,20 @@
         gl_FragColor = vec4(c * u_dir.z, 1.0);
       }`,
   };
-  const rockAt = phi => Math.PI / 4 * (1 + Math.tanh(2.2 * Math.sin(phi)) / Math.tanh(2.2));      // 구르는 각: 위(90°)와 옆(0°)에서 오래 머문다
 
-  class Tree {
+  class Trace {
     constructor(host, box) {
       this.host = host; this.box = box;
-      this.cv = box.querySelector('canvas.tree-gl'); this.ov = box.querySelector('canvas.tree-ov');
+      this.cv = box.querySelector('canvas.trace-gl'); this.ov = box.querySelector('canvas.trace-ov');
       this.octx = this.ov.getContext('2d');
-      this.btn = {}; for (const b of box.querySelectorAll('[data-tree]')) this.btn[b.dataset.tree] = b;
+      this.btn = {}; for (const b of box.querySelectorAll('[data-trace]')) this.btn[b.dataset.trace] = b;
       this.ok = false; this.gl = null; this.lost = false;
-      this.id = new Map(); this.val = []; this.par = []; this.dep = []; this.N = 0; this.extra = []; this.M = 0; this.cap = 0; this.maxDep = 1;
-      this.w = 0; this.h = 0; this.dpr = 1; this.narrow = false;
-      this.a = 4 * Math.PI / 180; this.zk = 2; this.s = 1; this.sS = 0; this.c = [0, 0, 0]; this.cS = [0, 0, 0]; this.lift = 0; this.palMax = 20;
-      this.theta = Math.PI / 2; this.thetaT = Math.PI / 2; this.alpha = 0; this.alphaT = 0;
-      this.mode = 'auto'; this.phi = Math.PI / 2; this.tSway = 0; this.time = 0; this.grow = 0; this.dim = 1;
-      this.live = { n: 0, path: null, op: 0, frac: 1 }; this.trails = []; this.hover = null; this.hoverUntil = 0; this.ptr = null; this.drag = null;
-      this.dirty = true; this.raf = 0; this.last = 0; this.slow = 0; this.cut = 0; this.bloom = true; this.mvp = new Float32Array(16); this.scrOk = false;
+      this.runs = []; this.cur = null;                     // 계산들(오래된 것부터), 지금 하고 있는 계산
+      this.w = 0; this.h = 0; this.dpr = 1; this.narrow = false; this.cut = 0; this.slow = 0; this.bloom = true;
+      this.psi = TRACE.VIEW.solid[0]; this.theta = TRACE.VIEW.solid[1]; this.psiT = this.psi; this.thetaT = this.theta; this.view = 'solid';
+      this.camX = null; this.top = 12; this.sPx = 2.5; this.shift = 0; this.mvp = new Float32Array(16);
+      this.hover = null; this.hoverUntil = 0; this.ptr = null; this.drag = null;
+      this.dirty = true; this.raf = 0; this.last = 0;
       this._frame = this._frame.bind(this);
       try { this._initGL(); this.ok = true; } catch (e) { this.ok = false; }
       if (this.ok) this._bind();
@@ -659,7 +682,7 @@
 
     // ── WebGL
     _initGL() {
-      const opt = { antialias: false, alpha: false, depth: false, stencil: false, preserveDrawingBuffer: false };
+      const opt = { antialias: true, alpha: false, depth: false, stencil: false, preserveDrawingBuffer: false };
       const gl = this.cv.getContext('webgl', opt) || this.cv.getContext('experimental-webgl', opt);
       if (!gl) throw new Error('webgl');
       const prog = (vs, fs) => {
@@ -676,17 +699,21 @@
       };
       const loc = (p, names) => { const o = {}; for (const n of names) o[n] = gl.getUniformLocation(p, n); return o; };
       this.gl = gl;
-      this.pT = prog(TREE.VS, TREE.FS);
-      this.uT = loc(this.pT, ['u_mvp', 'u_vp', 'u_fs', 'u_ph', 'u_fog', 'u_hi', 'u_pal']);
-      this.aT = ['a_p', 'a_o', 'a_s', 'a_t'].map(n => gl.getAttribLocation(this.pT, n));
-      this.pP = prog(TREE.POST_VS, TREE.POST_FS);
+      this.pL = prog(TRACE.LINE_VS, TRACE.LINE_FS);
+      this.uL = loc(this.pL, ['u_mvp', 'u_vp', 'u_sq', 'u_fl', 'u_col', 'u_rv', 'u_fog', 'u_age']);
+      this.aL = ['a_p', 'a_o', 'a_s'].map(n => gl.getAttribLocation(this.pL, n));
+      this.pB = prog(TRACE.BAR_VS, TRACE.BAR_FS);
+      this.uB = loc(this.pB, ['u_mvp', 'u_geo', 'u_rv', 'u_fog', 'u_age', 'u_c0', 'u_c1']);
+      this.aB = gl.getAttribLocation(this.pB, 'a_p');
+      this.pP = prog(TRACE.POST_VS, TRACE.POST_FS);
       this.uP = loc(this.pP, ['u_tex', 'u_dir']);
       this.aP = gl.getAttribLocation(this.pP, 'a_xy');
       this.bufQuad = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, this.bufQuad);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-      this.bufEdge = gl.createBuffer(); this.nVert = 0;
-      this.fbo = null; this.fboW = 0; this.fboH = 0; this.palKey = '';
+      this.bufRail = gl.createBuffer(); this.rail = new Float32Array(7 * 60);
+      this.fbo = null; this.fboW = 0; this.fboH = 0;
+      for (const r of this.runs) this._buffers(r);         // (컨텍스트를 되살린 뒤)
     }
     _target(w, h) {                                    // 빛번짐을 그릴 작은 그림 두 장
       const gl = this.gl;
@@ -708,128 +735,88 @@
       this.fboW = w; this.fboH = h;
     }
 
-    // ── 나무: 1부터 N까지의 수와 그 수들이 지나는 수
-    _ensure(n) {                                       // n의 길을 나무에 단다. 새 점이 생겼으면 true
-      if (this.id.has(n)) return false;
-      const path = [];
-      let x = n;
-      while (!this.id.has(x)) { path.push(x); x = x % 2 ? 3 * x + 1 : x / 2; }
-      let p = this.id.get(x);
-      for (let i = path.length - 1; i >= 0; i--) {
-        const k = this.val.length;
-        this.id.set(path[i], k); this.val.push(path[i]); this.par.push(p); this.dep.push(this.dep[p] + 1);
-        p = k;
+    // ── 계산 하나의 기록: 걸음마다 머리의 자리와 상태, 그리고 테이프
+    _make(n, steps, end, posEnd) {
+      const N = steps.length, LV = TRACE.LEVEL;
+      const lev = new Uint8Array(N + 1), pl = new Int16Array(N + 1), Ls = new Int32Array(N + 1);
+      let L = 0, top = 1;                                // L = 끝자리(1의 자리)가 있는 칸: 자리 j의 숫자는 칸 L − j에 있다
+      for (let k = 0; k <= N; k++) {
+        const tape = k < N ? steps[k].before : end;
+        Ls[k] = L; lev[k] = k < N ? LV[steps[k].state] : 0; pl[k] = L - (k < N ? steps[k].pos : posEnd);
+        if (tape.s.length && L - tape.lo > top) top = L - tape.lo;
+        if (pl[k] > top) top = pl[k];
+        if (k < N) L = steps[k].LAfter;
       }
-      return true;
-    }
-    _plant(N) {
-      this.id = new Map([[1, 0]]); this.val = [1]; this.par = [-1]; this.dep = [0]; this.N = N;
-      for (let n = 2; n <= N; n++) this._ensure(n);
-      this.baseM = this.val.length;                    // 여기까지가 그림의 모양과 크기를 정한다
-      let mb = 1;
-      for (const v of this.val) if (v > mb) mb = v;
-      this.baseBits = Math.log2(mb); this.palMax = Math.max(20, Math.ceil(this.baseBits));
-      for (const n of this.extra) this._ensure(n);
-      this._arrays();
-    }
-    _arrays() {                                        // 점마다: 크기(비트), 지나는 수의 개수 → 굵기
-      const M = this.M = this.val.length;
-      if (M > this.cap) {
-        this.cap = Math.ceil(M * 1.25) + 64;
-        for (const k of ['X', 'Y', 'Z', 'bits', 'wgt', 'sx', 'sy']) this[k] = new Float32Array(this.cap);
-        this.th = new Float64Array(this.cap); this.cnt = new Int32Array(this.cap);
-      }
-      const { val, par, dep, cnt, bits, wgt, id } = this;
-      cnt.fill(0);
-      let maxDep = 1;
-      for (let k = 0; k < M; k++) { bits[k] = Math.log2(val[k]); if (dep[k] > maxDep) maxDep = dep[k]; }
-      const walk = n => { for (let k = id.get(n); k >= 0; k = par[k]) cnt[k]++; };
-      for (let n = 1; n <= this.N; n++) walk(n);
-      for (const n of this.extra) if (n > this.N) walk(n);
-      const top = Math.log2(1 + this.N);
-      for (let k = 0; k < M; k++) wgt[k] = Math.min(1, Math.log2(1 + Math.max(1, cnt[k])) / top);
-      this.maxDep = maxDep;
-      this.order = Array.from({ length: M - 1 }, (_, i) => i + 1).sort((i, j) => cnt[i] - cnt[j]);   // 가는 선부터 그린다
-    }
-    _layout(a, keep) {                                 // 꺾는 각 a로 자리를 잡고, 가장 길게 뻗는 쪽을 가로로 돌려놓는다
-      const { val, par, th, X, Y, Z, bits, M } = this, b = a * TREE.RATIO, B = this.baseM;
-      th[0] = 0; X[0] = 0; Y[0] = 0;
-      for (let k = 1; k < M; k++) {
-        const p = par[k];
-        th[k] = th[p] + (val[k] % 2 ? -b : a);
-        X[k] = X[p] + Math.cos(th[k]); Y[k] = Y[p] + Math.sin(th[k]);
-      }
-      if (!keep) {                                     // (나중에 덧붙은 수는 모양을 바꾸지 않는다: 돌린 각과 크기는 그대로)
-        let mx = 0, my = 0, sxx = 0, sxy = 0, syy = 0;
-        for (let k = 0; k < B; k++) { mx += X[k]; my += Y[k]; }
-        mx /= B; my /= B;
-        for (let k = 0; k < B; k++) { const dx = X[k] - mx, dy = Y[k] - my; sxx += dx * dx; sxy += dx * dy; syy += dy * dy; }
-        let phi = 0.5 * Math.atan2(2 * sxy, sxx - syy);
-        if (mx * Math.cos(phi) + my * Math.sin(phi) < 0) phi += Math.PI;                  // 뿌리가 왼쪽에 오게
-        this.rot = phi;
-      }
-      const c = Math.cos(this.rot), s = Math.sin(this.rot);
-      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
-      for (let k = 0; k < M; k++) {
-        const x = X[k] * c + Y[k] * s, y = -X[k] * s + Y[k] * c;
-        X[k] = x; Y[k] = y;
-        if (k < B) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-      }
-      const zk = keep ? this.zk : Math.min(TREE.ZMAX, 0.9 * (y1 - y0) / this.baseBits);
-      for (let k = 0; k < M; k++) Z[k] = bits[k] * zk;
-      if (keep) return null;
-      // 구르는 동안 세로로 가장 많이 차지하는 폭
-      const cy = (y0 + y1) / 2, cz = this.baseBits * zk / 2;
-      let mid = 0;
-      for (const deg of [20, 35, 50, 65]) {
-        const sn = Math.sin(deg * Math.PI / 180), cs = Math.cos(deg * Math.PI / 180);
-        let lo = 1e9, hi = -1e9;
-        for (let k = 0; k < B; k++) { const v = (Y[k] - cy) * sn + (Z[k] - cz) * cs; if (v < lo) lo = v; if (v > hi) hi = v; }
-        mid = Math.max(mid, Math.max(hi, -lo) * 2);
-      }
-      return { a, zk, wx: x1 - x0, hy: y1 - y0, hz: this.baseBits * zk, mid, c: [(x0 + x1) / 2, cy, cz] };
-    }
-    _solve() {                                         // 그림 칸에 가장 크게 들어가는 꺾는 각을 찾는다
-      const narrow = this.narrow, mx = narrow ? 20 : Math.max(28, this.w * 0.03), padT = narrow ? 26 : 34, padB = narrow ? 42 : 44;
-      const fit = L => [(this.w - 2 * mx) / L.wx, Math.min((this.h - padT - padB) / Math.max(L.hy, L.hz), (this.h - 12) / L.mid)];
-      let lo = TREE.A_MIN, hi = TREE.A_MAX, L = this._layout(hi), f = fit(L);
-      if (f[1] < f[0]) {                               // 가장 많이 굽혔더니 세로가 넘친다 → 덜 굽힌다
-        L = this._layout(lo); f = fit(L);
-        if (f[1] < f[0]) {
-          L = null;
-        } else {
-          for (let i = 0; i < 12; i++) {
-            const m = (lo + hi) / 2; L = this._layout(m); f = fit(L);
-            if (f[1] < f[0]) hi = m; else lo = m;
-          }
-          L = this._layout(lo); f = fit(L);
+      // 벽: 자리마다, 같은 숫자가 이어지는 동안을 긴 칸 하나로. k번째 걸음 앞의 테이프가 [k − 1, k)에 놓인다
+      const bars = [];
+      for (let j = 0; j <= top; j++) {
+        let cur = -1, x0 = 0;
+        for (let k = 0; k <= N + 1; k++) {
+          let v = -1;
+          if (k <= N) { const c = tapeGet(k < N ? steps[k].before : end, Ls[k] - j); v = c === null ? -1 : +c; }
+          if (v !== cur) { if (cur >= 0) bars.push(x0, k - 1, j, cur); cur = v; x0 = k - 1; }
         }
-        if (!L) { L = this._layout(TREE.A_MIN); f = fit(L); }
       }
-      this.a = L.a; this.zk = L.zk; this.c = L.c; this.ext = L;
-      this.s = Math.min(f[0], f[1]) * 0.96;
-      this.lift = (padB - padT) / 2;
-    }
-    _more() {                                          // 수가 덧붙었다: 같은 모양에 새 가지만 단다
-      this._arrays(); this._layout(this.a, true); this._upload();
-    }
-    _upload() {                                        // 선마다 삼각형 둘, 꼭짓점마다 수 열두 개
-      const { X, Y, Z, par, dep, bits, wgt, order } = this, n = order.length, a = new Float32Array(n * 72);
+      const bar = new Float32Array(bars.length / 4 * 18);
+      for (let i = 0, o = 0; i < bars.length; i += 4) {
+        const x0 = bars[i], x1 = bars[i + 1], y0 = bars[i + 2] - 0.38, y1 = bars[i + 2] + 0.38, b = bars[i + 3];
+        for (const [x, y] of [[x0, y0], [x1, y0], [x0, y1], [x1, y0], [x1, y1], [x0, y1]]) { bar[o++] = x; bar[o++] = y; bar[o++] = b; }
+      }
+      // 머리의 길: k번째 걸음은 (k, 자리, 상태)에서 (k + 1, 다음 자리, 다음 상태)로 가는 선. 색은 그 걸음을 한 상태
+      const line = new Float32Array(N * 60);
       let o = 0;
-      const put = (k, q, g, e) => {                    // k = 이쪽 끝, q = 저쪽 끝, e = 뿌리 쪽 끝인가
-        a[o] = X[k]; a[o + 1] = Y[k]; a[o + 2] = Z[k]; a[o + 3] = X[q]; a[o + 4] = Y[q]; a[o + 5] = Z[q];
-        a[o + 6] = g; a[o + 7] = e; a[o + 8] = wgt[e ? q : k]; a[o + 9] = bits[k]; a[o + 10] = dep[k]; a[o + 11] = 0;
-        o += 12;
+      const put = (a, b, g, e) => {
+        line[o] = a; line[o + 1] = pl[a]; line[o + 2] = lev[a]; line[o + 3] = b; line[o + 4] = pl[b]; line[o + 5] = lev[b];
+        line[o + 6] = g; line[o + 7] = e; line[o + 8] = lev[e ? b : a]; line[o + 9] = a; o += 10;
       };
-      for (let i = 0; i < n; i++) {
-        const k = order[i], p = par[k];
-        put(k, p, -1, 0); put(k, p, 1, 0); put(p, k, -1, 1);
-        put(k, p, 1, 0); put(p, k, 1, 1); put(p, k, -1, 1);
+      for (let k = 0; k < N; k++) {
+        put(k, k + 1, -1, 0); put(k, k + 1, 1, 0); put(k + 1, k, -1, 1);
+        put(k, k + 1, 1, 0); put(k + 1, k, 1, 1); put(k + 1, k, -1, 1);
       }
-      const gl = this.gl;
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.bufEdge); gl.bufferData(gl.ARRAY_BUFFER, a, gl.STATIC_DRAW);
-      this.nVert = n * 6; this.scrOk = false; this.dirty = true;
+      const run = { n, N, steps, lev, pl, top, off: 0, stop: N, h: N, a: 1, M: null, bar, line, nBar: bar.length / 3, nLine: N * 6 };
+      this._buffers(run);
+      return run;
     }
+    _buffers(run) {
+      const gl = this.gl;
+      run.bufBar = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, run.bufBar); gl.bufferData(gl.ARRAY_BUFFER, run.bar, gl.STATIC_DRAW);
+      run.bufLine = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, run.bufLine); gl.bufferData(gl.ARRAY_BUFFER, run.line, gl.STATIC_DRAW);
+    }
+    _drop(run) { const gl = this.gl; if (gl && !this.lost) { gl.deleteBuffer(run.bufBar); gl.deleteBuffer(run.bufLine); } }
+
+    // ── 기계가 알려 주는 것: 지금의 계산(M)과 시각. 기록은 머리가 옮겨 갈 때마다 한 걸음씩 자란다
+    setLive(M, tt) {
+      if (!this.ok) return;
+      let cur = this.cur;
+      if (!cur || cur.M !== M) {                         // 새 계산: 앞의 것은 거기까지로 두고 그 뒤에 잇는다
+        let off = 0;
+        if (cur) { cur.stop = Math.min(cur.N, cur.h); cur.M = null; off = cur.off + cur.stop + TRACE.GAP; }
+        const run = this._make(M.n, M.steps, M.end, M.posEnd);
+        run.M = M; run.off = off; run.h = 0;
+        this.runs.push(run); this.cur = cur = run;
+        if (this.runs.length === 1) {                    // 처음: 바로 앞의 수들의 기록을 왼쪽에 놓아 둔다
+          let x = 0, total = 0;
+          for (let m = M.n - 1; m >= 2 && total < 2600 && this.runs.length < 12; m--) {
+            const sim = simulate(m), r = this._make(m, sim.steps, sim.end, sim.posEnd);
+            x -= r.N + TRACE.GAP; r.off = x; total += r.N + TRACE.GAP;
+            this.runs.unshift(r);
+          }
+        }
+        while (this.runs.length > 16) this._drop(this.runs.shift());
+        this.hover = null;
+      }
+      let h = 0, a = 1;
+      if (tt < M.IN_T0) a = 0;
+      else if (tt < M.HEAD_T0) a = clamp01((tt - M.IN_T0) / 0.5);
+      if (tt >= M.HALT_T0) h = M.N;
+      else {
+        const k = bisectRight(M.T0, tt) - 1;
+        if (k >= 0) { const st = M.steps[k], u = (tt - st.t0) / st.d, b = phaseAB(st.d)[1]; h = k + (u >= b ? ease((u - b) / (1 - b)) : 0); }
+      }
+      if (h !== cur.h || a !== cur.a) { cur.h = h; cur.a = a; this.dirty = true; }
+      this.wake();
+    }
+    get now() { return this.cur ? this.cur.off + this.cur.h : 0; }
 
     // ── 크기
     resize() {
@@ -837,137 +824,83 @@
       const w = Math.round(this.box.clientWidth), h = Math.round(this.box.clientHeight);
       if (w < 40 || h < 40) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2) / (this.cut === 2 ? 2 : this.cut === 1 ? 1.5 : 1);
-      const same = w === this.w && h === this.h && dpr === this.dpr;
       this.w = w; this.h = h; this.dpr = dpr; this.narrow = w < 560;
       const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
       for (const c of [this.cv, this.ov]) if (c.width !== pw || c.height !== ph) { c.width = pw; c.height = ph; }
-      const N = w >= 1100 ? 3000 : w >= 700 ? 2000 : 1000;
-      if (N !== this.N) this._plant(N);
-      if (!same || !this.nVert) { this._solve(); this._upload(); this.sS = 0; this._path(); }
-      this.box.querySelector('.tree-ui').style.left = Math.round(this.host._treeEdges()[0]) + 'px';
+      this.box.querySelector('.trace-ui').style.left = Math.round(this.host._traceEdges()[0]) + 'px';
       this.dirty = true; this.wake();
     }
 
-    // ── 기계가 알려 주는 것: 지금 수, 끝낸 계산 횟수, 방금 간 선을 얼마나 지났는가
-    setLive(n, op, frac) {
-      const L = this.live;
-      if (n !== L.n) {
-        if (L.path && L.op > 0) {                      // 방금까지 계산하던 수의 길은 잠깐 남는다
-          this.trails.push({ v: L.path.slice(0, Math.min(L.op, L.path.length - 1) + 1).map(k => this.val[k]), t: this.time });
-          if (this.trails.length > 3) this.trails.shift();
-        }
-        L.n = n; L.path = null;
-        if (this.M) {
-          this._path();
-        }
-        this.dirty = true;
-      }
-      L.op = op; L.frac = frac;
-      this.wake();
-    }
-    _path() {                                          // 지금 수가 1까지 가는 길(점의 번호)
-      const L = this.live;
-      L.path = null;
-      if (!this.M || !L.n) return;
-      if (!this.id.has(L.n)) {
-        this.extra.push(L.n); if (this.extra.length > 400) this.extra.shift();
-        this._ensure(L.n); this._more();
-      }
-      const p = [];
-      for (let k = this.id.get(L.n); k >= 0; k = this.par[k]) p.push(k);
-      L.path = p;
-    }
-
-    // ── 움직임
+    // ── 움직임: 보는 방향이 따라가고, 지금의 걸음이 늘 같은 자리에 오도록 따라간다
     wake() { if (this.ok && !this.lost && !this.raf && this.host._visible !== false) this.raf = requestAnimationFrame(this._frame); }
     stop() { if (this.raf) cancelAnimationFrame(this.raf); this.raf = 0; this.last = 0; }
-    get side() { const c = Math.cos(this.theta); return c * c; }               // 0 = 위에서 … 1 = 옆에서
     _frame(now) {
       this.raf = 0;
-      if (!this.nVert) return;
+      if (!this.cur || !this.w) return;
       const dt = this.last ? Math.min(0.1, (now - this.last) / 1000) : 0;
       this.last = now;
-      const playing = this.host._playing, still = reducedMotion(), run = playing && !still;
-      const hold = !!this.drag || (this.ptr && now - this.ptr.t < 6000);       // 마우스를 움직이는 동안은(그리고 6초 더) 가만히 있는다
+      const playing = this.host._playing, still = reducedMotion();
       let moving = false;
-      if (still) this.grow = this.maxDep + 12;
-      else if (this.grow < this.maxDep + 12 && (playing || this.grow > 0)) {    // 처음: 뿌리에서 자라난다
-        this.grow = Math.min(this.maxDep + 12, this.grow + dt * (this.maxDep + 12) / TREE.GROW * (0.35 + 1.3 * this.grow / this.maxDep));
+      const kq = 1 - Math.exp(-dt / (still ? 0.001 : 0.24));
+      const dp = this.psiT - this.psi, dh = this.thetaT - this.theta;
+      if (Math.abs(dp) > 1e-5 || Math.abs(dh) > 1e-5) {
+        this.psi += dp * kq; this.theta += dh * kq;
+        if (Math.abs(this.psiT - this.psi) < 2e-4) this.psi = this.psiT;
+        if (Math.abs(this.thetaT - this.theta) < 2e-4) this.theta = this.thetaT;
         this.dirty = true; moving = true;
       }
-      if (run) {
-        this.time += dt;
-        if (!hold && this.mode !== 'free' && this.grow >= this.maxDep) {
-          if (this.mode === 'auto') { this.phi += 2 * Math.PI / TREE.ROCK * dt; this.thetaT = rockAt(this.phi); }
-          this.tSway += dt; this.alphaT = TREE.SWAY * Math.sin(2 * Math.PI * this.tSway / TREE.SWAY_T);
-        }
-      }
-      // 보는 방향과 크기는 부드럽게 따라간다
-      const kq = 1 - Math.exp(-dt / (still ? 0.001 : 0.26));
-      const dth = this.thetaT - this.theta, dal = this.alphaT - this.alpha;
-      if (Math.abs(dth) > 1e-5 || Math.abs(dal) > 1e-5) {
-        this.theta += dth * kq; this.alpha += dal * kq;
-        if (Math.abs(this.thetaT - this.theta) < 2e-5) this.theta = this.thetaT;
-        if (Math.abs(this.alphaT - this.alpha) < 2e-5) this.alpha = this.alphaT;
+      const X = this.now;
+      if (this.camX === null || still) { if (this.camX !== X) { this.camX = X; this.dirty = true; } }
+      else if (Math.abs(X - this.camX) > 1e-3) {
+        this.camX += (X - this.camX) * (1 - Math.exp(-dt / 0.3));
+        if (Math.abs(X - this.camX) < 0.01) this.camX = X;
         this.dirty = true; moving = true;
       }
-      if (!this.sS) { this.sS = this.s; this.cS = this.c.slice(); this.dirty = true; }
-      else if (Math.abs(this.sS - this.s) > this.s * 1e-4 || Math.abs(this.cS[0] - this.c[0]) + Math.abs(this.cS[1] - this.c[1]) + Math.abs(this.cS[2] - this.c[2]) > 1e-3) {
-        const kf = 1 - Math.exp(-dt / 0.5);
-        this.sS += (this.s - this.sS) * kf;
-        for (let i = 0; i < 3; i++) this.cS[i] += (this.c[i] - this.cS[i]) * kf;
-        this.dirty = true; moving = true;
-      }
-      if (this.hover && this.hoverUntil && now > this.hoverUntil) { this.hover = null; this.hoverUntil = 0; }
-      const dimT = this.hover ? 0.42 : 1;              // 수를 가리키면 나머지는 어두워진다
-      if (Math.abs(dimT - this.dim) > 0.004) { this.dim += (dimT - this.dim) * (1 - Math.exp(-dt / (still ? 0.001 : 0.16))); this.dirty = true; moving = true; }
-      else this.dim = dimT;
-      if (run && dt > 0) {                             // 느린 기기: 프레임 사이가 계속 벌어지면 빛번짐부터 끄고, 다음엔 해상도를 낮춘다
+      let top = 8;                                       // 세로 눈금: 보이는 계산들 가운데 가장 긴 수가 들어가게
+      for (const r of this.runs) if (r.off + r.stop > this.camX - 1500 && r.top + 2 > top) top = r.top + 2;
+      if (Math.abs(top - this.top) > 0.01) { this.top += (top - this.top) * (still ? 1 : 1 - Math.exp(-dt / 0.5)); this.dirty = true; moving = true; }
+      if (playing && !still && dt > 0) {                 // 느린 기기: 프레임 사이가 계속 벌어지면 빛번짐부터 끄고, 다음엔 해상도를 낮춘다
         this.slow = dt > 0.05 ? this.slow + 1 : Math.max(0, this.slow - 2);
         if (this.slow > 60) {
           this.slow = 0;
           if (this.bloom) this.bloom = false;
-          else if (this.cut < 2) { this.cut++; this.w = 0; this.resize(); }
+          else if (this.cut < 2) { this.cut++; this.resize(); }
+          this.dirty = true;
         }
       }
-      if (this.dirty || run) {
-        if (this.dirty) { this._camera(); this.scrOk = false; }
-        this._drawGL(still ? 0 : 1); this.dirty = false;
+      if (this.hover && this.hoverUntil && now > this.hoverUntil) { this.hover = null; this.hoverUntil = 0; }
+      if (this.dirty) {
+        this._fit(); this._drawGL(); this.dirty = false;
+        if (this.ptr && !this.drag) this._hoverAt(this.ptr.x, this.ptr.y, 0);
       }
-      if (this.ptr && !this.drag && !this.scrOk) this._hoverAt(this.ptr.x, this.ptr.y, 0);
       this._drawOverlay();
-      if (moving || this.drag || playing || this.hoverUntil) this.wake();
+      if (moving || this.drag || this.hoverUntil) this.wake();
     }
-    setMode(mode) {
-      this.mode = mode;
-      if (mode === 'top') this.thetaT = Math.PI / 2;
-      else if (mode === 'side') this.thetaT = 0;
-      else if (mode === 'auto') {                      // 지금 각에서 이어서 구른다: 위에 가까우면 옆으로, 옆에 가까우면 위로
-        const y = Math.max(-0.999, Math.min(0.999, this.theta / (Math.PI / 4) - 1));
-        const ph = Math.asin(Math.max(-1, Math.min(1, Math.atanh(y * Math.tanh(2.2)) / 2.2)));
-        this.phi = this.theta > Math.PI / 4 ? Math.PI - ph : ph;
-        this.tSway = Math.asin(Math.max(-1, Math.min(1, this.alpha / TREE.SWAY))) * TREE.SWAY_T / (2 * Math.PI);
-      }
+    setView(name) {
+      const v = TRACE.VIEW[name];
+      this.view = name; this.psiT = v[0]; this.thetaT = v[1];
       this._labels(); this.wake();
     }
     _labels() {
       const T = this.host._T || TEXT.ko;
-      for (const k of ['top', 'side', 'auto']) {
+      ['solid', 'tape', 'states', 'orbit'].forEach((k, i) => {
         const b = this.btn[k];
-        b.textContent = T[k === 'top' ? 'treeTop' : k === 'side' ? 'treeSide' : 'treeAuto'];
-        b.setAttribute('aria-pressed', this.mode === k ? 'true' : 'false');
-      }
-      this.box.setAttribute('aria-label', T.treeAria);
+        b.textContent = T.traceViews[i]; b.title = T.traceViewTitles[i];
+        b.setAttribute('aria-pressed', this.view === k ? 'true' : 'false');
+      });
+      this.box.setAttribute('aria-label', T.traceAria);
     }
 
-    // ── 사진기: 나무를 긴 축 둘레로 굴리고(theta: 90° = 위에서, 0° = 옆에서), 화면의 세로축 둘레로 조금 돌린다(alpha)
-    _camera() {
-      const st = Math.sin(this.theta), ct = Math.cos(this.theta), sa = Math.sin(this.alpha), ca = Math.cos(this.alpha);
-      const r = [ca, -sa * ct, sa * st], u = [0, st, ct], f = [sa, ca * ct, -ca * st];
-      const D = this.w / (2 * this.sS * Math.tan(TREE.HFOV / 2)), q = this.lift / this.sS;
-      const T = [this.cS[0] - u[0] * q, this.cS[1] - u[1] * q, this.cS[2] - u[2] * q];
+    // ── 사진기. psi = 세로축 둘레로 돌린 각(클수록 지나간 쪽이 멀어진다), theta = 내려다보는 각
+    _cam(s, shift) {
+      const cp = Math.cos(this.psi), sp = Math.sin(this.psi), ct = Math.cos(this.theta), st = Math.sin(this.theta);
+      const f = [-sp * ct, -st, -cp * ct], r = [cp, 0, -sp];
+      const u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
+      const D = this.w / (2 * s * Math.tan(TRACE.HFOV / 2)), back = 0.31 * this.w / s;
+      const yc = (TRACE.FLOOR + this.top) / 2 * TRACE.SY, zc = 3 * TRACE.SZ;
+      const T = [this.camX - back + u[0] * shift, yc + u[1] * shift, zc + u[2] * shift];
       const e = [T[0] - f[0] * D, T[1] - f[1] * D, T[2] - f[2] * D];
-      const fx = 1 / Math.tan(TREE.HFOV / 2), fy = fx * this.w / this.h, near = D * 0.05, far = D * 4;
+      const fx = 1 / Math.tan(TRACE.HFOV / 2), fy = fx * this.w / this.h, near = D * 0.04, far = D * 9;
       const A = (far + near) / (near - far), B = 2 * far * near / (near - far);
       const V = [r[0], u[0], -f[0], r[1], u[1], -f[1], r[2], u[2], -f[2],
                  -(r[0] * e[0] + r[1] * e[1] + r[2] * e[2]), -(u[0] * e[0] + u[1] * e[1] + u[2] * e[2]), f[0] * e[0] + f[1] * e[1] + f[2] * e[2]];
@@ -976,79 +909,110 @@
         const x = V[c * 3], y = V[c * 3 + 1], z = V[c * 3 + 2], w = c === 3 ? 1 : 0;
         m[c * 4] = fx * x; m[c * 4 + 1] = fy * y; m[c * 4 + 2] = A * z + B * w; m[c * 4 + 3] = -z;
       }
-      this.camD = D;
+      this.camD = D; this.sPx = s; this.shift = shift;
     }
-    _proj(k) {                                         // 점 k → 화면(px)
-      const m = this.mvp, x = this.X[k], y = this.Y[k], z = this.Z[k], w = m[3] * x + m[7] * y + m[11] * z + m[15];
-      return [(0.5 + 0.5 * (m[0] * x + m[4] * y + m[8] * z + m[12]) / w) * this.w, (0.5 - 0.5 * (m[1] * x + m[5] * y + m[9] * z + m[13]) / w) * this.h];
+    _P(x, y, z) {                                      // (걸음, 자리, 상태) → 화면(px)과 거리
+      const m = this.mvp, X = x, Y = y * TRACE.SY, Z = z * TRACE.SZ, w = m[3] * X + m[7] * Y + m[11] * Z + m[15];
+      return [(0.5 + 0.5 * (m[0] * X + m[4] * Y + m[8] * Z + m[12]) / w) * this.w, (0.5 - 0.5 * (m[1] * X + m[5] * Y + m[9] * Z + m[13]) / w) * this.h, w];
     }
-    _projXYZ(x, y, z) {
-      const m = this.mvp, w = m[3] * x + m[7] * y + m[11] * z + m[15];
-      return [(0.5 + 0.5 * (m[0] * x + m[4] * y + m[8] * z + m[12]) / w) * this.w, (0.5 - 0.5 * (m[1] * x + m[5] * y + m[9] * z + m[13]) / w) * this.h];
-    }
-    _pick(px, py, rad) {                               // 화면의 점에서 가장 가까운 수
-      const { X, Y, Z, sx, sy, M } = this, m = this.mvp;
-      if (!this.scrOk) {
-        const hw = this.w / 2, hh = this.h / 2;
-        for (let k = 0; k < M; k++) {
-          const x = X[k], y = Y[k], z = Z[k], w = m[3] * x + m[7] * y + m[11] * z + m[15];
-          sx[k] = (1 + (m[0] * x + m[4] * y + m[8] * z + m[12]) / w) * hw; sy[k] = (1 - (m[1] * x + m[5] * y + m[9] * z + m[13]) / w) * hh;
+    _fit() {                                           // 지금의 걸음 둘레(자리 × 상태)가 그림 칸의 높이에 꼭 들어가게
+      const padT = this.narrow ? 28 : 36, padB = this.narrow ? 44 : 46, usable = this.h - padT - padB, want = padT + usable / 2;
+      let s = this.sPx, shift = this.shift;
+      for (let it = 0; it < 4; it++) {
+        this._cam(s, shift);
+        let lo = 1e9, hi = -1e9;
+        for (const x of [this.camX - 2, this.camX + 2]) for (const y of [TRACE.FLOOR, this.top]) for (const z of [-0.2, 6.3]) {
+          const p = this._P(x, y, z);
+          if (p[1] < lo) lo = p[1]; if (p[1] > hi) hi = p[1];
         }
-        this.scrOk = true;
+        s = Math.max(0.3, Math.min(30, s * usable / Math.max(1, hi - lo)));
+        shift += (want - (lo + hi) / 2) / s;
       }
-      let best = -1, bd = rad * rad;
-      const lim = this.grow - 2;
-      for (let k = 0; k < M; k++) {
-        const dx = sx[k] - px, dy = sy[k] - py, d = dx * dx + dy * dy;
-        if (d < bd && this.dep[k] <= lim) { bd = d; best = k; }
-      }
-      return best;
+      this._cam(s, shift);
+      const e = ease((this.psi - 1.0) / 0.5);             // 끝에서 볼수록 가까운 걸음만 남긴다(겹쳐서 뭉개지지 않게)
+      this.ageStart = lerp(0.60 * this.w / s / Math.max(Math.cos(this.psi), 0.5), 110, e); this.ageLen = 0.5 * this.ageStart;
     }
 
-    // ── WebGL로 나무를
-    _drawGL(flowOn) {
+    // ── WebGL로: 벽(테이프의 역사), 바닥의 줄(상태), 머리의 길과 그 그림자 둘
+    _drawGL() {
       const gl = this.gl, TH = this.host._TH || THEMES.dark, dark = (this.host._themeName || 'light') === 'dark';
-      const bg = rgb(TH.bg).map(v => v / 255);
-      gl.useProgram(this.pT);
-      if (this.palKey !== this.host._themeName) {
-        const pal = [];
-        for (const h of TREE.PAL[dark ? 'dark' : 'light']) pal.push(...rgb(h).map(v => v / 255));
-        gl.uniform3fv(this.uT.u_pal, new Float32Array(pal));
-        const hi = dark ? [1, 0.97, 0.9] : [0.12, 0.1, 0.05];
-        gl.uniform3f(this.uT.u_hi, hi[0], hi[1], hi[2]);
-        this.palKey = this.host._themeName;
-      }
-      gl.uniformMatrix4fv(this.uT.u_mvp, false, this.mvp);
-      const R = Math.hypot(this.ext.wx, this.ext.hy, this.ext.hz) / 2;
-      gl.uniform3f(this.uT.u_fog, this.camD - R * 0.5, 1 / (R * 1.1), dark ? 0.5 : 0.35);
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.bufEdge);
-      const sizes = [3, 3, 4, 2], offs = [0, 12, 24, 40];
-      for (let i = 0; i < 4; i++) { gl.enableVertexAttribArray(this.aT[i]); gl.vertexAttribPointer(this.aT[i], sizes[i], gl.FLOAT, false, 48, offs[i]); }
-      gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND);
-      const ks = Math.max(0.75, Math.min(1.15, this.sS / 5.5)), flow = flowOn ? 1 : 0;
-      const pass = (glow, pw, ph, r0, r1, gain) => {
-        gl.viewport(0, 0, pw, ph);
-        gl.clearColor(glow ? 0 : bg[0], glow ? 0 : bg[1], glow ? 0 : bg[2], 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-        gl.uniform4f(this.uT.u_vp, pw / 2, ph / 2, r0, r1);
-        gl.uniform4f(this.uT.u_fs, glow, gain, flow, this.palMax);
-        gl.uniform4f(this.uT.u_ph, (this.time * 11) % 53, (this.time * 15) % 37, this.grow, (dark ? 0.95 : 1) * (glow ? this.dim : 0.25 + 0.75 * this.dim));
-        gl.drawArrays(gl.TRIANGLES, 0, this.nVert);
+      const C = TRACE.COL[dark ? 'dark' : 'light'], bg = rgb(TH.bg).map(v => v / 255), f3 = h => rgb(h).map(v => v / 255);
+      const W = this.w / this.sPx, cur = this.cur, X = this.now, k = this.dpr;
+      const fog = [this.camD + 0.1 * W, 1 / (1.7 * W), 0.9, 0];
+      const bind = (buf, locs, sizes, stride) => {
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        let off = 0;
+        locs.forEach((l, i) => { gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, sizes[i], gl.FLOAT, false, stride, off); off += sizes[i] * 4; });
+      };
+      const upto = r => (r === cur ? r.h : r.stop);
+      const lines = (pw, ph, glow) => {                  // 머리의 길(과 그림자들)
+        gl.useProgram(this.pL);
+        gl.uniformMatrix4fv(this.uL.u_mvp, false, this.mvp);
+        const cols = new Float32Array(24);
+        C.st.forEach((h, i) => cols.set(f3(h), i * 3));
+        gl.uniform3fv(this.uL.u_col, cols);
+        gl.uniform4f(this.uL.u_fog, fog[0], fog[1], fog[2], 0);
+        const draw = (buf, n, off, sq, fl, R, from, to, alpha) => {
+          bind(buf, this.aL, [3, 3, 4], 40);
+          gl.uniform4f(this.uL.u_vp, pw / 2, ph / 2, R, this.camD);
+          gl.uniform3f(this.uL.u_sq, sq[0], sq[1], sq[2]); gl.uniform3f(this.uL.u_fl, fl[0], fl[1], fl[2]);
+          gl.uniform4f(this.uL.u_rv, from, to, alpha, 0);
+          gl.uniform4f(this.uL.u_age, X - off, this.ageStart, 1 / this.ageLen, 0);
+          gl.drawArrays(gl.TRIANGLES, 0, n);
+        };
+        const SY = TRACE.SY, SZ = TRACE.SZ, fy = TRACE.FLOOR * SY, sc = glow ? 0.25 * k : k;
+        if (!glow) {
+          // 바닥의 줄 일곱: 상태마다 하나. 지금 상태의 줄만 제 색으로 켜진다
+          const a = this.rail, x0 = X - this.ageStart - this.ageLen, x1 = X + 12, lv = this._state()[0];
+          let o = 0;
+          const put = (xa, xb, l, g, e) => { a[o] = xa; a[o + 1] = TRACE.FLOOR; a[o + 2] = l; a[o + 3] = xb; a[o + 4] = TRACE.FLOOR; a[o + 5] = l; a[o + 6] = g; a[o + 7] = e; a[o + 8] = l === lv ? l : 7; a[o + 9] = xa; o += 10; };
+          for (let l = 0; l <= 6; l++) { put(x0, x1, l, -1, 0); put(x0, x1, l, 1, 0); put(x1, x0, l, -1, 1); put(x0, x1, l, 1, 0); put(x1, x0, l, 1, 1); put(x1, x0, l, -1, 1); }
+          gl.bindBuffer(gl.ARRAY_BUFFER, this.bufRail); gl.bufferData(gl.ARRAY_BUFFER, a, gl.DYNAMIC_DRAW);
+          draw(this.bufRail, 42, 0, [1, SY, SZ], [0, 0, 0], 0.5 * k, -1e9, 1e9, 0.8);
+        }
+        for (const r of this.runs) {
+          const to = upto(r);
+          if (to <= 0 || r.off + to < X - this.ageStart - this.ageLen) continue;
+          if (!glow) {
+            draw(r.bufLine, r.nLine, r.off, [1, SY, 0], [r.off, 0, 0], 0.55 * k, 0, to, 0.55 * r.a);          // 벽에 비친 그림자
+            draw(r.bufLine, r.nLine, r.off, [1, 0, SZ], [r.off, fy, 0], 0.8 * k, 0, to, 0.85 * r.a);           // 바닥에 비친 그림자
+          }
+          draw(r.bufLine, r.nLine, r.off, [1, SY, SZ], [r.off, 0, 0], (glow ? 2.2 : 1.25) * sc, 0, to, (glow ? 0.9 : 1) * r.a);
+        }
+        for (const l of this.aL) gl.disableVertexAttribArray(l);
       };
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      pass(0, this.cv.width, this.cv.height, 0.44 * this.dpr * ks, 1.9 * this.dpr * ks, 1);
+      gl.viewport(0, 0, this.cv.width, this.cv.height);
+      gl.clearColor(bg[0], bg[1], bg[2], 1); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      // 벽
+      gl.useProgram(this.pB);
+      gl.uniformMatrix4fv(this.uB.u_mvp, false, this.mvp);
+      gl.uniform4f(this.uB.u_fog, fog[0], fog[1], fog[2], 0);
+      const c0 = f3(C.bit0), c1 = f3(C.bit1);
+      gl.uniform3f(this.uB.u_c0, c0[0], c0[1], c0[2]); gl.uniform3f(this.uB.u_c1, c1[0], c1[1], c1[2]);
+      for (const r of this.runs) {
+        const to = upto(r);
+        if (r.off + to < X - this.ageStart - this.ageLen) continue;
+        bind(r.bufBar, [this.aB], [3], 12);
+        gl.uniform3f(this.uB.u_geo, r.off, TRACE.SY, 0);
+        gl.uniform4f(this.uB.u_rv, -1.5, to, 0.92 * r.a * ease((Math.abs(Math.cos(this.psi) * Math.cos(this.theta)) - 0.03) / 0.2), 0);
+        gl.uniform4f(this.uB.u_age, X - r.off, this.ageStart, 1 / this.ageLen, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, r.nBar);
+      }
+      gl.disableVertexAttribArray(this.aB);
+      lines(this.cv.width, this.cv.height, 0);
       if (!dark || !this.bloom) { gl.disable(gl.BLEND); return; }
-      // 빛번짐: 작은 그림에 굵게 그려 흐린 뒤 더한다
+      // 빛번짐: 머리의 길만 작은 그림에 굵게 그려 흐린 뒤 더한다
       const bw = Math.max(8, Math.round(this.cv.width / 4)), bh = Math.max(8, Math.round(this.cv.height / 4));
       this._target(bw, bh);
       if (!this.bloom) { gl.disable(gl.BLEND); return; }
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo[0].fb);
-      pass(1, bw, bh, 0.5, 1.5 * ks, 1);
+      gl.viewport(0, 0, bw, bh); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+      lines(bw, bh, 1);
       gl.disable(gl.BLEND);
       gl.useProgram(this.pP);
       gl.bindBuffer(gl.ARRAY_BUFFER, this.bufQuad);
-      for (let i = 1; i < 4; i++) gl.disableVertexAttribArray(this.aT[i]);
       gl.enableVertexAttribArray(this.aP); gl.vertexAttribPointer(this.aP, 2, gl.FLOAT, false, 0, 0);
       gl.activeTexture(gl.TEXTURE0); gl.uniform1i(this.uP.u_tex, 0);
       const blur = (src, dst, dx, dy, gain) => {
@@ -1061,119 +1025,131 @@
       blur(this.fbo[1].tex, this.fbo[0].fb, 0, 2 / bh, 1);
       gl.viewport(0, 0, this.cv.width, this.cv.height);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
-      blur(this.fbo[0].tex, null, 0, 0, 0.75);
+      blur(this.fbo[0].tex, null, 0, 0, 0.8);
       gl.disable(gl.BLEND);
     }
+    _state() {                                         // 지금: [상태(0 = 멈춤, 1 … 6), 머리의 자리(실수), 상태의 깊이(실수), 걸음(정수)]
+      const r = this.cur, k = Math.min(r.N, Math.floor(r.h)), j = Math.min(r.N, k + 1), f = r.h - k;
+      return [r.lev[k], lerp(r.pl[k], r.pl[j], f), lerp(r.lev[k], r.lev[j], f), k];
+    }
 
-    // ── 그 위에: 지금 수의 금빛 길, 가리킨 수, 글자
+    // ── 그 위에: 지금의 머리(벽과 바닥에 내린 선), 상태의 이름, 테이프의 숫자, 가리킨 걸음
     _drawOverlay() {
-      const ctx = this.octx, TH = this.host._TH || THEMES.dark, T = this.host._T || TEXT.ko, k = this.dpr;
+      const ctx = this.octx, TH = this.host._TH || THEMES.dark, T = this.host._T || TEXT.ko, k = this.dpr, num = this.host._numbers;
+      const dark = (this.host._themeName || 'light') === 'dark', C = TRACE.COL[dark ? 'dark' : 'light'];
       ctx.setTransform(k, 0, 0, k, 0, 0);
       ctx.clearRect(0, 0, this.w, this.h);
-      if (!this.M || !this.sS) return;
-      const narrow = this.narrow, side = this.side, fpx = narrow ? 10.5 : 12.5, font = sansFont(400, fpx);
-      const edge = this.host._treeEdges ? this.host._treeEdges() : [16, this.w - 16];
-      const shown = clamp01((this.grow - 4) / 12);
-      text(ctx, T.treeTitle, edge[0], 10, font, TH.label, 'la');
-      text(ctx, narrow ? T.treeLegendS : T.treeLegend, edge[1], 10, font, TH.label, 'ra');
+      const cur = this.cur;
+      if (!cur || !this.sPx) return;
+      const narrow = this.narrow, fpx = narrow ? 10.5 : 12.5, font = sansFont(400, fpx), bold = sansFont(700, fpx);
+      const edge = this.host._traceEdges ? this.host._traceEdges() : [16, this.w - 16];
+      text(ctx, T.traceTitle, edge[0], 10, font, TH.label, 'la');
+      text(ctx, T.from + '  ' + fmt(cur.n), edge[0] + textW(ctx, T.traceTitle, font) + 22, 10, font, TH.gold, 'la', 0.9 * cur.a);
+      if (!narrow || this.w > 430) text(ctx, narrow ? T.traceLegendS : T.traceLegend, edge[1], 10, font, TH.label, 'ra');
+      const X = this.now, [lv, pl, lz] = this._state(), col = C.st[lv];
+      const name = l => (l ? headName(T, TRACE.ORDER[l], num) : T.halt);
 
-      // 옆에서 볼 때: 수의 크기를 읽는 가로줄
-      if (side > 0.25 && shown > 0) {
-        const al = ease((side - 0.25) / 0.6) * shown, E = this.ext, x0 = this.c[0] - E.wx / 2, x1 = this.c[0] + E.wx / 2;
-        ctx.lineWidth = 1; ctx.strokeStyle = TH.rule;
-        for (const [v, label] of [[1e3, fmt(1e3)], [1e6, fmt(1e6)]]) {
-          const z = Math.log2(v) * this.zk;
-          if (z > E.hz * 1.04) continue;
-          const p = this._projXYZ(x0, this.c[1], z), q = this._projXYZ(x1, this.c[1], z);
-          ctx.globalAlpha = al * 0.9; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); ctx.globalAlpha = 1;
-          text(ctx, label, p[0] + 2, p[1] - 5, font, TH.label, 'ls', al);
+      // 계산마다: 출발한 수
+      for (const r of this.runs) {
+        const age = X - r.off;
+        if (age > this.ageStart + this.ageLen * 0.6) continue;
+        const p = this._P(r.off - TRACE.GAP / 2, TRACE.FLOOR + 0.2, 0);
+        if (p[2] <= 0 || p[0] < -30 || p[0] > this.w + 30) continue;
+        text(ctx, fmt(r.n), p[0], p[1] - 3, r === cur ? bold : font, r === cur ? TH.hot : TH.gold, 'ms', (r === cur ? 1 : 0.75) * clamp01(1.4 - age / this.ageStart));
+      }
+
+      // 상태의 이름: 바닥의 줄 끝에. 줄 사이가 좁아 보일 때는 지금 상태의 이름만 머리 옆에
+      const a0 = this._P(X + 13, TRACE.FLOOR, 0), a1 = this._P(X + 13, TRACE.FLOOR, 1);
+      const lpx = fpx - 1, showAll = Math.abs(a1[1] - a0[1]) >= lpx * (narrow ? 1.16 : 0.9) ? 1 : 0;   // 줄들이 세로로 벌어져 보일 때: 이름을 모두
+      const marks = (1 - showAll) * clamp01((Math.abs(a1[0] - a0[0]) - 13) / 4);          // 가로로 벌어져 보일 때: 번호만
+      if (showAll > 0) {
+        for (let l = 0; l <= 6; l++) {
+          const p = this._P(X + 14.5, TRACE.FLOOR, l);
+          text(ctx, name(l), p[0] + 2, p[1], sansFont(l === lv ? 700 : 400, lpx), C.st[l], 'lm', l === lv ? 1 : 0.55);
+        }
+      } else if (marks > 0) {
+        for (let l = 1; l <= 6; l++) {
+          const p = this._P(X + 2, TRACE.FLOOR, l);
+          text(ctx, CIRCLED[TRACE.ORDER[l]], p[0], p[1] + 15, l === lv ? bold : font, C.st[l], 'ms', marks * (l === lv ? 1 : 0.6));
         }
       }
-      // 뿌리
-      const root = this._proj(0);
-      text(ctx, '1', root[0] - 9, root[1] + 1, sansFont(700, narrow ? 12 : 14), TH.ink, 'rm', 0.9 * shown);
 
-      const line = (path, from, upto, frac) => {       // 길의 from번째 점부터 upto번째 점까지 (마지막 선은 frac만큼)
-        let p = null, q = null;
-        ctx.beginPath();
-        for (let i = from; i <= upto; i++) {
-          q = p; p = this._proj(path[i]);
-          if (i === upto && frac < 1 && q) p = [lerp(q[0], p[0], frac), lerp(q[1], p[1], frac)];
-          if (i === from) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+      // 지금의 머리: 벽의 칸(읽고 있는 자리)과 바닥의 줄(상태)에 내린 선, 그리고 구슬
+      const hp = this._P(X, pl, lz), wp = this._P(X, pl, 0), fp = this._P(X, TRACE.FLOOR, lz);
+      ctx.globalAlpha = cur.a;
+      const kn = Math.min(cur.N, Math.floor(cur.h)), tp = kn < cur.N ? cur.steps[kn].before : null;
+      const hi = (tp && tp.s.length ? (kn > 0 ? cur.steps[kn - 1].LAfter : 0) - tp.lo : 0) + 1.6;       // 지금 수의 맨 윗자리 바로 위까지
+      const q = [[TRACE.FLOOR, 0], [hi, 0], [hi, 6.3], [TRACE.FLOOR, 6.3]].map(c => this._P(X, c[0], c[1]));     // 지금의 단면
+      ctx.beginPath(); q.forEach((c, i) => (i ? ctx.lineTo(c[0], c[1]) : ctx.moveTo(c[0], c[1]))); ctx.closePath();
+      ctx.fillStyle = rgba(TH.ink, 0.035); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = rgba(TH.ink, 0.16); ctx.stroke();
+      ctx.lineWidth = 1; ctx.strokeStyle = rgba(col, 0.6);
+      ctx.beginPath(); ctx.moveTo(hp[0], hp[1]); ctx.lineTo(wp[0], wp[1]); ctx.moveTo(hp[0], hp[1]); ctx.lineTo(fp[0], fp[1]); ctx.stroke();
+      ctx.fillStyle = rgba(col, 0.9);
+      ctx.beginPath(); ctx.arc(wp[0], wp[1], 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(fp[0], fp[1], 2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = rgba(col, 0.2); ctx.beginPath(); ctx.arc(hp[0], hp[1], narrow ? 8 : 10, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(hp[0], hp[1], narrow ? 3 : 3.8, 0, Math.PI * 2); ctx.fill();
+      if (showAll < 1) {
+        const str = name(lv), w = textW(ctx, str, bold), tx = Math.min(hp[0] + 12, this.w - 6 - w), ty = Math.max(24, hp[1] - 10);
+        ctx.fillStyle = rgba(TH.bg, 0.7 * (1 - showAll)); ctx.fillRect(tx - 4, ty - fpx - 1, w + 8, fpx + 7);
+        text(ctx, str, tx, ty, bold, col, 'ls', 1 - showAll);
+      }
+      ctx.globalAlpha = 1;
+
+      // 지금 테이프에 적힌 숫자들: 벽의 오른쪽 끝에 세로로 (정면에 가깝고 칸이 넉넉히 클 때만)
+      const b0 = this._P(X, 0, 0), b1 = this._P(X, 1, 0), cell = Math.abs(b1[1] - b0[1]);
+      const front = clamp01((0.45 - Math.abs(this.psi)) / 0.2) * clamp01((0.45 - this.theta) / 0.2) * clamp01((cell - 9.5) / 2) * cur.a;
+      if (front > 0 && cur.M) {
+        const kk = Math.min(cur.N, Math.round(cur.h)), tape = kk < cur.N ? cur.steps[kk].before : cur.M.end, L = kk > 0 ? cur.steps[kk - 1].LAfter : 0;
+        const df = sansFont(400, Math.min(12.5, cell * 0.92));
+        for (let j = 0; j <= cur.top; j++) {
+          const c = tapeGet(tape, L - j);
+          if (c === null) continue;
+          const p = this._P(X + 1.2, j, 0);
+          text(ctx, c, p[0] + 5, p[1], df, c === '1' ? TH.ink : TH.label, 'mm', front);
         }
-        return p;
-      };
-      const soft = (col, lw, gain) => {                // 지금 길을 빛나는 선으로 (넓고 흐린 선 둘 위에 또렷한 선)
-        ctx.strokeStyle = rgba(col, 0.10 * gain); ctx.lineWidth = lw + 9; ctx.stroke();
-        ctx.strokeStyle = rgba(col, 0.20 * gain); ctx.lineWidth = lw + 4; ctx.stroke();
-        ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.stroke();
-      };
-      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      }
 
-      // 가리킨 수: 1까지 가는 길
+      // 가리킨 걸음
       const hv = this.hover;
-      if (hv && hv.k < this.M) {
-        const path = [];
-        let peak = 1;
-        for (let j = hv.k; j >= 0; j = this.par[j]) { path.push(j); if (this.val[j] > peak) peak = this.val[j]; }
-        line(path, 0, path.length - 1, 1);
-        soft(TH.ink, narrow ? 1.4 : 1.8, 0.6);
-        const p = this._proj(hv.k);
-        ctx.fillStyle = TH.ink; ctx.beginPath(); ctx.arc(p[0], p[1], 3.4, 0, Math.PI * 2); ctx.fill();
-        const str = T.treeInfo(this.val[hv.k], this.dep[hv.k], peak), w = textW(ctx, str, font);
-        const tx = Math.min(Math.max(p[0], 8 + w / 2), this.w - 8 - w / 2), ty = p[1] > 44 ? p[1] - 14 : p[1] + 24;
-        ctx.fillStyle = rgba(TH.bg, 0.84);
-        ctx.fillRect(tx - w / 2 - 7, ty - fpx - 3, w + 14, fpx + 10);
+      if (hv && this.runs.includes(hv.run)) {
+        const r = hv.run, x = r.off + hv.k, p = this._P(x, r.pl[hv.k], r.lev[hv.k]), c2 = C.st[r.lev[hv.k]];
+        const q0 = this._P(x, TRACE.FLOOR, 0), q1 = this._P(x, r.top + 1, 0), q2 = this._P(x, TRACE.FLOOR, 6.3);
+        ctx.lineWidth = 1; ctx.strokeStyle = rgba(TH.ink, 0.45);
+        ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q0[0], q0[1]); ctx.lineTo(q2[0], q2[1]); ctx.stroke();
+        ctx.strokeStyle = TH.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p[0], p[1], 5.5, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = c2; ctx.beginPath(); ctx.arc(p[0], p[1], 3, 0, Math.PI * 2); ctx.fill();
+        const st = r.steps[Math.min(hv.k, r.N - 1)], halted = hv.k >= r.N;
+        const str = halted ? T.traceHalted(r.n, r.N) : T.traceInfo(r.n, hv.k + 1, name(r.lev[hv.k]), st.read, st.write, st.move, st.next === 'H');
+        const w = textW(ctx, str, font), tx = Math.min(Math.max(p[0], 8 + w / 2), this.w - 8 - w / 2), ty = p[1] > 50 ? p[1] - 16 : p[1] + 26;
+        ctx.fillStyle = rgba(TH.bg, 0.86); ctx.fillRect(tx - w / 2 - 7, ty - fpx - 3, w + 14, fpx + 10);
         text(ctx, str, tx, ty, font, TH.ink, 'ms');
-      }
-
-      // 방금 계산을 마친 수들의 길: 서서히 사라진다
-      for (const tr of this.trails) {
-        const a = 1 - (this.time - tr.t) / 9;
-        if (a <= 0) continue;
-        const path = [];
-        for (const v of tr.v) { const j = this.id.get(v); if (j === undefined) break; path.push(j); }
-        if (path.length < 2) continue;
-        ctx.lineWidth = narrow ? 1.2 : 1.5; ctx.strokeStyle = rgba(TH.gold, 0.5 * a * a);
-        line(path, 0, path.length - 1, 1); ctx.stroke();
-      }
-
-      // 지금 수: 지나온 길은 금빛으로, 남은 길은 흐리게
-      const L = this.live;
-      const live = L.path ? clamp01((this.grow - this.dep[L.path[0]]) / 8) : 0;        // 나무가 거기까지 자란 뒤에
-      if (live > 0) {
-        const path = L.path, op = Math.min(L.op, path.length - 1), shown = live;
-        ctx.globalAlpha = shown;
-        if (op < path.length - 1) {
-          ctx.lineWidth = narrow ? 1 : 1.2; ctx.strokeStyle = rgba(TH.hot, 0.5);
-          line(path, op, path.length - 1, 1); ctx.stroke();
-        }
-        const head = line(path, 0, op, L.frac);
-        if (op > 0) soft(TH.hot, narrow ? 1.8 : 2.4, 1);
-        const beat = 0.5 + 0.5 * Math.sin(this.time * 3.2);
-        ctx.fillStyle = rgba(TH.hot, 0.10 + 0.06 * beat); ctx.beginPath(); ctx.arc(head[0], head[1], (narrow ? 10 : 13) + 4 * beat, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = rgba(TH.hot, 0.24 + 0.12 * beat); ctx.beginPath(); ctx.arc(head[0], head[1], (narrow ? 6 : 8) + 3 * beat, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = TH.hot; ctx.beginPath(); ctx.arc(head[0], head[1], narrow ? 2.8 : 3.6, 0, Math.PI * 2); ctx.fill();
-        const tip = this._proj(path[0]), lf = sansFont(700, narrow ? 11.5 : 13.5);
-        const label = (str, p, col, a) => {
-          const w = textW(ctx, str, lf), tx = Math.min(Math.max(p[0], 6 + w / 2), this.w - 6 - w / 2), ty = p[1] > 44 ? p[1] - 13 : p[1] + 24;
-          ctx.fillStyle = rgba(TH.bg, 0.62 * a * shown);
-          ctx.fillRect(tx - w / 2 - 5, ty - 12, w + 10, 16);
-          text(ctx, str, tx, ty, lf, col, 'ms', a * shown);
-        };
-        label(fmt(this.val[path[op]]), head, TH.hot, 1);
-        if (Math.hypot(tip[0] - head[0], tip[1] - head[1]) > 34) label(fmt(L.n), tip, TH.gold, 0.8);
-        ctx.globalAlpha = 1;
       }
     }
 
     // ── 손
+    _pick(px, py, rad) {                               // 화면의 점에서 가장 가까운 걸음(머리의 길 위의 점)
+      let best = null, bd = rad * rad;
+      const X = this.now;
+      for (let i = this.runs.length - 1; i >= 0; i--) {
+        const r = this.runs[i], to = Math.floor(r === this.cur ? r.h : r.stop);
+        if (r.off + to < X - this.ageStart - this.ageLen * 0.5) break;
+        for (let k = to; k >= 0; k--) {
+          if (X - r.off - k > this.ageStart + this.ageLen * 0.5) break;
+          const p = this._P(r.off + k, r.pl[k], r.lev[k]);
+          if (p[2] <= 0) continue;
+          const dx = p[0] - px, dy = p[1] - py, d = dx * dx + dy * dy;
+          if (d < bd) { bd = d; best = { run: r, k }; }
+        }
+      }
+      return best;
+    }
     _hoverAt(px, py, hold) {
-      const k = this._pick(px, py, hold ? 26 : 16);
-      if (k !== (this.hover ? this.hover.k : -1)) { this.hover = k < 0 ? null : { k }; this.wake(); }
-      this.hoverUntil = k >= 0 && hold ? performance.now() + hold : 0;
-      this.box.style.cursor = this.drag ? 'grabbing' : (k >= 0 ? 'pointer' : 'grab');
-      return k;
+      const h = this._pick(px, py, hold ? 26 : 15), o = this.hover;
+      if ((h && h.run) !== (o && o.run) || (h && h.k) !== (o && o.k)) { this.hover = h; this.wake(); }
+      this.hoverUntil = h && hold ? performance.now() + hold : 0;
+      this.box.style.cursor = this.drag ? 'grabbing' : (h ? 'pointer' : 'grab');
+      return h;
     }
     _bind() {
       const box = this.box, pos = e => { const r = box.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
@@ -1189,15 +1165,13 @@
       box.addEventListener('pointermove', e => {
         const d = this.drag, [px, py] = pos(e);
         if (!d || d.id !== e.pointerId) {
-          if (e.pointerType === 'mouse') { this.ptr = { x: px, y: py, t: performance.now() }; if (!onUi(e)) this._hoverAt(px, py, 0); else if (this.hover) { this.hover = null; this.wake(); } }
+          if (e.pointerType === 'mouse') { this.ptr = { x: px, y: py }; if (!onUi(e)) this._hoverAt(px, py, 0); else if (this.hover) { this.hover = null; this.wake(); } }
           return;
         }
         if (!d.moved && Math.hypot(px - d.x0, py - d.y0) < 6) return;
-        if (!d.moved) { d.moved = true; this.hover = null; this.mode = 'free'; this._labels(); box.style.cursor = 'grabbing'; }
-        const dx = px - d.x, dy = py - d.y, lim = 0.2;
-        if (d.touch) this.thetaT -= dx * 0.008;        // 손가락: 좌우로 밀면 구른다 (위아래는 쪽을 넘기는 데 쓴다)
-        else { this.thetaT += dy * 0.009; this.alphaT = Math.max(-0.8, Math.min(0.8, this.alphaT + dx * 0.0042)); }
-        this.thetaT = Math.max(-lim, Math.min(Math.PI / 2 + lim, this.thetaT));
+        if (!d.moved) { d.moved = true; this.hover = null; this.view = ''; this._labels(); box.style.cursor = 'grabbing'; }
+        this.psiT = Math.max(-0.45, Math.min(Math.PI / 2 + 0.2, this.psiT - (px - d.x) * 0.0062));       // 좌우: 돌린다
+        if (!d.touch) this.thetaT = Math.max(-0.12, Math.min(Math.PI / 2, this.thetaT + (py - d.y) * 0.0062));   // 위아래: 내려다본다 (손가락은 쪽을 넘긴다)
         d.x = px; d.y = py; this.wake();
       });
       const up = e => {
@@ -1205,20 +1179,22 @@
         if (!d || d.id !== e.pointerId) return;
         this.drag = null;
         try { box.releasePointerCapture(e.pointerId); } catch (err) { /* */ }
-        this.thetaT = Math.max(0, Math.min(Math.PI / 2, this.thetaT));
-        if (e.type === 'pointerup' && !d.moved && performance.now() - d.t0 < 600) {      // 눌렀다 뗌: 그 수를 계산
-          const [px, py] = pos(e), k = this._hoverAt(px, py, d.touch ? 2600 : 0);
-          if (k >= 0 && this.val[k] <= 1000000) this.host._jumpTo(this.val[k]);
+        if (e.type === 'pointerup' && !d.moved && performance.now() - d.t0 < 600) {      // 눌렀다 뗌: 그 걸음으로 돌아간다 (다른 수의 기록이면 그 수를 다시 계산)
+          const [px, py] = pos(e), h = this._hoverAt(px, py, d.touch ? 2600 : 0);
+          if (h) {
+            if (h.run === this.cur && this.cur.M && h.k < this.cur.N) { this.host.currentTime = this.cur.steps[h.k].t0 + 1e-4; this.host.play(); }
+            else if (h.run !== this.cur) this.host._jumpTo(h.run.n);
+          }
         }
         box.style.cursor = 'grab'; this.wake();
       };
       box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
       box.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { this.ptr = null; if (!this.drag) { this.hover = null; this.wake(); } } });
-      box.addEventListener('dblclick', e => { if (!onUi(e)) this.setMode('auto'); });
-      for (const k of ['top', 'side', 'auto']) this.btn[k].addEventListener('click', () => this.setMode(k));
+      box.addEventListener('dblclick', e => { if (!onUi(e)) this.setView('solid'); });
+      for (const k of Object.keys(this.btn)) this.btn[k].addEventListener('click', () => this.setView(k));
       this.cv.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; this.stop(); });
       this.cv.addEventListener('webglcontextrestored', () => {
-        try { this._initGL(); this.lost = false; this._upload(); this.dirty = true; this.wake(); }
+        try { this.lost = false; this._initGL(); this.dirty = true; this.wake(); }
         catch (err) { this.ok = false; }
       });
     }
@@ -1252,25 +1228,25 @@
     :host([theme="dark"]) .bar button, :host([theme="dark"]) .bar input, :host([theme="dark"]) .bar select {
            color: #EEEBE3; background: #17161B; border-color: #2B2A31; }
     :host([theme="dark"]) .bar .info { color: #55535D; }
-    .tree { position: relative; height: var(--turing-3n1-tree-height, 300px); overflow: hidden; cursor: grab;
-            touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-    .tree[hidden] { display: none; }
-    .tree canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-    .tree-ov { pointer-events: none; }
-    .tree-ui { position: absolute; left: 16px; bottom: 8px; display: flex; gap: 6px; }
-    .tree-ui button { font: 400 12px/1 "Nanum Gothic", NanumGothic, system-ui, sans-serif; color: #6A6772; cursor: pointer;
-            background: rgba(255,255,255,.82); border: 1px solid #DCDAE0; border-radius: 999px; padding: 6px 12px; }
-    .tree-ui button:hover, .tree-ui button:focus-visible { color: #9A7628; border-color: #9A7628; outline: none; }
-    .tree-ui button[aria-pressed="true"] { color: #9A7628; border-color: #C9B27A; }
-    :host([theme="dark"]) .tree-ui button { color: #83818A; background: rgba(13,13,16,.72); border-color: #2B2A31; }
-    :host([theme="dark"]) .tree-ui button:hover, :host([theme="dark"]) .tree-ui button:focus-visible { color: #F2D99A; border-color: #C6A660; }
-    :host([theme="dark"]) .tree-ui button[aria-pressed="true"] { color: #D9BE82; border-color: #6B5A33; }
+    .trace { position: relative; height: var(--turing-3n1-trace-height, 300px); overflow: hidden; cursor: grab;
+             touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .trace[hidden] { display: none; }
+    .trace canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+    .trace-ov { pointer-events: none; }
+    .trace-ui { position: absolute; left: 16px; bottom: 8px; display: flex; gap: 6px; }
+    .trace-ui button { font: 400 12px/1 "Nanum Gothic", NanumGothic, system-ui, sans-serif; color: #6A6772; cursor: pointer;
+             background: rgba(255,255,255,.82); border: 1px solid #DCDAE0; border-radius: 999px; padding: 6px 12px; }
+    .trace-ui button:hover, .trace-ui button:focus-visible { color: #9A7628; border-color: #9A7628; outline: none; }
+    .trace-ui button[aria-pressed="true"] { color: #9A7628; border-color: #C9B27A; }
+    :host([theme="dark"]) .trace-ui button { color: #83818A; background: rgba(13,13,16,.72); border-color: #2B2A31; }
+    :host([theme="dark"]) .trace-ui button:hover, :host([theme="dark"]) .trace-ui button:focus-visible { color: #F2D99A; border-color: #C6A660; }
+    :host([theme="dark"]) .trace-ui button[aria-pressed="true"] { color: #D9BE82; border-color: #6B5A33; }
   `;
   const PLAY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>';
   const reducedMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   class Turing3n1 extends HTMLElement {
-    static get observedAttributes() { return ['start', 'theme', 'numbers', 'layout', 'speed', 'loop', 'controls', 'lang', 'sequence', 'ridges', 'tree']; }
+    static get observedAttributes() { return ['start', 'theme', 'numbers', 'layout', 'speed', 'loop', 'controls', 'lang', 'sequence', 'ridges', 'trace']; }
 
     constructor() {
       super();
@@ -1280,9 +1256,9 @@
           <canvas part="canvas" role="img"></canvas>
           <div class="play">${PLAY_SVG}</div>
         </div>
-        <div class="tree" part="tree" role="group" hidden>
-          <canvas class="tree-gl" aria-hidden="true"></canvas><canvas class="tree-ov" aria-hidden="true"></canvas>
-          <div class="tree-ui"><button type="button" data-tree="top"></button><button type="button" data-tree="side"></button><button type="button" data-tree="auto"></button></div>
+        <div class="trace" part="trace" role="group" hidden>
+          <canvas class="trace-gl" aria-hidden="true"></canvas><canvas class="trace-ov" aria-hidden="true"></canvas>
+          <div class="trace-ui"><button type="button" data-trace="solid"></button><button type="button" data-trace="tape"></button><button type="button" data-trace="states"></button><button type="button" data-trace="orbit"></button></div>
         </div>
         <div class="bar" part="controls" hidden>
           <button type="button" data-act="toggle"></button>
@@ -1310,7 +1286,7 @@
       this._seq = false; this._ridges = false; this._rows = null; this._n0 = 27; this._rnd = 0; this._Gold = null;
       this._sm = 110; this._smSnap = true; this._clock = 0; this._rowsVer = 0; this._rcan = null; this._rkey = '';
       this._rx = new Float64Array(1024); this._ry = new Float64Array(1024);
-      this._treeBox = root.querySelector('.tree'); this._tree3 = null; this._treeOn = false; this._treeFail = false;
+      this._traceBox = root.querySelector('.trace'); this._trace3 = null; this._traceOn = false; this._traceFail = false;
       this._tick = this._tick.bind(this);
 
       this._stage.addEventListener('click', () => this.toggle());
@@ -1374,7 +1350,7 @@
     disconnectedCallback() {
       if (this._raf) cancelAnimationFrame(this._raf);
       this._raf = 0;
-      if (this._tree3) this._tree3.stop();
+      if (this._trace3) this._trace3.stop();
       if (this._ro) this._ro.disconnect();
       if (this._io) this._io.disconnect();
     }
@@ -1384,13 +1360,13 @@
       if (name === 'start') {
         const n = this._readStart();
         if (n !== this._n0) { this._build(); this.restart(); }
-      } else if (name === 'sequence' || name === 'ridges' || name === 'tree' || (name === 'loop' && this.hasAttribute('sequence'))) {
+      } else if (name === 'sequence' || name === 'ridges' || name === 'trace' || (name === 'loop' && this.hasAttribute('sequence'))) {
         this._build(); this._base = null; this._resize(true); this.restart();
       } else if (name === 'layout') {
         this._resize(true);
       } else {
         this._syncBar(); this._render();
-        if (this._tree3) { this._tree3.dirty = true; this._tree3.wake(); }
+        if (this._trace3) { this._trace3.dirty = true; this._trace3.wake(); }
       }
     }
 
@@ -1419,14 +1395,14 @@
       const on = name => { const v = this.getAttribute(name); return v !== null && v !== 'off' && v !== 'false'; };
       this._seq = on('sequence') && this._loop;
       this._ridges = on('ridges');
-      this._treeOn = on('tree');
-      if (this._treeOn && !this._tree3 && !this._treeFail) {      // 나무는 처음 쓸 때 만든다
-        const tr = new Tree(this, this._treeBox);
-        if (tr.ok) this._tree3 = tr; else this._treeFail = true;
+      this._traceOn = on('trace');
+      if (this._traceOn && !this._trace3 && !this._traceFail) {      // 자취 그림은 처음 쓸 때 만든다
+        const tr = new Trace(this, this._traceBox);
+        if (tr.ok) this._trace3 = tr; else this._traceFail = true;
       }
-      if (this._treeOn && this._treeFail) { this._treeOn = false; this._ridges = true; }    // WebGL이 없으면 ridges 그림으로
-      this._treeBox.hidden = !this._treeOn;
-      if (this._tree3) this._tree3._labels();
+      if (this._traceOn && this._traceFail) { this._traceOn = false; this._ridges = true; }    // WebGL이 없으면 ridges 그림으로
+      this._traceBox.hidden = !this._traceOn;
+      if (this._trace3) this._trace3._labels();
       this._bar.hidden = !this.hasAttribute('controls') || this.getAttribute('controls') === 'off';
     }
     _build() {
@@ -1453,7 +1429,7 @@
       this._G = geometry(this._LY, this._M);
       this._syncBar();
     }
-    _jumpTo(n) {                                      // 나무에서 고른 수로: 하던 계산을 그만두고 그 수부터 이어 간다
+    _jumpTo(n) {                                      // 자취 그림에서 고른 수로: 하던 계산을 그만두고 그 수부터 이어 간다
       if (!this._M || !this._G) return;
       n = Math.max(1, Math.min(1000000, Math.floor(n)));
       if (n === this._M.n && this._playing && this._t < 2.5) return;
@@ -1463,8 +1439,8 @@
       this._t = 0; this._cam = 0; this._started = true; this._ended = false; this._smSnap = true;
       this._syncBar(); this.play(); this._render();
     }
-    _treeEdges() {                                    // 나무 그림의 글자와 단추를 기계 그림의 왼쪽 · 오른쪽 끝(규칙표의 끝)에 맞춘다
-      const a = this._stage.getBoundingClientRect(), b = this._treeBox.getBoundingClientRect(), LY = this._LY;
+    _traceEdges() {                                    // 자취 그림의 글자와 단추를 기계 그림의 왼쪽 · 오른쪽 끝(규칙표의 끝)에 맞춘다
+      const a = this._stage.getBoundingClientRect(), b = this._traceBox.getBoundingClientRect(), LY = this._LY;
       const m = LY ? a.width * LY.gx0 / LY.W : 16;
       return [a.left - b.left + m, a.right - b.left - m];
     }
@@ -1506,7 +1482,7 @@
     }
     _schedule() {
       if (this._playing && this._visible && !this._raf) this._raf = requestAnimationFrame(this._tick);
-      if (this._tree3 && this._treeOn) this._tree3.wake();
+      if (this._trace3 && this._traceOn) this._trace3.wake();
     }
     _showPoster() {                 // 기다리는 동안 보여 줄 장면: 여섯 번째 계산 직후
       const M = this._M;
@@ -1516,7 +1492,7 @@
       this._started = false; this._smSnap = true;
     }
     _resize(force) {
-      const cssW = this._stage.clientWidth || this.clientWidth;      // (기계 그림의 폭: 나무 그림이 있으면 요소보다 좁을 수 있다)
+      const cssW = this._stage.clientWidth || this.clientWidth;      // (기계 그림의 폭: 자취 그림이 있으면 요소보다 좁을 수 있다)
       if (!cssW) return;
       const mode = this.getAttribute('layout');
       let name = mode === 'wide' || mode === 'narrow' ? mode : '';
@@ -1542,7 +1518,7 @@
         this._fades = null;
       }
       this._render();
-      if (this._tree3 && this._treeOn) this._tree3.resize();
+      if (this._trace3 && this._traceOn) this._trace3.resize();
     }
     _tick(now) {
       this._raf = 0;
@@ -1792,10 +1768,7 @@
         }
       }
       if (this._ridges) this._drawRidges(ctx, M, S, tt, glow);
-      if (this._tree3 && this._treeOn) {                        // 나무에 알린다: 지금 수와 끝낸 계산 횟수
-        const vi = S.inProg === null ? 0 : S.vi;
-        this._tree3.setLive(M.n, vi, vi > 0 && S.valueT !== null && S.valueT < 0.3 ? easeOut(S.valueT / 0.3) : 1);
-      }
+      if (this._trace3 && this._traceOn) this._trace3.setLive(M, tt);      // 자취 그림에 알린다: 지금의 계산과 시각
 
       // ── 테이프 띠의 양 끝을 바탕색으로 흐리게
       if (!this._fades || this._fades.theme !== TH || this._fades.LY !== LY) {
