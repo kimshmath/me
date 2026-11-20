@@ -26,7 +26,7 @@
   padding-top: calc(var(--nav-height) + 3rem);
 }
 
-/* ---------- Hero: a live computation (hero.js) ---------- */
+/* ---------- Hero: a live computation (hero.js, or the <turing-3n1> component) ---------- */
 .essay-hero {
   display: none;                     /* shown only when scripts run: see the inline script in the head */
   margin: 0;
@@ -48,6 +48,19 @@
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* The Turing essay's hero is the web component <turing-3n1> (/assets/js/turing-3n1.js), not hero.js.
+   It paints its own ground, #0d0d10 in its dark theme: the band takes the same colour, so the
+   picture has no visible edge, and fades into the page at the bottom. */
+.essay-hero-tm {
+  padding: calc(var(--nav-height) + 1.5rem) 0 2.5rem;
+  background: linear-gradient(to bottom, #0d0d10 calc(100% - 2.5rem), rgba(13, 13, 16, 0));
+}
+
+.essay-hero-tm .tm-frame {
+  width: min(100% - 3rem, 1500px);
+  margin: 0 auto;
 }
 
 /* The lattice hero is a round figure: a taller stage, and hero.js places a square canvas in it. */
@@ -139,10 +152,6 @@
   color: var(--text-main);
   cursor: pointer;
   pointer-events: auto;
-}
-
-.essay-hero[data-hero="goldbach"] .hero-toggle {
-  bottom: calc(7% + 0.9rem);         /* just above the axis of the plot */
 }
 
 .hero-toggle:hover,
@@ -684,6 +693,14 @@ table.data tbody th {
 
   .hero-stage {
     height: clamp(17rem, 46vh, 24rem);
+  }
+
+  .essay-hero-tm {
+    padding-top: calc(var(--nav-height) + 1rem);
+  }
+
+  .essay-hero-tm .tm-frame {
+    width: 100%;                       /* every pixel of a small screen goes to the picture */
   }
 
   .hero-readout {

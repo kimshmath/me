@@ -1,12 +1,6 @@
-/* Hero animations for the essay pages (essays/*.html).
+/* Hero animation for the essay pages (essays/*.html).
 
-   Each hero is a real computation that runs in the reader's browser, not a recording:
-
-   goldbach   "Turing and the Halting Problem". Program 4 of the essay, running. For every even
-              number x = 4, 6, 8, ... it looks for primes p <= q with x = p + q, exactly as step (3)
-              says, and plots one dot at height g(x) = the number of such pairs. The picture that
-              grows is known as Goldbach's comet. The program stops only at a counterexample to
-              Goldbach's conjecture, so nobody knows whether it halts.
+   The hero is a real computation that runs in the reader's browser, not a recording:
 
    unit       "Humans, Mathematics, and AI". The unit distance problem: how many pairs among n points
               in the plane can be at distance exactly 1? Erdos (1946) conjectured n^(1 + o(1)); in May
@@ -20,11 +14,14 @@
               embeddings makes it a projection of the lattice into three dimensions, and the view
               from straight above is the planar shadow.
 
+   (The hero of "Turing and the Halting Problem" is a separate web component, <turing-3n1>,
+   in /assets/js/turing-3n1.js: a Turing machine that runs the 3n+1 map. It does not use this file.)
+
    Markup (see the essay pages): <figure class="essay-hero" data-hero="..."> with a <canvas>,
    a .hero-readout (.hero-num, .hero-sub) and a .hero-toggle button. Text templates live in
    data-* attributes on the figure, so the wording is edited in the HTML, not here.
-   The comet fills the whole stage; the lattice figure is round, so its hero places a square
-   canvas inside the stage and lays out its text beside or above it (see essay.css).
+   The lattice figure is round, so the hero places a square canvas inside the stage and lays out
+   its text beside or above it (see essay.css).
 
    Motion: honours prefers-reduced-motion (starts paused on a finished still), pauses when the
    hero is off screen or the tab is hidden, and has a pause/play button. */
@@ -43,14 +40,14 @@
     if (el && el.textContent !== s) el.textContent = s;
   }
 
-  /* The colours of both heroes, from 0 to 1: blue, violet, rose, gold, ivory. */
+  /* The colours of the hero, from 0 to 1: blue, violet, rose, gold, ivory. */
   var STOPS = [
     [0.00, 92, 134, 255], [0.22, 150, 142, 252], [0.38, 232, 150, 198],
     [0.50, 255, 200, 124], [0.72, 255, 224, 168], [1.00, 255, 246, 226]
   ];
 
   /* ------------------------------------------------------------------------------------------
-     Runner shared by both heroes
+     Runner: sizing, pausing, and the frame loop
      ------------------------------------------------------------------------------------------ */
   function mount(root, factory) {
     var stage = root.querySelector('.hero-stage');
@@ -126,246 +123,6 @@
     size();
     kick();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(size);   // text may wrap differently once the fonts are in
-  }
-
-  /* ------------------------------------------------------------------------------------------
-     goldbach: Program 4, running
-     ------------------------------------------------------------------------------------------ */
-  function goldbach(root, canvas, ui) {
-    var ctx = canvas.getContext('2d');
-    var W = 0, H = 0, scale = 1;                 // internal buffer size; CSS px -> buffer px
-    var img = null, accI = null, accR = null, accG = null, accB = null;
-    var glow = document.createElement('canvas'), gctx = glow.getContext('2d');   // small copy, drawn back enlarged: a soft halo
-    var ox = 0, oy = 0, pw = 1, ph = 1;          // plot origin and extent, buffer px
-
-    /* primes */
-    var MAXLIM = 1 << 23;                         // stop extending the table of primes at about 8 million
-    var LIM = 1 << 21, sieve = null, primes = null;
-    function buildSieve() {
-      var s = new Uint8Array(LIM + 1), i, j, c = 0;
-      s.fill(1); s[0] = 0; s[1] = 0;
-      for (i = 2; i * i <= LIM; i++) if (s[i]) for (j = i * i; j <= LIM; j += i) s[j] = 0;
-      for (i = 2; i <= LIM; i++) c += s[i];
-      var p = new Int32Array(c + 1);
-      for (i = 2, j = 0; i <= LIM; i++) if (s[i]) p[j++] = i;
-      p[c] = 0x7fffffff;                          // sentinel
-      sieve = s; primes = p;
-    }
-
-    /* the dots: entry i belongs to x = 4 + 2i */
-    var cap = 1 << 15, n = 0;
-    var gv = new Uint32Array(cap);               // g(x): number of ways x = p + q, p <= q prime
-    var tv = new Uint8Array(cap);                // colour index, from the odd prime factors of x
-    var x = 2, firstP = 2, gmax = 1, halted = false, spent = false;
-    function push(c, t) {
-      if (n === cap) {
-        cap *= 2;
-        var g2 = new Uint32Array(cap), t2 = new Uint8Array(cap);
-        g2.set(gv); t2.set(tv); gv = g2; tv = t2;
-      }
-      gv[n] = c; tv[n] = t; n++;
-      if (c > gmax) gmax = c;
-    }
-
-    /* Hardy and Littlewood's heuristic for g(x) carries the factor
-       prod over odd primes p | x of (p - 1)/(p - 2); it is what splits the comet into bands.
-       Colour by that factor: blue for 1 (no small odd prime factor), through violet and rose,
-       to gold at 2 and ivory above. The factor 2 comes from p = 3, and the other x are held
-       below gold, so a dot is gold or lighter exactly when 3 | x. */
-    var SMALL = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
-    function band(v) {
-      var f = 1, i, p, t;
-      for (i = 0; i < SMALL.length; i++) { p = SMALL[i]; if (v % p === 0) f *= (p - 1) / (p - 2); }
-      t = Math.log(f) / 1.386;                   // ln f / ln 4
-      if (v % 3 !== 0 && t > 0.38) t = 0.38;     // e.g. 5 * 7 * 11 * 13 | x would otherwise drift into gold
-      return Math.round(255 * clamp(t, 0, 1));
-    }
-    var ramp = new Float32Array(256 * 3);
-    (function () {
-      for (var i = 0; i < 256; i++) {
-        var t = i / 255, k = 1;
-        while (k < STOPS.length - 1 && STOPS[k][0] < t) k++;
-        var a = STOPS[k - 1], b = STOPS[k], u = (t - a[0]) / (b[0] - a[0]);
-        for (var c = 0; c < 3; c++) ramp[i * 3 + c] = (a[c + 1] + (b[c + 1] - a[c + 1]) * u) / 255;
-      }
-    })();
-
-    /* Step (2) and step (3) of Program 4, repeated until the time budget is spent. */
-    function advance(xLimit, budgetMs) {
-      var t0 = performance.now(), made = 0;
-      while (!halted && x + 2 <= xLimit) {
-        var nx = x + 2;
-        if (nx > LIM) {
-          if (LIM >= MAXLIM) { spent = true; return; }   // the table of primes ends here; so does this run
-          LIM *= 2; buildSieve();
-        }
-        var half = nx >> 1, c = 0, fp = 0, i = 0, p = primes[0];
-        for (; p <= half; p = primes[++i]) {
-          if (sieve[nx - p]) { c++; if (!fp) fp = p; }
-        }
-        x = nx;
-        if (c === 0) { halted = true; return; }   // a counterexample: step (4), the program halts
-        firstP = fp;
-        push(c, band(nx));
-        if ((++made & 7) === 0 && performance.now() - t0 > budgetMs) return;
-      }
-    }
-
-    /* pacing: x doubles every T2 seconds until the arithmetic itself becomes the limit */
-    var T2 = 1.25, X0 = 56, clock = 0, elapsed = 0;
-    function pace(t) { return 4 + X0 * (Math.pow(2, t / T2) - 1); }
-    var Xv = 96, Yv = 6;                           // the view: x in [0, Xv], g in [0, Yv]
-    var builtX = 0, builtY = 0, builtN = 0, builtW = 1;   // what the density buffer currently holds
-    var sparks = [], lastText = 0, dirty = true, held = 0, tickNo = 0, drawNo = 0;
-
-    function resize(cw, chh, dpr) {
-      scale = Math.min(dpr, 1.5);
-      if (cw * scale > 1500) scale = 1500 / cw;
-      W = Math.max(2, Math.round(cw * scale)); H = Math.max(2, Math.round(chh * scale));
-      canvas.width = W; canvas.height = H;
-      glow.width = Math.max(2, Math.round(W / 5)); glow.height = Math.max(2, Math.round(H / 5));
-      img = ctx.createImageData(W, H);
-      accI = new Float32Array(W * H); accR = new Float32Array(W * H);
-      accG = new Float32Array(W * H); accB = new Float32Array(W * H);
-      ox = Math.round(ui.alignLeft() * scale);
-      oy = Math.round(H * 0.93);
-      var top = Math.round((ui.headerHeight() + 18) * scale);
-      pw = W - ox - 2; ph = Math.max(10, oy - top);
-      builtN = -1; dirty = true;
-    }
-
-    var LUT = new Uint8Array(4096);
-    (function () { for (var i = 0; i < 4096; i++) LUT[i] = Math.round(255 * (1 - Math.exp(-2.1 * i / 256))); })();
-
-    function splat(i0, i1, weight, kernel) {
-      var sx = pw / Xv, sy = ph / Yv, i, px, py, ix, iy, fx, fy, k, w, r, g, b, t;
-      for (i = i0; i < i1; i++) {
-        px = ox + (4 + 2 * i) * sx; py = oy - gv[i] * sy;
-        if (px < 1 || px >= W - 2 || py < 1 || py >= H - 2) continue;
-        t = tv[i] * 3; r = ramp[t]; g = ramp[t + 1]; b = ramp[t + 2];
-        ix = px | 0; iy = py | 0;
-        if (kernel === 0) {
-          k = iy * W + ix;
-          accI[k] += weight; accR[k] += weight * r; accG[k] += weight * g; accB[k] += weight * b;
-        } else if (kernel === 2) {                 // few dots on screen: draw each one 3 x 3, soft-edged
-          for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
-            w = weight * (dx === 0 ? 1 : 0.5) * (dy === 0 ? 1 : 0.5);
-            k = (iy + dy) * W + ix + dx;
-            accI[k] += w; accR[k] += w * r; accG[k] += w * g; accB[k] += w * b;
-          }
-        } else {
-          fx = px - ix; fy = py - iy;
-          k = iy * W + ix;
-          w = weight * (1 - fx) * (1 - fy); accI[k] += w; accR[k] += w * r; accG[k] += w * g; accB[k] += w * b;
-          w = weight * fx * (1 - fy); accI[k + 1] += w; accR[k + 1] += w * r; accG[k + 1] += w * g; accB[k + 1] += w * b;
-          k += W;
-          w = weight * (1 - fx) * fy; accI[k] += w; accR[k] += w * r; accG[k] += w * g; accB[k] += w * b;
-          w = weight * fx * fy; accI[k + 1] += w; accR[k + 1] += w * r; accG[k + 1] += w * g; accB[k + 1] += w * b;
-        }
-      }
-    }
-
-    function weightFor(count) {                    // keeps the mean brightness steady as dots pile up
-      return Math.min(1, 0.26 * pw * ph / Math.max(1, count));
-    }
-
-    function rebuild() {
-      accI.fill(0); accR.fill(0); accG.fill(0); accB.fill(0);
-      builtW = weightFor(n);
-      if (n < 9000) splat(0, n, builtW * clamp(1.5 - n / 9000, 0.5, 1.2), 2);
-      else splat(0, n, builtW, n > 40000 ? 0 : 1);   // dense enough: one texel per dot
-      builtX = Xv; builtY = Yv; builtN = n;
-    }
-
-    function paint() {
-      var d = img.data, len = W * H, k, o, s, a, m;
-      for (k = 0, o = 0; k < len; k++, o += 4) {
-        s = accI[k];
-        if (s <= 0.002) { d[o + 3] = 0; continue; }
-        a = s * 256; m = 255 / s;
-        d[o] = accR[k] * m; d[o + 1] = accG[k] * m; d[o + 2] = accB[k] * m;
-        d[o + 3] = LUT[a > 4095 ? 4095 : a | 0];
-      }
-      ctx.putImageData(img, 0, 0);
-      gctx.clearRect(0, 0, glow.width, glow.height);
-      gctx.drawImage(canvas, 0, 0, glow.width, glow.height);
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.42;
-      ctx.drawImage(glow, 0, 0, W, H);
-      ctx.restore();
-    }
-
-    function text(now) {
-      if (now - lastText < 90 && !halted) return;
-      lastText = now;
-      write(ui.num, halted ? nf.format(x) : nf.format(x) + ' = ' + nf.format(firstP) + ' + ' + nf.format(x - firstP));
-      write(ui.sub, halted
-        ? fill(root.dataset.lHalted, { x: nf.format(x) })
-        : fill(root.dataset.lChecked, { n: nf.format(n) }));
-    }
-
-    function step(dt) {
-      if ((halted || spent) && !sparks.length) return;       // nothing more to compute: the last sparks fade, then rest
-      if (elapsed > 45 && (++tickNo & 1)) { held = dt; return; }   // once the comet has formed, work on every other frame
-      dt += held; held = 0;
-      dirty = true;
-      clock += dt; elapsed += dt;
-      // generous while the comet takes shape, then a light load for as long as the page stays open
-      var budget = elapsed < 26 ? 3.6 : Math.max(1.3, 3.6 - (elapsed - 26) * 0.12);
-      var before = n;
-      advance(Math.floor(pace(clock) / 2) * 2, budget);
-      if (x + 2 < pace(clock)) clock = T2 * Math.log(1 + (x - 4) / X0) / Math.LN2 + 0.02;   // arithmetic-bound: do not let the pace run ahead
-      var k = 1 - Math.exp(-dt / 0.10);
-      Xv += (Math.max(96, x * 1.022) - Xv) * k;
-      Yv += (Math.max(5.6, gmax * 1.07) - Yv) * (1 - Math.exp(-dt / 0.30));
-      var born = n - before;
-      for (var j = 0, m = Math.min(born, born > 40 ? 2 : 4); j < m; j++) {
-        sparks.push({ i: n - 1 - Math.floor(j * born / m), age: 0 });
-      }
-      for (j = sparks.length - 1; j >= 0; j--) { sparks[j].age += dt; if (sparks[j].age > 0.7) sparks.splice(j, 1); }
-      if (sparks.length > 70) sparks.splice(0, sparks.length - 70);
-    }
-
-    function draw(now) {
-      if (!img) return;
-      if (!dirty && builtN >= 0) { text(now || 0); return; }
-      // with tens of thousands of dots the picture changes slowly: redraw it on every other frame
-      if (n > 50000 && elapsed <= 45 && builtN >= 0 && (++drawNo & 1)) { text(now || 0); return; }
-      dirty = false;
-      var moved = Math.abs(Xv / builtX - 1) * pw > 0.3 || Math.abs(Yv / builtY - 1) * ph > 0.3;
-      if (builtN < 0 || moved || n < 60000 || weightFor(n) < 0.97 * builtW) rebuild();
-      else if (n > builtN) { splat(builtN, n, builtW, 0); builtN = n; }
-      paint();
-
-      var sx = pw / Xv, sy = ph / Yv;
-      ctx.save();
-      ctx.fillStyle = 'rgba(240, 232, 216, 0.10)';             // the axis g = 0
-      ctx.fillRect(ox, oy + Math.round(1.5 * scale), pw, Math.max(1, Math.round(scale)));
-      ctx.globalCompositeOperation = 'lighter';
-      for (var j = 0; j < sparks.length; j++) {
-        var s = sparks[j], i = s.i, px = ox + (4 + 2 * i) * sx, py = oy - gv[i] * sy;
-        if (px > W) continue;
-        var a = 1 - s.age / 0.7, t = tv[i] * 3, rad = (0.9 + 1.5 * a) * scale;
-        var grd = ctx.createRadialGradient(px, py, 0, px, py, rad * 2.2);
-        var col = Math.round(ramp[t] * 255) + ',' + Math.round(ramp[t + 1] * 255) + ',' + Math.round(ramp[t + 2] * 255);
-        grd.addColorStop(0, 'rgba(' + col + ',' + (0.75 * a * a).toFixed(3) + ')');
-        grd.addColorStop(1, 'rgba(' + col + ',0)');
-        ctx.fillStyle = grd;
-        ctx.fillRect(px - rad * 2.2, py - rad * 2.2, rad * 4.4, rad * 4.4);
-      }
-      ctx.restore();
-      text(now || 0);
-    }
-
-    function still() {                             // a finished picture for readers who prefer no motion
-      advance(40000, 400);
-      clock = T2 * Math.log(1 + (x - 4) / X0) / Math.LN2;
-      Xv = Math.max(96, x * 1.022); Yv = Math.max(5.6, gmax * 1.07);
-    }
-
-    buildSieve();
-    return { resize: resize, step: step, draw: draw, still: still };
   }
 
   /* ------------------------------------------------------------------------------------------
@@ -607,7 +364,7 @@
     function due(k) { return 0.3 + (k < 3 ? 0.7 * k : 2.1 + 0.95 * (k - 3)); }   // when level k starts to arrive
     function rise(k) { return clamp((clock - due(k)) / RISE, 0, 1); }            // how far it has arrived
 
-    /* ---- drawing: lines are summed into a buffer of floats, then mapped to colour, as for the comet ---- */
+    /* ---- drawing: lines are summed into a buffer of floats, then mapped to colour ---- */
     var S = 0, acc = null, img = null, pix = null, lo = null, hi = null, unit0 = 1, TXv = null, TYv = null;
     var LUT = new Uint32Array(4096);               // summed line weight -> one RGBA pixel
     var LITTLE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
@@ -850,7 +607,7 @@
   }
 
   /* ------------------------------------------------------------------------------------------ */
-  var kinds = { goldbach: goldbach, unit: unit };
+  var kinds = { unit: unit };
   function start() {
     var roots = document.querySelectorAll('.essay-hero[data-hero]');
     for (var i = 0; i < roots.length; i++) {
