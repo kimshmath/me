@@ -28,6 +28,13 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family
 #frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;overflow:hidden}
 #frame img{position:absolute;inset:0;width:100%;height:100%;display:block}
 #frame video{position:absolute;display:none;background:#fff}
+/* 살아 있는 슬라이드: 그림 대신 이 페이지에서 실제로 돌아가는 것 (튜링 기계와 그 3차원 기록). 크기는 --u = 화면 폭 / 1920.
+   제목은 덱의 다른 슬라이드와 같은 자리와 글꼴(1920×1080 기준), 기계는 폭의 82%로 가운데, 그 아래 기록은 화면 폭 전체.
+   쪽 번호는 넣지 않는다 (그림에 찍힌 다른 슬라이드들의 번호가 그대로 이어지도록) */
+#live{position:absolute;inset:0;display:none;background:#fff;color:#131313}
+#live.on{display:block}
+#live .t{position:absolute;margin:0;left:calc(var(--u)*114px);top:calc(var(--u)*152px);font-family:"Nanum Myeongjo",NanumMyeongjo,"Noto Serif KR",AppleMyungjo,serif;font-weight:700;font-size:calc(var(--u)*75px);line-height:1.2;white-space:nowrap}
+#live turing-3n1{position:absolute;left:0;right:0;top:calc(var(--u)*270px);display:block;--turing-3n1-layout:wide;--turing-3n1-machine-width:calc(var(--u)*1574.4px);--turing-3n1-trace-height:calc(var(--u)*380px)}
 #bar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:999px;background:rgba(20,20,24,.72);color:#eee;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
 #deck.ui #bar{opacity:1;pointer-events:auto}
 #bar button{all:unset;cursor:pointer;width:34px;height:30px;display:grid;place-items:center;border-radius:999px}
@@ -65,6 +72,8 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family
   // 암호화 설정 — 이 값들은 공개되어도 된다 (비밀번호 없이는 내용을 풀 수 없다)
   var KDF = {"salt": "nCVEUdShTVRLtpcl2jD2Aw==", "iter": 600000};
   var DIR = 'd/';
+  // 살아 있는 슬라이드({live: {...}})가 쓰는 웹 컴포넌트 — 공개된 파일이다 (글 「튜링과 정지문제」의 맨 위 그림과 같은 것)
+  var TM_JS = '/assets/js/turing-3n1.js?v=1.4.1';
 
   if (!(window.crypto && crypto.subtle)) {
     if (location.protocol === 'http:') { location.replace('https:' + location.href.slice(5)); return; }
@@ -131,6 +140,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family
     vid.style.left = v.box[0] * 100 + '%'; vid.style.top = v.box[1] * 100 + '%';
     vid.style.width = v.box[2] * 100 + '%'; vid.style.height = v.box[3] * 100 + '%';
     clampFromHash();
+    setupLive();
     layout(); show(false);
     preloadAll();
   }
@@ -138,12 +148,41 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family
     var W = innerWidth, H = innerHeight, r = 16 / 9;
     var w = Math.min(W, H * r), h = w / r;
     $('frame').style.width = w + 'px'; $('frame').style.height = h + 'px';
+    $('frame').style.setProperty('--u', (w / 1920).toFixed(5));
   }
+
+  // ── 살아 있는 슬라이드 ──
+  // 단계 {live: {title, start}}: 그림 대신 <turing-3n1 trace>(위: 기계, 아래: 기계가 지나온 길을 세운 3차원 그림)를 보인다.
+  // 요소는 덱을 열 때 한 번 만들어 숨겨 두고(글꼴 · 스크립트를 미리 받아 둠), 숨어 있는 동안은 스스로 멈춰 있다.
+  // 처음 보일 때 출발한 수부터 돌기 시작하고, 다시 돌아오면 멈췄던 데서 이어 간다.
+  // 그림 안을 누르거나 끌어도 슬라이드는 넘어가지 않는다 (기계를 누르면 멈춤/재생, 기록은 끌어서 돌리기 · 단추로 방향 바꾸기).
+  var live = null;
+  function setupLive() {
+    var spec = null;
+    M.slides.forEach(function (s) { s.forEach(function (st) { if (st.live && !spec) spec = st.live; }); });
+    if (!spec) return;
+    var box = document.createElement('div'), el = document.createElement('turing-3n1');
+    box.id = 'live';
+    if (spec.title) { var t = document.createElement('h2'); t.className = 't'; t.textContent = spec.title; box.appendChild(t); }
+    el.setAttribute('start', String(spec.start || 27)); el.setAttribute('sequence', ''); el.setAttribute('trace', '');
+    box.appendChild(el);
+    $('frame').appendChild(box);
+    ['click', 'dblclick', 'touchstart', 'touchend'].forEach(function (type) {
+      box.addEventListener(type, function (e) { if (e.target === el || el.contains(e.target)) e.stopPropagation(); }, { passive: true });
+    });
+    var s = document.createElement('script'); s.src = TM_JS; document.head.appendChild(s);
+    live = { box: box, el: el };
+  }
+  function inLive(node) { return !!(live && node && live.box.contains(node)); }
   addEventListener('resize', function () { if (M) layout(); });
 
   function show(advanced) {
     var st = M.slides[S][K], vid = $('vid');
-    url(st.f, 'image/webp').then(function (u) {
+    if (live) {
+      if (!st.live && inLive(document.activeElement)) document.activeElement.blur();
+      live.box.classList.toggle('on', !!st.live);
+    }
+    if (st.f) url(st.f, 'image/webp').then(function (u) {
       if (M.slides[S][K] === st) $('img').src = u;
     });
     // 동영상: 앞으로 넘어가며 재생 클릭에 닿을 때만 처음부터 튼다
@@ -171,7 +210,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family
       out.push(M.slides[s][k].f);
     }
     if (S > 0) out.push(M.slides[S - 1][M.slides[S - 1].length - 1].f);
-    return out;
+    return out.filter(Boolean);                  // 살아 있는 슬라이드에는 받을 그림이 없다
   }
   function next() {
     if (K + 1 < M.slides[S].length) K++;
@@ -192,7 +231,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family
   // 모든 화면을 차례로 받아 둔다 (강연 중 인터넷이 끊겨도 넘길 수 있게)
   function preloadAll() {
     var list = [], done = 0;
-    M.slides.forEach(function (s) { s.forEach(function (st) { list.push([st.f, 'image/webp']); }); });
+    M.slides.forEach(function (s) { s.forEach(function (st) { if (st.f) list.push([st.f, 'image/webp']); }); });
     list.push([M.video.f, 'video/mp4']);
     (function step(i) {
       if (i >= list.length) { $('load').textContent = ''; return; }
@@ -205,19 +244,23 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family
   }
 
   // ── 조작 ──
+  // 키는 늘 슬라이드를 넘긴다: 살아 있는 슬라이드의 그림을 누른 뒤라도 스페이스 · Enter가 그림(멈춤/재생)으로 가지 않도록
+  // 가장 먼저(capture) 받아서, 덱이 쓰는 키면 그림까지 내려보내지 않는다. 덱이 쓰지 않는 R은 그림으로 간다(처음 수로 다시).
   var typed = '';
   addEventListener('keydown', function (e) {
     if (!M || e.altKey || e.ctrlKey || e.metaKey) return;
-    var k = e.key;
-    if (/^[0-9]$/.test(k)) { typed += k; return; }
-    if (k === 'Enter' && typed) { go(parseInt(typed, 10) - 1); typed = ''; e.preventDefault(); return; }
+    var k = e.key, used = true;
+    if (/^[0-9]$/.test(k)) { typed += k; if (inLive(e.target)) e.stopPropagation(); return; }
+    if (k === 'Enter' && typed) { go(parseInt(typed, 10) - 1); typed = ''; e.preventDefault(); if (inLive(e.target)) e.stopPropagation(); return; }
     typed = '';
     if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter' || k === 'n' || k === 'N') { next(); e.preventDefault(); }
     else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp' || k === 'Backspace' || k === 'p' || k === 'P') { prev(); e.preventDefault(); }
     else if (k === 'Home') { go(0); e.preventDefault(); }
     else if (k === 'End') { go(M.slides.length - 1, true); e.preventDefault(); }
     else if (k === 'f' || k === 'F') { fullscreen(); }
-  });
+    else used = false;
+    if (used && inLive(e.target)) e.stopPropagation();
+  }, true);
   function fullscreen() {
     var d = document, el = d.documentElement;
     if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
