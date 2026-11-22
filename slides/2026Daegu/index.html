@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<title>비공개 자료</title>
+<style>
+:root{--bg:#f3f2ef;--ink:#1f1e24;--grey:#6a6772;--rule:#d6d4da;--field:#fff;--stage:#0d0d10}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141418;--ink:#eeebe3;--grey:#9c99a3;--rule:#34333a;--field:#1c1c21}}
+:root[data-theme="dark"]{--bg:#141418;--ink:#eeebe3;--grey:#9c99a3;--rule:#34333a;--field:#1c1c21}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:"Nanum Gothic","Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif}
+/* 잠금 화면 */
+#lock{min-height:100%;display:grid;place-items:center;padding:24px 16px;text-align:center}
+#lock h1{font-family:"Nanum Myeongjo","Noto Serif KR","AppleMyungjo",Georgia,serif;font-weight:700;font-size:clamp(24px,5vw,34px);margin:0 0 14px}
+#lock p{color:var(--grey);font-size:15px;line-height:1.7;margin:0 0 22px}
+#lock form{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#lock input{font:inherit;font-size:16px;width:min(260px,100%);padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--field);color:var(--ink)}
+#lock input:focus{outline:2px solid var(--grey);outline-offset:1px}
+#lock button{font:inherit;font-size:15px;padding:10px 18px;border:1px solid var(--ink);border-radius:8px;background:var(--ink);color:var(--bg);cursor:pointer}
+#lock button:disabled{opacity:.5;cursor:default}
+#msg{min-height:1.7em;margin-top:14px!important;margin-bottom:0!important}
+/* 슬라이드 */
+#deck{display:none;position:fixed;inset:0;background:var(--stage);user-select:none;-webkit-user-select:none;touch-action:pan-y pinch-zoom}
+#deck.on{display:block}
+#frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;overflow:hidden}
+#frame img{position:absolute;inset:0;width:100%;height:100%;display:block}
+#frame video{position:absolute;display:none;background:#fff}
+#bar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:999px;background:rgba(20,20,24,.72);color:#eee;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+#deck.ui #bar{opacity:1;pointer-events:auto}
+#bar button{all:unset;cursor:pointer;width:34px;height:30px;display:grid;place-items:center;border-radius:999px}
+#bar button:hover,#bar button:focus-visible{background:rgba(255,255,255,.16)}
+#bar svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#pos{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#load{position:absolute;right:12px;top:10px;color:#8f8c97;font-size:12px}
+</style>
+</head>
+<body>
+<main id="lock">
+  <div>
+    <h1>비공개 자료입니다</h1>
+    <p>비밀번호를 넣으면 열립니다.</p>
+    <form id="f" autocomplete="off">
+      <input id="pw" type="password" aria-label="비밀번호" placeholder="비밀번호" autofocus>
+      <button id="go" type="submit">열기</button>
+    </form>
+    <p id="msg" role="status" aria-live="polite"></p>
+  </div>
+</main>
+<div id="deck" aria-label="슬라이드">
+  <div id="frame"><img id="img" alt=""><video id="vid" muted playsinline preload="auto"></video></div>
+  <div id="load"></div>
+  <div id="bar">
+    <button id="prev" aria-label="이전"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <span id="pos"></span>
+    <button id="next" aria-label="다음"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button id="fs" aria-label="전체 화면"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  // 암호화 설정 — 이 값들은 공개되어도 된다 (비밀번호 없이는 내용을 풀 수 없다)
+  var KDF = {"salt": "nCVEUdShTVRLtpcl2jD2Aw==", "iter": 600000};
+  var DIR = 'd/';
+
+  if (!(window.crypto && crypto.subtle)) {
+    if (location.protocol === 'http:') { location.replace('https:' + location.href.slice(5)); return; }
+    document.getElementById('msg').textContent = '이 브라우저에서는 열 수 없습니다.';
+    return;
+  }
+  var $ = function (id) { return document.getElementById(id); };
+  var b64 = function (s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); };
+  var key = null, M = null, cache = {}, pending = {};
+
+  function derive(pw) {
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']).then(function (k) {
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(KDF.salt), iterations: KDF.iter, hash: 'SHA-256' },
+        k, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    });
+  }
+  function fetchPlain(name) {
+    return fetch(DIR + name).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.arrayBuffer();
+    }).then(function (buf) {
+      var u = new Uint8Array(buf);
+      return crypto.subtle.decrypt({ name: 'AES-GCM', iv: u.subarray(0, 12) }, key, u.subarray(12));
+    });
+  }
+  function url(name, type) {
+    if (cache[name]) return Promise.resolve(cache[name]);
+    if (!pending[name]) pending[name] = fetchPlain(name).then(function (b) {
+      return (cache[name] = URL.createObjectURL(new Blob([b], { type: type })));
+    });
+    return pending[name];
+  }
+
+  $('f').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pw = $('pw').value;
+    if (!pw) return;
+    $('go').disabled = true; $('msg').textContent = '여는 중…';
+    derive(pw).then(function (k) {
+      key = k;
+      return fetchPlain('m.bin');
+    }).then(function (b) {
+      M = JSON.parse(new TextDecoder().decode(b));
+      start();
+    }).catch(function (err) {
+      key = null;
+      $('go').disabled = false;
+      $('msg').textContent = (err && err.name === 'OperationError') ? '비밀번호가 맞지 않습니다.' : '열지 못했습니다. 다시 해 보세요.';
+      $('pw').select();
+    });
+  });
+
+  // ── 슬라이드 ──
+  var S = 0, K = 0, played = false;
+  function clampFromHash() {
+    var n = parseInt(location.hash.slice(1), 10);
+    if (n >= 1 && n <= M.slides.length) S = n - 1;
+  }
+  function start() {
+    document.title = M.title;
+    $('lock').remove();
+    $('deck').classList.add('on');
+    var v = M.video, vid = $('vid');
+    vid.style.left = v.box[0] * 100 + '%'; vid.style.top = v.box[1] * 100 + '%';
+    vid.style.width = v.box[2] * 100 + '%'; vid.style.height = v.box[3] * 100 + '%';
+    clampFromHash();
+    layout(); show(false);
+    preloadAll();
+  }
+  function layout() {
+    var W = innerWidth, H = innerHeight, r = 16 / 9;
+    var w = Math.min(W, H * r), h = w / r;
+    $('frame').style.width = w + 'px'; $('frame').style.height = h + 'px';
+  }
+  addEventListener('resize', function () { if (M) layout(); });
+
+  function show(advanced) {
+    var st = M.slides[S][K], vid = $('vid');
+    url(st.f, 'image/webp').then(function (u) {
+      if (M.slides[S][K] === st) $('img').src = u;
+    });
+    // 동영상: 앞으로 넘어가며 재생 클릭에 닿을 때만 처음부터 튼다
+    var onVideoSlide = (S === M.video.slide - 1);
+    if (onVideoSlide && st.play && advanced && !played) {
+      played = true;
+      url(M.video.f, 'video/mp4').then(function (u) {
+        if (S !== M.video.slide - 1 || !M.slides[S][K].play) return;
+        if (vid.src !== u) vid.src = u;
+        vid.currentTime = 0; vid.style.display = 'block';
+        var p = vid.play(); if (p && p.catch) p.catch(function () {});
+      });
+    } else if (!(onVideoSlide && st.play && played)) {
+      vid.pause(); vid.style.display = 'none'; played = false;
+    }
+    $('pos').textContent = (S + 1) + ' / ' + M.slides.length;
+    if (location.hash !== '#' + (S + 1)) history.replaceState(null, '', '#' + (S + 1));
+    // 가까운 화면을 먼저 받아 둔다
+    near().forEach(function (f) { url(f, 'image/webp'); });
+  }
+  function near() {
+    var out = [], s = S, k = K;
+    for (var i = 0; i < 4; i++) {
+      if (k + 1 < M.slides[s].length) k++; else if (s + 1 < M.slides.length) { s++; k = 0; } else break;
+      out.push(M.slides[s][k].f);
+    }
+    if (S > 0) out.push(M.slides[S - 1][M.slides[S - 1].length - 1].f);
+    return out;
+  }
+  function next() {
+    if (K + 1 < M.slides[S].length) K++;
+    else if (S + 1 < M.slides.length) { S++; K = 0; played = false; }
+    else return;
+    show(true);
+  }
+  function prev() {
+    if (K > 0) K--;
+    else if (S > 0) { S--; K = M.slides[S].length - 1; played = false; }
+    else return;
+    show(false);
+  }
+  function go(n, last) {
+    S = Math.max(0, Math.min(M.slides.length - 1, n)); K = last ? M.slides[S].length - 1 : 0; played = false;
+    show(false);
+  }
+  // 모든 화면을 차례로 받아 둔다 (강연 중 인터넷이 끊겨도 넘길 수 있게)
+  function preloadAll() {
+    var list = [], done = 0;
+    M.slides.forEach(function (s) { s.forEach(function (st) { list.push([st.f, 'image/webp']); }); });
+    list.push([M.video.f, 'video/mp4']);
+    (function step(i) {
+      if (i >= list.length) { $('load').textContent = ''; return; }
+      url(list[i][0], list[i][1]).then(function () {
+        done++;
+        $('load').textContent = done < list.length ? '받는 중 ' + Math.round(done * 100 / list.length) + '%' : '';
+        step(i + 1);
+      }, function () { step(i + 1); });
+    })(0);
+  }
+
+  // ── 조작 ──
+  var typed = '';
+  addEventListener('keydown', function (e) {
+    if (!M || e.altKey || e.ctrlKey || e.metaKey) return;
+    var k = e.key;
+    if (/^[0-9]$/.test(k)) { typed += k; return; }
+    if (k === 'Enter' && typed) { go(parseInt(typed, 10) - 1); typed = ''; e.preventDefault(); return; }
+    typed = '';
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter' || k === 'n' || k === 'N') { next(); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp' || k === 'Backspace' || k === 'p' || k === 'P') { prev(); e.preventDefault(); }
+    else if (k === 'Home') { go(0); e.preventDefault(); }
+    else if (k === 'End') { go(M.slides.length - 1, true); e.preventDefault(); }
+    else if (k === 'f' || k === 'F') { fullscreen(); }
+  });
+  function fullscreen() {
+    var d = document, el = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+    else if (el.requestFullscreen) el.requestFullscreen(); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  }
+  $('prev').addEventListener('click', function (e) { e.stopPropagation(); prev(); });
+  $('next').addEventListener('click', function (e) { e.stopPropagation(); next(); });
+  $('fs').addEventListener('click', function (e) { e.stopPropagation(); fullscreen(); });
+  $('bar').addEventListener('click', function (e) { e.stopPropagation(); });
+  // 화면을 누르면 다음, 왼쪽 4분의 1을 누르면 이전
+  var tx = null, ty = null, swiped = false;
+  $('deck').addEventListener('click', function (e) {
+    if (swiped) { swiped = false; return; }
+    if (e.clientX < innerWidth / 4) prev(); else next();
+  });
+  $('deck').addEventListener('touchstart', function (e) { var t = e.touches[0]; tx = t.clientX; ty = t.clientY; }, { passive: true });
+  $('deck').addEventListener('touchend', function (e) {
+    if (tx === null) return;
+    var t = e.changedTouches[0], dx = t.clientX - tx, dy = t.clientY - ty;
+    tx = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { swiped = true; if (dx < 0) next(); else prev(); setTimeout(function () { swiped = false; }, 400); }
+  });
+  // 마우스를 움직이면 아래 단추 줄이 잠깐 보인다
+  var hideT = null;
+  addEventListener('mousemove', function () {
+    if (!M) return;
+    $('deck').classList.add('ui'); clearTimeout(hideT);
+    hideT = setTimeout(function () { $('deck').classList.remove('ui'); }, 1800);
+  });
+  addEventListener('hashchange', function () {
+    if (!M) return;
+    var n = parseInt(location.hash.slice(1), 10);
+    if (n >= 1 && n <= M.slides.length && n - 1 !== S) go(n - 1);
+  });
+})();
+</script>
+</body>
+</html>
