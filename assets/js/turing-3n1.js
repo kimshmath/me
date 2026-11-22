@@ -1,11 +1,14 @@
 /*!
- * turing-3n1.js · v1.4.1 · 2026-11-20
+ * turing-3n1.js · v1.5.0 · 2026-11-22
  *   v1.1  v1.0에 영어 화면 글을 더함
  *   v1.2  sequence(멈추면 다음 수로 이어 감)와 ridges('수의 변화' 그림)를 더함
  *   v1.3  tree('1로 가는 길' 나무 그림)를 더했다가
  *   v1.4  그 자리에 trace('기계가 지나온 길': 테이프 · 머리 · 상태의 역사를 입체로 세운 그림)를 넣음 (tree는 뺌)
  *   v1.4.1  trace: 좁은 화면에서 상태 이름이 오른쪽 끝에서 잘리지 않게 자리를 남김 · 돌려 볼 때 제목 줄이 가려지지 않게 함
- *   sequence · ridges · trace를 쓰지 않으면 화면은 v1.0과 같음 (한국어 화면은 픽셀까지 같음)
+ *   v1.5  규칙표의 칸마다 '다음 상태'(①–⑥)를 늘 보임 — 번호의 색 = 그 상태의 색('기계가 지나온 길'의 색과 같음).
+ *         한 걸음 = 읽기 · 쓰기 · 이동 · 다음 상태: 마지막 단계에서 규칙표 머리의 금빛 테가 다음 상태의 열로 미끄러져 가고,
+ *         방금 쓴 규칙의 다음 상태 번호가 빛나며, 머리 위 이름표가 다음 상태로 바뀜. 첫걸음은 0.62 → 0.74초.
+ *   (v1.4까지는 sequence · ridges · trace를 쓰지 않으면 화면이 강연 덱의 영상과 픽셀까지 같았음. v1.5부터는 다음 상태를 보이므로 다름)
  * 3n+1(콜라츠) 튜링 기계 애니메이션 — 웹 컴포넌트 <turing-3n1>
  *
  * 「인간, 수학, AI — 생각을 생각하다」 강연 덱의 튜링 기계 영상(tm_video2.py가 PIL로 그려 만든 1920×496 영상)을
@@ -34,7 +37,7 @@
  *             WebGL을 쓸 수 없으면 ridges 그림으로 대신함. 그림의 높이는 CSS 변수 --turing-3n1-trace-height(기본 300px),
  *             기계 그림의 폭은 --turing-3n1-machine-width(기본 100%)로 정함 → 아래 그림만 화면 폭을 다 쓰게 할 수 있음
  *   theme     light | dark — light = 강연 덱의 흰 바탕 영상, dark = 원래 영상(0D0D10 바탕) (기본 light)
- *   numbers   on | off — 상태 번호 ①–⑥과 규칙표의 '다음 상태' 표시 (기본: light는 off, dark는 on — 각 영상과 같게)
+ *   numbers   on | off — 상태 번호 ①–⑥과 규칙표의 '다음 상태' 표시 (기본 on. off면 v1.4의 밝은 화면처럼 쓸 기호 · 이동만)
  *   layout    auto | wide | narrow — narrow는 값과 그래프를 규칙표 아래로 내린 배치 (기본 auto: 폭 640px 미만이면 narrow.
  *             페이지의 CSS가 이 요소에 --turing-3n1-layout: wide | narrow 를 주면 auto는 그것을 따름)
  *   speed     배속 (기본 1, 0.1 – 16)
@@ -79,7 +82,7 @@
               R: '오른쪽 끝으로', H: '멈춤' },
       erase: '지움', halt: '멈춤',
       task: '짝수면 ÷2   ·   홀수면 ×3+1   ·   1이 되면 멈춤',
-      phases: ['읽기', '쓰기', '이동'],
+      phases: ['읽기', '쓰기', '이동', '다음 상태'],
       table: '규 칙 표', legend: '각 칸  =  쓸 기호 · 이동 · 다음 상태',
       tape: '테이프에 적힌 수', start: '출발',
       nth: i => `${i}번째 계산`, steps: k => `${fmt(k)}걸음`, peak: v => `최고 ${fmt(v)}`,
@@ -112,7 +115,7 @@
               R: 'To right end', H: 'Halt' },
       erase: 'erase', halt: 'halt',
       task: 'If even ÷2   ·   If odd ×3+1   ·   Halt at 1',
-      phases: ['Read', 'Write', 'Move'],
+      phases: ['Read', 'Write', 'Move', 'Next state'],
       table: 'Rule table', legend: 'Each cell  =  write · move · next state',
       tape: 'Number on the tape', start: 'Start',
       nth: i => `Operation ${i}`, steps: k => `${fmt(k)} step${k === 1 ? '' : 's'}`, peak: v => `Peak ${fmt(v)}`,
@@ -202,10 +205,11 @@
   }
 
   // ───────────────────────────── 시간표 (tm_video2.py와 같은 값) ─────────────────────────────
-  // 처음에는 한 걸음에 0.62초(읽기 · 쓰기 · 이동이 보임) → 0.066초까지 빨라짐 → 끝에서 다시 느려짐.
-  const D0 = 0.62, DFAST = 0.066, KAPPA = 30, DEND = 0.42, KAPPA2 = 9;
+  // 처음에는 한 걸음에 0.74초(읽기 · 쓰기 · 이동 · 다음 상태가 보임) → 0.066초까지 빨라짐 → 끝에서 다시 느려짐.
+  const D0 = 0.74, DFAST = 0.066, KAPPA = 30, DEND = 0.42, KAPPA2 = 9;
   const T_EMPTY = 0.8, T_IN_ANIM = 0.55, T_HEAD_IN = 0.8, T_HALT = 4.2, T_OUT = 1.4, TAU = 0.42;
-  const phaseAB = d => (d >= 0.30 ? [0.30, 0.55] : [0.12, 0.40]);    // 한 걸음 안에서 읽기 | 쓰기 | 이동의 경계
+  const phases = d => (d >= 0.30 ? [0.24, 0.44, 0.74] : [0.10, 0.30, 0.64]);   // 한 걸음 안에서 읽기 | 쓰기 | 이동 | 다음 상태의 경계
+  const TAU_HAND = 0.075;                       // 머리글의 금빛 테가 다음 상태의 열로 따라가는 빠르기(초, 빠른 걸음에서는 0.04까지)
   // sequence(이어 달리기): 멈춘 장면을 짧게 두고, 둘째 수부터는 빈 화면 · 느린 첫걸음을 줄인다
   const T_HALT_SEQ = 2.6, T_EMPTY_NEXT = 0.5, D0_NEXT = 0.32, KAPPA_NEXT = 10, T_GEOM = 0.5;
 
@@ -228,7 +232,7 @@
     const LCH = [{ t: IN_T0, L: 0, len: start.length }];            // 끝자리 위치 · 자릿수가 바뀌는 시각 (카메라용)
     for (const st of S) {
       if (!st.op) continue;
-      const tt = st.t0 + phaseAB(st.d)[1] * st.d;
+      const tt = st.t0 + phases(st.d)[1] * st.d;
       VCH.push({ t: tt, it: st.itAfter, val: st.valAfter, op: st.op });
       LCH.push({ t: tt, L: st.LAfter, len: st.lenAfter });
     }
@@ -263,13 +267,32 @@
     if (tt >= M.HALT_T0) return M.posEnd;
     const k = bisectRight(M.T0, tt) - 1;
     if (k < 0) return 0;
-    const st = M.steps[k], u = (tt - st.t0) / st.d, b = phaseAB(st.d)[1];
-    return st.pos + st.move * (u >= b ? ease((u - b) / (1 - b)) : 0);
+    const st = M.steps[k], u = (tt - st.t0) / st.d, [, b, c] = phases(st.d);
+    return st.pos + st.move * (u >= b ? ease((u - b) / (c - b)) : 0);
+  }
+
+  // 규칙표 머리의 금빛 테: 지금 상태의 열에 있다가, 걸음마다 '다음 상태' 단계에서 다음 상태의 열로 따라감.
+  // 따라가는 모양 = 한 차 지연(시간 상수 TAU_HAND) — 앞선 걸음들의 넘어감을 더해 시각 t만으로 계산(되감아도 같음).
+  // 같은 상태에 머무는 규칙은 테가 움직이지 않고 한 번 빛남.
+  function handAt(M, tt, k) {
+    const col = s => STATES.indexOf(s);
+    let target = null, x = 0, glow = 0;
+    for (let j = Math.min(k, M.N - 1); j >= 0; j--) {
+      const st = M.steps[j], tS = st.t0 + phases(st.d)[2] * st.d;
+      if (tS > tt) { if (target === null) target = col(st.state); continue; }
+      const from = col(st.state), to = st.next === 'H' ? from : col(st.next), dt = tt - tS;
+      if (target === null) target = to;
+      if (dt > 8 * TAU_HAND) break;
+      x += (from - to) * Math.exp(-dt / Math.max(0.04, Math.min(TAU_HAND, 0.4 * (1 - phases(st.d)[2]) * st.d)));
+      glow = Math.max(glow, Math.exp(-dt / 0.2) * Math.min(1, st.d / 0.3));
+    }
+    return { x: (target === null ? 0 : target) + x, glow, a: 1 };
   }
 
   function stateAt(M, tt) {
     const S = { tape: { lo: -(M.start.length - 1), s: M.start }, headI: null, headA: 0, pill: 'P', pillHot: 0,
-                cellRC: null, phase: null, fast: false, heat: new Map(), flip: new Map(), value: M.n, valueT: null,
+                pillFrom: null, pillMix: 1, cellRC: null, colOn: true, hand: null, nextGlow: 0,
+                phase: null, fast: false, heat: new Map(), flip: new Map(), value: M.n, valueT: null,
                 op: null, it: 0, vi: 0, inProg: null, outA: 1, frameGlow: 0.5, steps: 0 };
     if (tt < M.IN_T0) { S.outA = 0; return S; }
     S.inProg = tt - M.IN_T0;
@@ -277,24 +300,34 @@
     S.headI = headAt(M, tt);
     const k = bisectRight(M.T0, tt) - 1;
     if (tt >= M.HALT_T0) {
-      S.tape = M.end; S.pill = 'H'; S.pillHot = 1; S.steps = M.N;
+      S.tape = M.end; S.pill = 'H'; S.pillHot = 1; S.steps = M.N; S.colOn = false;
       S.cellRC = tt - M.HALT_T0 < 0.9 ? ['Q', '_'] : null;
     } else if (k >= 0) {
-      const st = M.steps[k], u = (tt - st.t0) / st.d, [a, b] = phaseAB(st.d), p = st.pos;
+      const st = M.steps[k], u = (tt - st.t0) / st.d, [a, b, c] = phases(st.d), p = st.pos;
       S.fast = st.d < 0.30; S.pill = st.state; S.cellRC = [st.state, st.read]; S.steps = k + 1;
       let tape = st.before;
-      S.phase = u < a ? 'read' : (u < b ? 'write' : 'move');
+      S.phase = u < a ? 'read' : (u < b ? 'write' : (u < c ? 'move' : 'state'));
+      S.hand = handAt(M, tt, k);
+      if (k === 0) S.hand.a = clamp01((tt - st.t0) / 0.15);
       S.frameGlow = u < a ? 0.55 + 0.45 * Math.sin(Math.min(1, u / a) * Math.PI) : 0.55;
       if (u >= a && st.write !== st.read) {
         if (u < b) S.flip.set(p, [st.read, st.write, ease((u - a) / (b - a))]);
         else tape = tapeWrite(tape, p, st.write);
       }
-      if (st.next === 'H' && u >= b) { S.pill = 'H'; S.pillHot = ease((u - b) / (1 - b)); }
+      if (u >= c) {                                   // 다음 상태
+        const v = (u - c) / (1 - c);
+        S.nextGlow = Math.sin(Math.PI * Math.min(1, v * 1.25)) * (S.fast ? 0.4 : 1);
+        if (st.next === 'H') { S.pill = 'H'; S.pillHot = ease(v); S.colOn = false; S.hand.a *= 1 - ease(v); }
+        else if (st.next !== st.state) {
+          S.pillFrom = st.state; S.pill = st.next;
+          S.pillMix = clamp01((tt - (st.t0 + c * st.d)) / Math.min(0.16, 0.9 * (1 - c) * st.d));
+        }
+      }
       S.tape = tape;
     }
     // 방금 쓴 칸에 남는 열기 (3초 안의 쓰기들)
     for (let j = Math.min(k, M.N - 1); j >= 0; j--) {
-      const st = M.steps[j], tw = st.t0 + phaseAB(st.d)[0] * st.d;
+      const st = M.steps[j], tw = st.t0 + phases(st.d)[0] * st.d;
       if (tt - tw > 3.0) break;
       if (st.write !== st.read && tt >= tw && !S.heat.has(st.pos)) S.heat.set(st.pos, Math.exp(-(tt - tw) / 0.55));
     }
@@ -308,7 +341,7 @@
   // 좌표는 논리 픽셀. wide = 원래 영상(1920×496) 그대로, narrow = 값 · 그래프를 규칙표 아래로 내린 1120×790.
   const LAYOUTS = {
     wide: {
-      W: 1920, H: 496, phaseX: 173, phaseY: 8, taskX: 1747, taskY: 8,
+      W: 1920, H: 496, phaseX: 173, phaseY: 8, phaseDX: 132, taskX: 1747, taskY: 8,
       tapeY: 128, xmin: 120, xmax: 1742, cellMax: 84, cellMin: 40, fadeW: 280, pillMin: 113, pillMax: 1880,
       gx0: 173, glab: 126, gcol: 156, gyHdr: 244, gyLine: 274, gyHead: 284, gyRow: 330, gpitch: 47,
       V: { x: 1747, hdrY: 244, binY: 306, subY: 312, opY: 352, bigY: 468, bigMinX: 1430, flashTop: 372, flashBot: 474, binMinX: null },
@@ -318,7 +351,7 @@
             smMin: 110, lw: 1, halo: 1, labPx: 22, subPx: 16, peakPx: 18, tails: 3, sway: 44 },
     },
     narrow: {
-      W: 1120, H: 790, phaseX: 52, phaseY: 8, taskX: 1088, taskY: 8,
+      W: 1120, H: 790, phaseX: 52, phaseY: 8, phaseDX: 120, taskX: 1088, taskY: 8,
       tapeY: 128, xmin: 24, xmax: 1096, cellMax: 84, cellMin: 30, fadeW: 110, pillMin: 12, pillMax: 1108,
       gx0: 32, glab: 126, gcol: 156, gyHdr: 244, gyLine: 274, gyHead: 284, gyRow: 330, gpitch: 47,
       V: { x: 1088, hdrY: 520, binY: 582, subY: 588, opY: 630, bigY: 752, bigMinX: 560, flashTop: 670, flashBot: 758, binMinX: 560 },
@@ -341,6 +374,7 @@
       from: '#8F8C97', ridgeLive: '#9A7628', mist: 0.10, mistLive: 0.16,
       ridge: [[0, '#1F1E24', 0.80], [0.12, '#55535C', 0.70], [0.40, '#8F8C97', 0.55], [0.75, '#B3B0B9', 0.36], [1, '#DCDAE0', 0]],
       sky: '#DCDAE0', skyA: 0,
+      stc: ['#8A6A1E', '#0E8F82', '#2B4FD6', '#6D45C8', '#C2407F', '#B8660F'], numFade: 0.30,
     },
     dark: {    // 원래 영상(tm_video2.py)의 색
       bg: '#0D0D10', ink: '#EEEBE3', gold: '#C6A660', hot: '#F2D99A',
@@ -353,6 +387,7 @@
       from: '#83818A', ridgeLive: '#F2D99A', mist: 0.24, mistLive: 0.22,
       ridge: [[0, '#EEEBE3', 0.80], [0.12, '#C4BEE2', 0.70], [0.40, '#767ED6', 0.58], [0.75, '#4652B0', 0.34], [1, '#343C8C', 0]],
       sky: '#3A46B0', skyA: 0.16,
+      stc: ['#FFF1D0', '#4FD6C4', '#5E86FF', '#A98BFA', '#F58BB6', '#E9B65C'], numFade: 0.30,
     },
   };
 
@@ -504,50 +539,87 @@
     for (const part of richParts(str)) w += typeof part === 'number' ? 0.92 * px : textW(ctx, part, sansFont(wt, px));
     return w;
   }
-  function rich(ctx, str, x, y, wt, px, color, alpha) {      // 가운데 맞춤('mm')만
-    if (alpha !== undefined && alpha <= 0.003) return;
+  // nc(n) = 동그라미 숫자 n의 색(없으면 글자와 같은 색). badge = 동그라미 속을 이 색으로 채움(숫자는 nc의 색, 굵게).
+  // 마지막 동그라미 숫자의 자리 [x, y, r]를 돌려줌
+  function rich(ctx, str, x, y, wt, px, color, alpha, nc, badge) {      // 가운데 맞춤('mm')만
+    if (alpha !== undefined && alpha <= 0.003) return null;
     const parts = richParts(str);
-    if (parts.length === 1 && typeof parts[0] === 'string') return text(ctx, str, x, y, sansFont(wt, px), color, 'mm', alpha);
-    let cx = x - richW(ctx, str, wt, px) / 2;
+    if (parts.length === 1 && typeof parts[0] === 'string') { text(ctx, str, x, y, sansFont(wt, px), color, 'mm', alpha); return null; }
+    let cx = x - richW(ctx, str, wt, px) / 2, at = null;
     ctx.globalAlpha = alpha === undefined ? 1 : clamp01(alpha);
-    ctx.fillStyle = color; ctx.strokeStyle = color; ctx.textBaseline = 'middle';
+    ctx.textBaseline = 'middle';
     for (const part of parts) {
       if (typeof part === 'number') {
-        const r = 0.41 * px, ox = cx + 0.46 * px;
-        ctx.lineWidth = Math.max(1, (wt >= 700 ? 0.08 : 0.06) * px);
-        ctx.beginPath(); ctx.arc(ox, y, r, 0, Math.PI * 2); ctx.stroke();
-        ctx.font = sansFont(wt, 0.62 * px); ctx.textAlign = 'center';
+        const r = 0.41 * px, ox = cx + 0.46 * px, ncol = nc ? nc(part) : color;
+        if (badge) {
+          ctx.fillStyle = badge; ctx.beginPath(); ctx.arc(ox, y, r + 0.05 * px, 0, Math.PI * 2); ctx.fill();
+          ctx.font = sansFont(700, 0.62 * px);
+        } else {
+          ctx.strokeStyle = ncol; ctx.lineWidth = Math.max(1, (wt >= 700 ? 0.08 : 0.06) * px);
+          ctx.beginPath(); ctx.arc(ox, y, r, 0, Math.PI * 2); ctx.stroke();
+          ctx.font = sansFont(wt, 0.62 * px);
+        }
+        ctx.fillStyle = ncol; ctx.textAlign = 'center';
         ctx.fillText(String(part), ox, y + 0.02 * px);
+        at = [ox, y, r];
         cx += 0.92 * px;
       } else {
-        ctx.font = sansFont(wt, px); ctx.textAlign = 'left';
+        ctx.fillStyle = color; ctx.font = sansFont(wt, px); ctx.textAlign = 'left';
         ctx.fillText(part, cx, y);
         cx += ctx.measureText(part).width;
       }
     }
     ctx.globalAlpha = 1;
+    return at;
   }
 
-  // 규칙표의 한 열: 머리(상태 이름) + 칸 셋. on = 지금 상태, hit = 지금 읽은 기호의 칸, cover = 고정 층 위에 덮어 그림
-  function drawColumn(ctx, LY, TH, T, num, c, on, hit, cover) {
-    const s = STATES[c], x = LY.gx0 + LY.glab + c * LY.gcol;
-    const hb = [x + 3, LY.gyHead, x + LY.gcol - 5, LY.gyHead + 34];
+  const stColor = TH => n => TH.stc[n - 1];                    // 상태 번호의 색
+  const stColorSoft = TH => n => mix(TH.stc[n - 1], TH.bg, TH.numFade);
+  const colX = (LY, c) => LY.gx0 + LY.glab + c * LY.gcol;
+
+  // 규칙표의 머리 하나(상태 이름). on = 금빛 테
+  function drawHead(ctx, LY, TH, T, num, c, on) {
+    const x = colX(LY, c), hb = [x + 3, LY.gyHead, x + LY.gcol - 5, LY.gyHead + 34];
     fillRR(ctx, hb, 17, on ? mix(TH.bg, TH.gold, 0.16) : TH.bg, 1);
     strokeRR(ctx, hb, 17, on ? TH.gold : TH.hdrLine, 1.5, 1);
-    rich(ctx, headName(T, s, num), x + LY.gcol / 2 - 1, LY.gyHead + 17, 700, 19.5, on ? TH.hot : TH.hdrText);
+    rich(ctx, headName(T, STATES[c], num), x + LY.gcol / 2 - 1, LY.gyHead + 17, 700, 19.5, on ? TH.hot : TH.hdrText,
+         undefined, stColor(TH));
+  }
+
+  // 규칙표의 한 열: 머리(상태 이름) + 칸 셋. on = 지금 상태, hit = 지금 읽은 기호의 칸, cover = 고정 층 위에 덮어 그림,
+  // head = 머리도 그림(움직이는 금빛 테가 있을 때는 머리를 drawHand가 그림). 칸 = 쓸 기호 · 이동 · 다음 상태(번호, 그 상태의 색).
+  // 지금 칸의 다음 상태 번호는 속을 채운 동그라미로 — 그 자리 [x, y, r]를 돌려줌
+  function drawColumn(ctx, LY, TH, T, num, c, on, hit, cover, head) {
+    const s = STATES[c], x = colX(LY, c);
+    if (head !== false) drawHead(ctx, LY, TH, T, num, c, on);
+    let at = null;
     ROWS.forEach(([sym], r) => {
       const tx = cellText(T, s, sym, num);
       const y = LY.gyRow + r * LY.gpitch, b = [x + 3, y, x + LY.gcol - 5, y + 38], cx = (b[0] + b[2]) / 2;
       if (cover) { ctx.fillStyle = TH.bg; ctx.fillRect(b[0] - 2, b[1] - 2, b[2] - b[0] + 4, b[3] - b[1] + 4); }
       if (hit === sym) {
         fillRR(ctx, b, 9, TH.gold, 1);
-        rich(ctx, tx, cx, y + 18, 700, 27, TH.bg);
+        at = rich(ctx, tx, cx, y + 18, 700, 27, TH.bg, undefined, stColor(TH), TH.bg);
       } else if (tx) {
-        rich(ctx, tx, cx, y + 18, 400, 27, on ? TH.cellTextOn : TH.cellText);
+        rich(ctx, tx, cx, y + 18, 400, 27, on ? TH.cellTextOn : TH.cellText, undefined, on ? stColor(TH) : stColorSoft(TH));
       } else {
         text(ctx, '·', cx, y + 18, F.cell, TH.cellDot, 'mm');
       }
     });
+    return at;
+  }
+
+  // 머리글의 금빛 테 (H = { x: 열 번호(실수), a: 진하기, glow }): 테를 그리고, 테가 걸친 열의 이름을 다시 씀
+  function drawHand(ctx, LY, TH, T, num, H) {
+    const x = colX(LY, H.x), hb = [x + 3, LY.gyHead, x + LY.gcol - 5, LY.gyHead + 34];
+    fillRR(ctx, hb, 17, mix(TH.bg, TH.gold, 0.16), H.a);
+    strokeRR(ctx, hb, 17, TH.gold, 1.5, H.a);
+    for (let c = Math.max(0, Math.floor(H.x)); c <= Math.min(STATES.length - 1, Math.ceil(H.x)); c++) {
+      const w = clamp01(1 - Math.abs(H.x - c)) * H.a;
+      rich(ctx, headName(T, STATES[c], num), colX(LY, c) + LY.gcol / 2 - 1, LY.gyHead + 17, 700, 19.5,
+           mix(TH.hdrText, TH.hot, w), undefined, stColor(TH));
+    }
+    return hb;
   }
 
   // ───────────────────────────── 자취(trace): 기계가 지나온 길 ─────────────────────────────
@@ -814,7 +886,7 @@
       if (tt >= M.HALT_T0) h = M.N;
       else {
         const k = bisectRight(M.T0, tt) - 1;
-        if (k >= 0) { const st = M.steps[k], u = (tt - st.t0) / st.d, b = phaseAB(st.d)[1]; h = k + (u >= b ? ease((u - b) / (1 - b)) : 0); }
+        if (k >= 0) { const st = M.steps[k], u = (tt - st.t0) / st.d, [, b, c] = phases(st.d); h = k + (u >= b ? ease((u - b) / (c - b)) : 0); }
       }
       if (h !== cur.h || a !== cur.a) { cur.h = h; cur.a = a; this.dirty = true; }
       this.wake();
@@ -1426,7 +1498,7 @@
       const theme = this.getAttribute('theme') === 'dark' ? 'dark' : 'light';
       this._themeName = theme; this._TH = THEMES[theme];
       const num = this.getAttribute('numbers');
-      this._numbers = num === null ? theme === 'dark' : (num !== 'off' && num !== 'false');
+      this._numbers = num === null ? true : (num !== 'off' && num !== 'false');
       const sp = parseFloat(this.getAttribute('speed'));
       this._speed = Number.isFinite(sp) ? Math.max(0.1, Math.min(16, sp)) : 1;
       const lp = this.getAttribute('loop');
@@ -1706,8 +1778,9 @@
         ctx.globalAlpha = ha; ctx.fillStyle = gcol;
         ctx.beginPath(); ctx.moveTo(cx - 11, tapeY - 26 + drop); ctx.lineTo(cx + 11, tapeY - 26 + drop);
         ctx.lineTo(cx, tapeY - 9 + drop); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
-        const label = pillName(T, S.pill, num);
-        const pw = richW(ctx, label, 700, 25) + 44;
+        const label = pillName(T, S.pill, num), from = S.pillFrom && S.pillMix < 1 ? pillName(T, S.pillFrom, num) : null;
+        const pm = from ? ease(S.pillMix) : 1;
+        const pw = from ? lerp(richW(ctx, from, 700, 25) + 44, richW(ctx, label, 700, 25) + 44, pm) : richW(ctx, label, 700, 25) + 44;
         const pcx = Math.min(Math.max(cx, LY.pillMin + pw / 2), LY.pillMax - pw / 2);
         const box = [pcx - pw / 2, tapeY - 80 + drop, pcx + pw / 2, tapeY - 34 + drop];
         if (S.pill === 'H') {
@@ -1718,29 +1791,41 @@
         } else {
           fillRR(ctx, box, 23, TH.bg, ha);
           strokeRR(ctx, box, 23, TH.gold, 2, ha);
-          rich(ctx, label, pcx, box[1] + 22, 700, 25, TH.gold, ha);
+          if (from) {                                          // 앞 이름이 위로 빠진 다음 새 이름이 아래에서 올라옴 (겹치지 않게)
+            const o = clamp01(1 - 2 * pm), n2 = clamp01(2 * pm - 1);
+            rich(ctx, from, pcx, box[1] + 22 - 8 * (1 - o), 700, 25, TH.gold, ha * o, num ? stColor(TH) : null);
+            rich(ctx, label, pcx, box[1] + 22 + 8 * (1 - n2), 700, 25, TH.gold, ha * n2, num ? stColor(TH) : null);
+          } else rich(ctx, label, pcx, box[1] + 22, 700, 25, TH.gold, ha, num ? stColor(TH) : null);
         }
       }
 
       // ── 읽기 · 쓰기 · 이동
       let px = LY.phaseX;
-      for (const [name, ph] of [[T.phases[0], 'read'], [T.phases[1], 'write'], [T.phases[2], 'move']]) {
+      for (const [name, ph] of [[T.phases[0], 'read'], [T.phases[1], 'write'], [T.phases[2], 'move'], [T.phases[3], 'state']]) {
         const on = S.phase === ph && !S.fast, soft = S.fast && S.phase !== null;
         if (on) {
           ctx.globalAlpha = oa; ctx.fillStyle = TH.gold;
           ctx.beginPath(); ctx.arc(px - 12.5, LY.phaseY + 16.5, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
         }
         text(ctx, name, px, LY.phaseY, on ? F.capB : F.cap, on ? TH.phaseOn : (soft ? TH.phaseSoft : TH.phaseOff), 'la');
-        px += 132;
+        px += LY.phaseDX;
       }
 
       // ── 규칙표: 지금 상태의 열만 다시 그린다 (나머지는 고정 층에 있음)
       const act = S.cellRC;
       if (act) {
         const c = STATES.indexOf(act[0]);
-        drawColumn(ctx, LY, TH, T, num, c, S.pill !== 'H', act[1], true);
-        const x = LY.gx0 + LY.glab + c * LY.gcol, y = LY.gyRow + ROWS.findIndex(r => r[0] === act[1]) * LY.gpitch;
+        const at = drawColumn(ctx, LY, TH, T, num, c, S.colOn, act[1], true, !S.hand);
+        const x = colX(LY, c), y = LY.gyRow + ROWS.findIndex(r => r[0] === act[1]) * LY.gpitch;
         glow(x + 3, y, x + LY.gcol - 5, y + 38, 9, 0.55);
+        if (at && S.nextGlow > 0.01) {                         // 다음 상태: 방금 쓴 규칙의 다음 상태 번호가 빛남
+          const r = at[2] + 5;
+          glow(at[0] - r, at[1] - r, at[0] + r, at[1] + r, r, 0.95 * S.nextGlow);
+        }
+      }
+      if (S.hand && S.hand.a > 0.003) {                       // 머리글의 금빛 테 = 지금 상태 (다음 상태의 열로 따라감)
+        const hb = drawHand(ctx, LY, TH, T, num, S.hand);
+        if (S.hand.glow > 0.01) glow(hb[0], hb[1], hb[2], hb[3], 17, 0.45 * S.hand.glow * S.hand.a);
       }
 
       // ── 테이프에 적힌 수 + 궤적 그래프
